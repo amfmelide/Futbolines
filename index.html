@@ -18,7 +18,6 @@
     --text: #e8edf5;
     --text-dim: #7a8fa8;
     --accent: #1565c0;
-    --accent2: #0d47a1;
     --gold: #ffc107;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,6 +80,19 @@
   }
   .search-box:focus { border-color: var(--accent); }
   .search-box::placeholder { color: var(--text-dim); }
+  .filter-bar { display: flex; justify-content: center; gap: 8px; padding: 14px 20px 0; flex-wrap: wrap; }
+  .filter-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.75rem;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px;
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn.oro.active { background: #b8860b; border-color: #ffc107; color: #fff; }
+  .filter-btn.plata.active { background: #607d8b; border-color: #b0bec5; color: #fff; }
+  .filter-btn.bronce.active { background: #795548; border-color: #cd7f32; color: #fff; }
+  .filter-btn.rookie.active { background: #4a148c; border-color: #9c27b0; color: #fff; }
   .grid-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
   .card {
@@ -90,17 +102,33 @@
   .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
   .card.libre { border-color: rgba(0,200,83,0.25); }
   .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
-  .card-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px 10px; }
+  .card.overtime { border-color: #ff6d00 !important; box-shadow: 0 0 24px rgba(255,109,0,0.4) !important; }
+  .card-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; }
   .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text-dim); min-width: 36px; line-height: 1; }
-  .card-name-input { background: transparent; border: none; outline: none; color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text; }
+  .card-name-input {
+    background: transparent; border: none; outline: none; color: var(--text);
+    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text;
+  }
   .card-name-input::placeholder { color: var(--text-dim); }
-  .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; transition: all 0.25s; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
   .libre .status-badge { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
   .ocupado .status-badge { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
-  .card-body { padding: 0 16px 14px; }
+  .card-meta { padding: 0 16px 10px; }
+  .cat-select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'Barlow', sans-serif; font-size: 0.75rem; font-weight: 600;
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; outline: none;
+    transition: border-color 0.2s; width: 100%;
+  }
+  .cat-select:focus { border-color: var(--accent); }
+  .cat-select.oro { border-color: #ffc107; color: #ffc107; }
+  .cat-select.plata { border-color: #b0bec5; color: #b0bec5; }
+  .cat-select.bronce { border-color: #cd7f32; color: #cd7f32; }
+  .cat-select.rookie { border-color: #9c27b0; color: #ce93d8; }
+  .card-body { padding: 0 16px 10px; }
   .toggle-btn {
     width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'Barlow', sans-serif;
-    font-weight: 800; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
     cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
   }
   .toggle-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
@@ -108,16 +136,32 @@
   .libre .toggle-btn:hover { background: linear-gradient(135deg, #00e676, var(--libre)); box-shadow: 0 6px 24px rgba(0,200,83,0.5); transform: translateY(-1px); }
   .ocupado .toggle-btn { background: linear-gradient(135deg, var(--ocupado), var(--ocupado-dark)); color: #fff; box-shadow: 0 4px 16px rgba(245,0,87,0.3); }
   .ocupado .toggle-btn:hover { background: linear-gradient(135deg, #ff4081, var(--ocupado)); box-shadow: 0 6px 24px rgba(245,0,87,0.5); transform: translateY(-1px); }
+  .toggle-btn.confirming { opacity: 0.85; animation: pulse-btn 0.5s ease-in-out infinite alternate; }
+  @keyframes pulse-btn { from { transform: scale(1); } to { transform: scale(1.02); } }
   .toggle-btn:active { transform: scale(0.97) !important; }
-  .card-footer { display: flex; align-items: center; gap: 8px; padding: 8px 16px 14px; min-height: 40px; }
-  .time-label { font-size: 0.72rem; color: var(--text-dim); }
-  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--ocupado); letter-spacing: 0.08em; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 16px 14px; min-height: 36px; }
+  .time-info { display: flex; flex-direction: column; gap: 2px; }
+  .time-label { font-size: 0.68rem; color: var(--text-dim); }
+  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; color: var(--ocupado); letter-spacing: 0.08em; }
+  .timer-display {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
+    letter-spacing: 0.1em; color: var(--libre); text-align: right; transition: color 0.3s;
+  }
+  .timer-display.warning { color: #ff6d00; }
+  .timer-display.overtime-text { color: #ff1744; animation: blink 1s step-start infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes pulse-border {
     0%, 100% { box-shadow: 0 0 0 0 rgba(245,0,87,0.2); }
     50% { box-shadow: 0 0 0 6px rgba(245,0,87,0); }
   }
-  .card.ocupado { animation: pulse-border 2.5s ease-in-out infinite; }
+  .card.ocupado:not(.overtime) { animation: pulse-border 2.5s ease-in-out infinite; }
   .card.ocupado .card-num { color: rgba(245,0,87,0.5); }
+  .card.overtime .card-num { color: rgba(255,109,0,0.7); }
+  #notif-banner {
+    display: none; text-align: center; padding: 10px 20px;
+    background: rgba(255,109,0,0.15); border-bottom: 1px solid rgba(255,109,0,0.3);
+    color: #ff6d00; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; cursor: pointer;
+  }
   footer { text-align: center; padding: 30px 20px; color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; }
   #toast {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -130,15 +174,21 @@
   @media (max-width: 600px) {
     .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
     .grid-container { padding: 12px; }
-    .card-top { padding: 10px 12px 6px; gap: 8px; }
-    .card-body { padding: 0 12px 10px; }
+    .card-top { padding: 10px 12px 6px; gap: 6px; }
+    .card-meta { padding: 0 12px 8px; }
+    .card-body { padding: 0 12px 8px; }
     .card-footer { padding: 4px 12px 10px; }
     .card-name-input { font-size: 0.85rem; }
-    .toggle-btn { font-size: 0.78rem; padding: 10px; }
+    .toggle-btn { font-size: 0.75rem; padding: 10px; }
+    .timer-display { font-size: 1.1rem; }
   }
 </style>
 </head>
 <body>
+
+<div id="notif-banner" onclick="requestNotifPermission()">
+  🔔 Activa las notificaciones para recibir avisos a los 25 min — toca aquí
+</div>
 
 <header>
   <div class="header-icon">
@@ -168,50 +218,185 @@
   <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
 </div>
 
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setFilter('todas', this)">TODAS</button>
+  <button class="filter-btn oro" onclick="setFilter('oro', this)">🥇 ORO</button>
+  <button class="filter-btn plata" onclick="setFilter('plata', this)">🥈 PLATA</button>
+  <button class="filter-btn bronce" onclick="setFilter('bronce', this)">🥉 BRONCE</button>
+  <button class="filter-btn rookie" onclick="setFilter('rookie', this)">⭐ ROOKIE</button>
+  <button class="filter-btn" onclick="setFilter('sin', this)">SIN CAT.</button>
+</div>
+
 <div class="grid-container">
   <div class="grid" id="grid"></div>
 </div>
 
-<footer>Haz clic en cada tarjeta para cambiar el estado · Los nombres son editables</footer>
+<footer>Primera pulsación pide confirmación · Segunda pulsación en 3s confirma el cambio</footer>
 <div id="toast"></div>
 
 <script>
 const TOTAL = 30;
+const LIMIT_MS = 25 * 60 * 1000;
+
 const state = [];
 for (let i = 1; i <= TOTAL; i++) {
-  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null });
+  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
 }
+
+const pendingConfirm = {};
+let currentFilter = 'todas';
+let tickInterval = null;
+
+function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') {
+      document.getElementById('notif-banner').style.display = 'none';
+      showToast('🔔 Notificaciones activadas');
+    }
+  });
+}
+
+function checkNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    document.getElementById('notif-banner').style.display = 'block';
+  }
+}
+
+function sendNotif(name) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('⏰ Tiempo agotado', {
+    body: `${name} lleva más de 25 minutos ocupado`
+  });
+}
+
 function pad(n) { return String(n).padStart(2, '0'); }
 function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function elapsedStr(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${pad(m)}:${pad(s)}`;
+}
+
 function updateCounters() {
   const libres = state.filter(s => s.libre).length;
   document.getElementById('count-libre').textContent = libres;
   document.getElementById('count-ocupado').textContent = TOTAL - libres;
 }
+
+function startTick() {
+  if (tickInterval) return;
+  tickInterval = setInterval(() => {
+    const now = Date.now();
+    for (let i = 1; i <= TOTAL; i++) {
+      const s = state[i - 1];
+      if (s.libre || !s.time) continue;
+      const elapsed = now - s.time.getTime();
+      const timerEl = document.querySelector(`#card-${i} .timer-display`);
+      const card = document.getElementById(`card-${i}`);
+      if (!timerEl || !card) continue;
+      timerEl.textContent = elapsedStr(elapsed);
+      if (elapsed >= LIMIT_MS) {
+        timerEl.className = 'timer-display overtime-text';
+        card.classList.add('overtime');
+        if (!s.notified) {
+          s.notified = true;
+          sendNotif(s.name);
+          showToast(`⏰ ${s.name} lleva más de 25 min`);
+        }
+      } else if (elapsed >= LIMIT_MS - 5 * 60 * 1000) {
+        timerEl.className = 'timer-display warning';
+        card.classList.remove('overtime');
+      } else {
+        timerEl.className = 'timer-display';
+        card.classList.remove('overtime');
+      }
+    }
+  }, 1000);
+}
+
 function toggle(id) {
   const s = state[id - 1];
-  s.libre = !s.libre;
-  s.time = s.libre ? null : new Date();
-  renderCard(id);
-  updateCounters();
-  showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
+  const btn = document.querySelector(`#card-${id} .toggle-btn`);
+  if (pendingConfirm[id]) {
+    clearTimeout(pendingConfirm[id].timer);
+    delete pendingConfirm[id];
+    s.libre = !s.libre;
+    s.time = s.libre ? null : new Date();
+    s.notified = false;
+    renderCard(id);
+    updateCounters();
+    showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
+    return;
+  }
+  const emoji = s.libre ? '🔴' : '✅';
+  const action = s.libre ? 'OCUPADO' : 'LIBRE';
+  btn.textContent = `${emoji} ¿Confirmar ${action}? (3s)`;
+  btn.classList.add('confirming');
+  pendingConfirm[id] = {
+    timer: setTimeout(() => {
+      delete pendingConfirm[id];
+      renderCard(id);
+    }, 3000)
+  };
 }
+
+function setCategory(id, cat) {
+  state[id - 1].cat = cat;
+  const sel = document.querySelector(`#card-${id} .cat-select`);
+  if (sel) sel.className = `cat-select ${cat}`;
+  filterCards();
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
+}
+
+function filterCards() {
+  const q = document.getElementById('search').value.toLowerCase();
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = state[i - 1];
+    const card = document.getElementById(`card-${i}`);
+    const matchSearch = s.name.toLowerCase().includes(q) || String(i).includes(q);
+    const matchFilter =
+      currentFilter === 'todas' ||
+      (currentFilter === 'sin' && s.cat === '') ||
+      s.cat === currentFilter;
+    card.style.display = (matchSearch && matchFilter) ? '' : 'none';
+  }
+}
+
 function renderCard(id) {
   const s = state[id - 1];
   const card = document.getElementById(`card-${id}`);
   if (!card) return;
   card.className = `card ${s.libre ? 'libre' : 'ocupado'}`;
   card.querySelector('.status-badge').textContent = s.libre ? '● Libre' : '● Ocupado';
-  card.querySelector('.toggle-btn').textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
+  const btn = card.querySelector('.toggle-btn');
+  btn.textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
+  btn.classList.remove('confirming');
+  const timeLabel = card.querySelector('.time-label');
   const timeVal = card.querySelector('.time-value');
-  if (s.time && !s.libre) {
-    card.querySelector('.time-label').textContent = 'Ocupado desde:';
+  const timerEl = card.querySelector('.timer-display');
+  if (!s.libre && s.time) {
+    timeLabel.textContent = 'Inicio:';
     timeVal.textContent = timeStr(s.time);
+    timerEl.textContent = '00:00';
+    timerEl.className = 'timer-display';
   } else {
-    card.querySelector('.time-label').textContent = '';
+    timeLabel.textContent = '';
     timeVal.textContent = '';
+    timerEl.textContent = '';
+    timerEl.className = 'timer-display';
+    card.classList.remove('overtime');
   }
 }
+
 function buildGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
@@ -231,40 +416,54 @@ function buildGrid() {
         </div>
         <div class="status-badge">● Libre</div>
       </div>
+      <div class="card-meta">
+        <select class="cat-select" onchange="setCategory(${i}, this.value)">
+          <option value="">Sin categoría</option>
+          <option value="oro">🥇 Oro</option>
+          <option value="plata">🥈 Plata</option>
+          <option value="bronce">🥉 Bronce</option>
+          <option value="rookie">⭐ Rookie</option>
+        </select>
+      </div>
       <div class="card-body">
         <button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button>
       </div>
       <div class="card-footer">
-        <span class="time-label"></span>
-        <span class="time-value"></span>
+        <div class="time-info">
+          <span class="time-label"></span>
+          <span class="time-value"></span>
+        </div>
+        <div class="timer-display"></div>
       </div>`;
     grid.appendChild(card);
   }
 }
+
 function resetAll() {
   if (!confirm('¿Poner todos los futbolines en LIBRE?')) return;
-  state.forEach(s => { s.libre = true; s.time = null; });
+  state.forEach(s => { s.libre = true; s.time = null; s.notified = false; });
+  Object.keys(pendingConfirm).forEach(id => {
+    clearTimeout(pendingConfirm[id].timer);
+    delete pendingConfirm[id];
+  });
   for (let i = 1; i <= TOTAL; i++) renderCard(i);
   updateCounters();
   showToast('✅ Todos los futbolines liberados');
 }
-function filterCards() {
-  const q = document.getElementById('search').value.toLowerCase();
-  for (let i = 1; i <= TOTAL; i++) {
-    const card = document.getElementById(`card-${i}`);
-    card.style.display = (state[i-1].name.toLowerCase().includes(q) || String(i).includes(q)) ? '' : 'none';
-  }
-}
+
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
 buildGrid();
 updateCounters();
+startTick();
+checkNotifPermission();
 </script>
 </body>
 </html>
