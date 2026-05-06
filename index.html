@@ -3,523 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Futbolines v3</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Asociación Melide Futbolín</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   :root {
-    --libre: #00c853; --libre-dark: #009624;
-    --ocupado: #f50057; --ocupado-dark: #bb002f;
-    --warning: #ff6d00; --warning-dark: #e65100;
-    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2236;
-    --border: #1e2d45; --text: #e8edf5; --text-dim: #7a8fa8;
-    --accent: #1565c0; --gold: #ffc107;
-    --cat-oro:#ffd700; --cat-oro-bg:rgba(255,215,0,0.10);
-    --cat-plata:#c0c0c0; --cat-plata-bg:rgba(192,192,192,0.10);
-    --cat-bronce:#cd7f32; --cat-bronce-bg:rgba(205,127,50,0.10);
-    --cat-rookie:#7c4dff; --cat-rookie-bg:rgba(124,77,255,0.10);
+    --libre: #00c853;
+    --libre-dark: #009624;
+    --ocupado: #f50057;
+    --ocupado-dark: #bb002f;
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1e2d45;
+    --text: #e8edf5;
+    --text-dim: #7a8fa8;
+    --accent: #1565c0;
+    --accent2: #0d47a1;
+    --gold: #ffc107;
   }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Barlow',sans-serif; background:var(--bg); color:var(--text); min-height:100vh;
-    background-image: radial-gradient(ellipse 80% 40% at 50% -10%,rgba(21,101,192,0.18) 0%,transparent 70%),
-      repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(30,45,69,0.3) 39px,rgba(30,45,69,0.3) 40px),
-      repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(30,45,69,0.3) 39px,rgba(30,45,69,0.3) 40px); }
-
-  #lock-screen { position:fixed; inset:0; z-index:1000; background:#070b14; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; }
-  #lock-screen .lock-icon { font-size:3rem; }
-  #lock-screen h2 { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:.1em; color:#fff; }
-  #lock-screen p { color:var(--text-dim); font-size:.9rem; }
-  .pin-dots { display:flex; gap:14px; margin:4px 0; }
-  .pin-dot { width:18px; height:18px; border-radius:50%; border:2px solid var(--accent); background:transparent; transition:background .15s,transform .15s; }
-  .pin-dot.filled { background:var(--accent); transform:scale(1.15); }
-  .pin-keypad { display:grid; grid-template-columns:repeat(3,72px); gap:10px; }
-  .pin-key { height:72px; border-radius:14px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Bebas Neue',sans-serif; font-size:1.8rem; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; }
-  .pin-key:hover { background:var(--accent); border-color:var(--accent); transform:scale(1.05); }
-  .pin-key:active { transform:scale(.95); }
-  .pin-key.del { font-size:1.2rem; color:var(--text-dim); }
-  .pin-key.zero { grid-column:2; }
-  .pin-error { color:var(--ocupado); font-size:.85rem; font-weight:700; min-height:20px; letter-spacing:.05em; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-  .pin-hint { color:var(--text-dim); font-size:.75rem; margin-top:-8px; }
-
-  header { text-align:center; padding:24px 20px 14px; position:relative; }
-  header::after { content:''; display:block; height:2px; margin-top:14px; background:linear-gradient(90deg,transparent,var(--accent),var(--gold),var(--accent),transparent); }
-  .header-top { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; }
-  .header-icon { font-size:2rem; }
-  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(1.8rem,5vw,3.2rem); letter-spacing:.06em; color:#fff; text-shadow:0 0 40px rgba(21,101,192,.5); line-height:1; }
-  .subtitle { font-size:.78rem; color:var(--text-dim); letter-spacing:.15em; text-transform:uppercase; margin-top:3px; }
-  .btn-hdr { background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:7px 13px; border-radius:8px; cursor:pointer; font-size:.78rem; font-family:'Barlow',sans-serif; font-weight:600; letter-spacing:.05em; transition:all .2s; }
-  .btn-hdr:hover { border-color:var(--accent); color:var(--text); }
-
-  .scoreboard { display:flex; justify-content:center; gap:10px; padding:16px 20px 0; flex-wrap:wrap; }
-  .score-card { flex:1; max-width:175px; min-width:110px; border-radius:12px; padding:12px 14px 10px; text-align:center; border:1px solid transparent; transition:transform .2s; }
-  .score-card:hover { transform:translateY(-2px); }
-  .score-card.libre   { background:linear-gradient(135deg,rgba(0,200,83,.12),rgba(0,150,36,.06));    border-color:rgba(0,200,83,.25); }
-  .score-card.ocupado { background:linear-gradient(135deg,rgba(245,0,87,.12),rgba(187,0,47,.06));    border-color:rgba(245,0,87,.25); }
-  .score-card.alerta  { background:linear-gradient(135deg,rgba(255,109,0,.12),rgba(230,81,0,.06));   border-color:rgba(255,109,0,.35); }
-  .score-card.total   { background:linear-gradient(135deg,rgba(21,101,192,.15),rgba(13,71,161,.08)); border-color:rgba(21,101,192,.3); }
-  .score-label { font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--text-dim); margin-bottom:3px; font-weight:600; }
-  .score-number { font-family:'Bebas Neue',sans-serif; font-size:2.4rem; line-height:1; }
-  .libre .score-number   { color:var(--libre);   text-shadow:0 0 18px rgba(0,200,83,.4); }
-  .ocupado .score-number { color:var(--ocupado); text-shadow:0 0 18px rgba(245,0,87,.4); }
-  .alerta .score-number  { color:var(--warning); text-shadow:0 0 18px rgba(255,109,0,.5); }
-  .total .score-number   { color:#7cb3ff; }
-  .score-dot { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:4px; vertical-align:middle; }
-  .libre .score-dot   { background:var(--libre);   box-shadow:0 0 5px var(--libre); }
-  .ocupado .score-dot { background:var(--ocupado); box-shadow:0 0 5px var(--ocupado); }
-  .alerta .score-dot  { background:var(--warning); box-shadow:0 0 5px var(--warning); }
-
-  .controls-bar { display:flex; justify-content:center; gap:8px; padding:14px 20px 0; flex-wrap:wrap; align-items:center; }
-  .btn-reset { background:linear-gradient(135deg,#1a237e,#283593); border:1px solid rgba(100,130,255,.3); color:#90caf9; font-family:'Barlow',sans-serif; font-weight:700; font-size:.76rem; letter-spacing:.1em; text-transform:uppercase; padding:8px 16px; border-radius:8px; cursor:pointer; transition:all .2s; }
-  .btn-reset:hover { background:linear-gradient(135deg,#283593,#3949ab); color:#fff; transform:translateY(-1px); box-shadow:0 4px 14px rgba(40,53,147,.4); }
-  .search-box { background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Barlow',sans-serif; font-size:.83rem; padding:8px 13px; border-radius:8px; outline:none; width:175px; transition:border-color .2s; }
-  .search-box:focus { border-color:var(--accent); }
-  .search-box::placeholder { color:var(--text-dim); }
-  .time-control { display:flex; align-items:center; gap:7px; background:var(--surface2); border:1px solid var(--border); padding:5px 11px; border-radius:8px; }
-  .time-control label { font-size:.72rem; color:var(--text-dim); font-weight:600; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; }
-  .time-control input[type=number] { background:transparent; border:none; outline:none; color:var(--gold); font-family:'Bebas Neue',sans-serif; font-size:1.35rem; width:42px; text-align:center; }
-  .time-control span { color:var(--text-dim); font-size:.72rem; }
-
-  .cat-filter { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:center; padding:10px 20px 0; }
-  .cat-filter-label { font-size:.7rem; color:var(--text-dim); font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-right:2px; }
-  .cat-btn { padding:5px 14px; border-radius:20px; border:1px solid transparent; font-family:'Barlow',sans-serif; font-weight:700; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .18s; background:var(--surface2); color:var(--text-dim); border-color:var(--border); }
-  .cat-btn:hover { transform:translateY(-1px); }
-  .cat-btn.active-all    { background:var(--accent);         color:#fff;              border-color:var(--accent); }
-  .cat-btn.active-oro    { background:var(--cat-oro-bg);    color:var(--cat-oro);    border-color:var(--cat-oro); }
-  .cat-btn.active-plata  { background:var(--cat-plata-bg);  color:var(--cat-plata);  border-color:var(--cat-plata); }
-  .cat-btn.active-bronce { background:var(--cat-bronce-bg); color:var(--cat-bronce); border-color:var(--cat-bronce); }
-  .cat-btn.active-rookie { background:var(--cat-rookie-bg); color:var(--cat-rookie); border-color:var(--cat-rookie); }
-
-  .grid-container { padding:14px 20px 20px; max-width:1400px; margin:0 auto; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); gap:10px; }
-
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; transition:transform .18s,box-shadow .18s,border-color .3s; position:relative; }
-  .card:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,.3); }
-  .card.libre   { border-color:rgba(0,200,83,.2); }
-  .card.ocupado { border-color:rgba(245,0,87,.3); }
-  .card.alerta  { border-color:rgba(255,109,0,.6) !important; }
-  @keyframes pulse-red  { 0%,100%{box-shadow:0 0 0 0 rgba(245,0,87,.13)}  50%{box-shadow:0 0 0 6px rgba(245,0,87,0)} }
-  @keyframes pulse-warn { 0%,100%{box-shadow:0 0 0 0 rgba(255,109,0,.28)} 50%{box-shadow:0 0 0 8px rgba(255,109,0,0)} }
-  .card.ocupado { animation:pulse-red 2.5s ease-in-out infinite; }
-  .card.alerta  { animation:pulse-warn 1.2s ease-in-out infinite; }
-
-  .cat-stripe { height:4px; width:100%; transition:background .3s; }
-  .cat-stripe.oro    { background:linear-gradient(90deg,var(--cat-oro),#ffe066,var(--cat-oro)); }
-  .cat-stripe.plata  { background:linear-gradient(90deg,var(--cat-plata),#e8e8e8,var(--cat-plata)); }
-  .cat-stripe.bronce { background:linear-gradient(90deg,var(--cat-bronce),#e09050,var(--cat-bronce)); }
-  .cat-stripe.rookie { background:linear-gradient(90deg,var(--cat-rookie),#b47aff,var(--cat-rookie)); }
-  .cat-stripe.none   { background:var(--border); }
-
-  .card-top { display:flex; align-items:center; gap:9px; padding:10px 13px 7px; }
-  .card-num { font-family:'Bebas Neue',sans-serif; font-size:1.65rem; color:var(--text-dim); min-width:32px; line-height:1; transition:color .3s; }
-  .ocupado .card-num { color:rgba(245,0,87,.4); }
-  .alerta  .card-num { color:rgba(255,109,0,.55); }
-  .libre   .card-num { color:rgba(0,200,83,.35); }
-  .card-name-input { background:transparent; border:none; outline:none; color:var(--text); font-family:'Barlow',sans-serif; font-weight:700; font-size:.92rem; width:100%; cursor:text; }
-  .card-name-input::placeholder { color:var(--text-dim); }
-  .status-badge { padding:3px 9px; border-radius:20px; font-size:.62rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; transition:all .25s; }
-  .libre   .status-badge { background:rgba(0,200,83,.12);  color:var(--libre);   border:1px solid rgba(0,200,83,.25); }
-  .ocupado .status-badge { background:rgba(245,0,87,.12);  color:var(--ocupado); border:1px solid rgba(245,0,87,.25); }
-  .alerta  .status-badge { background:rgba(255,109,0,.14); color:var(--warning); border:1px solid rgba(255,109,0,.4); }
-
-  .card-meta { display:flex; align-items:center; gap:7px; padding:0 13px 8px; }
-  .cat-select { appearance:none; -webkit-appearance:none; border:none; outline:none; cursor:pointer; font-family:'Barlow',sans-serif; font-weight:700; font-size:.7rem; letter-spacing:.07em; text-transform:uppercase; padding:4px 22px 4px 9px; border-radius:20px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8fa8'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 7px center; transition:all .2s; flex-shrink:0; }
-  .cat-select.oro    { background-color:var(--cat-oro-bg);    color:var(--cat-oro);    border:1px solid rgba(255,215,0,.35); }
-  .cat-select.plata  { background-color:var(--cat-plata-bg);  color:var(--cat-plata);  border:1px solid rgba(192,192,192,.35); }
-  .cat-select.bronce { background-color:var(--cat-bronce-bg); color:var(--cat-bronce); border:1px solid rgba(205,127,50,.35); }
-  .cat-select.rookie { background-color:var(--cat-rookie-bg); color:var(--cat-rookie); border:1px solid rgba(124,77,255,.35); }
-  .cat-select.none   { background-color:var(--surface2); color:var(--text-dim); border:1px solid var(--border); }
-  .cat-select option { background:var(--surface); color:var(--text); }
-  .note-input { flex:1; background:transparent; border:none; border-bottom:1px solid var(--border); outline:none; color:var(--text-dim); font-family:'Barlow',sans-serif; font-size:.75rem; padding:2px 4px; transition:border-color .2s,color .2s; min-width:0; }
-  .note-input:focus { border-color:var(--accent); color:var(--text); }
-  .note-input::placeholder { color:rgba(122,143,168,.5); font-style:italic; }
-
-  .timer-bar-wrap { padding:0 13px 5px; display:none; }
-  .card.ocupado .timer-bar-wrap, .card.alerta .timer-bar-wrap { display:block; }
-  .timer-bar-bg { height:3px; border-radius:2px; background:rgba(255,255,255,.07); overflow:hidden; }
-  .timer-bar-fill { height:100%; border-radius:2px; transition:width 1s linear,background .5s; background:var(--libre); }
-
-  .card-body { padding:0 13px 11px; }
-  .toggle-btn { width:100%; padding:10px; border:none; border-radius:10px; font-family:'Barlow',sans-serif; font-weight:800; font-size:.83rem; letter-spacing:.07em; text-transform:uppercase; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
-  .toggle-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(255,255,255,.08) 0%,transparent 100%); pointer-events:none; }
-  .libre   .toggle-btn { background:linear-gradient(135deg,var(--libre),var(--libre-dark));     color:#fff; box-shadow:0 4px 12px rgba(0,200,83,.22); }
-  .libre   .toggle-btn:hover { box-shadow:0 6px 20px rgba(0,200,83,.42); transform:translateY(-1px); }
-  .ocupado .toggle-btn { background:linear-gradient(135deg,var(--ocupado),var(--ocupado-dark)); color:#fff; box-shadow:0 4px 12px rgba(245,0,87,.22); }
-  .ocupado .toggle-btn:hover { box-shadow:0 6px 20px rgba(245,0,87,.42); transform:translateY(-1px); }
-  .alerta  .toggle-btn { background:linear-gradient(135deg,var(--warning),var(--warning-dark)); color:#fff; box-shadow:0 4px 12px rgba(255,109,0,.3); }
-  .alerta  .toggle-btn:hover { box-shadow:0 6px 20px rgba(255,109,0,.5); transform:translateY(-1px); }
-  .toggle-btn:active { transform:scale(.97) !important; }
-  .toggle-btn.confirm-pending {
-    background:linear-gradient(135deg,#e65100,#bf360c) !important;
-    box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4) !important;
-    animation:confirm-pulse 0.6s ease-in-out infinite !important;
-    font-size:.78rem;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px);
   }
-  @keyframes confirm-pulse {
-    0%,100% { box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4); }
-    50%      { box-shadow:0 0 0 8px rgba(255,109,0,.1),0 6px 20px rgba(230,81,0,.6); }
+  header { text-align: center; padding: 32px 20px 20px; position: relative; }
+  header::after {
+    content: '';
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
+    margin-top: 20px;
   }
-
-  .card-footer { display:flex; align-items:center; justify-content:space-between; padding:5px 13px 11px; min-height:32px; }
-  .timer-display { font-family:'Bebas Neue',sans-serif; font-size:1.35rem; letter-spacing:.06em; line-height:1; transition:color .3s; }
-  .libre   .timer-display { color:transparent; }
-  .ocupado .timer-display { color:#fff; }
-  .alerta  .timer-display { color:var(--warning); }
-  .alerta-tag { font-size:.62rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--warning); display:none; }
-  .alerta .alerta-tag { display:block; }
-
-  footer { text-align:center; padding:20px; color:var(--text-dim); font-size:.7rem; letter-spacing:.08em; line-height:1.6; }
-
-  #toast { position:fixed; bottom:26px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:10px 20px; border-radius:40px; font-size:.82rem; font-weight:600; transition:transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none; white-space:nowrap; z-index:9999; box-shadow:0 8px 28px rgba(0,0,0,.4); }
-  #toast.show { transform:translateX(-50%) translateY(0); }
-  #toast.warn { border-color:rgba(255,109,0,.5); color:var(--warning); }
-
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:500; display:none; align-items:center; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:28px; width:340px; max-width:90vw; }
-  .modal h3 { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:.1em; margin-bottom:16px; }
-  .modal-row { margin-bottom:12px; }
-  .modal-row label { display:block; font-size:.72rem; color:var(--text-dim); font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
-  .modal-input { width:100%; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Barlow',sans-serif; font-size:1rem; padding:9px 13px; border-radius:8px; outline:none; }
-  .modal-input:focus { border-color:var(--accent); }
-  .modal-actions { display:flex; gap:9px; margin-top:18px; }
-  .btn-primary { flex:1; background:var(--accent); border:none; color:#fff; font-family:'Barlow',sans-serif; font-weight:700; font-size:.88rem; padding:10px; border-radius:8px; cursor:pointer; transition:all .2s; }
-  .btn-primary:hover { background:#1976d2; transform:translateY(-1px); }
-  .btn-secondary { background:var(--surface2); border:1px solid var(--border); color:var(--text-dim); font-family:'Barlow',sans-serif; font-weight:600; font-size:.88rem; padding:10px 16px; border-radius:8px; cursor:pointer; transition:all .2s; }
-  .btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
-
-  @media(max-width:600px) {
-    .grid { grid-template-columns:1fr 1fr; gap:7px; }
-    .grid-container { padding:10px 10px 16px; }
-    .card-top { padding:8px 10px 5px; gap:6px; }
-    .card-meta { padding:0 10px 6px; }
-    .card-body { padding:0 10px 9px; }
-    .card-footer { padding:4px 10px 9px; }
-    .toggle-btn { font-size:.73rem; padding:8px; }
-    .timer-display { font-size:1.1rem; }
+  .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    letter-spacing: 0.06em;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(21,101,192,0.5);
+    line-height: 1;
+  }
+  .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+  .scoreboard { display: flex; justify-content: center; gap: 16px; padding: 20px 20px 0; flex-wrap: wrap; }
+  .score-card {
+    flex: 1; max-width: 220px; min-width: 140px; border-radius: 14px;
+    padding: 18px 20px 14px; text-align: center; border: 1px solid transparent; transition: transform 0.2s;
+  }
+  .score-card:hover { transform: translateY(-2px); }
+  .score-card.libre { background: linear-gradient(135deg, rgba(0,200,83,0.12), rgba(0,150,36,0.06)); border-color: rgba(0,200,83,0.25); }
+  .score-card.ocupado { background: linear-gradient(135deg, rgba(245,0,87,0.12), rgba(187,0,47,0.06)); border-color: rgba(245,0,87,0.25); }
+  .score-card.total { background: linear-gradient(135deg, rgba(21,101,192,0.15), rgba(13,71,161,0.08)); border-color: rgba(21,101,192,0.3); }
+  .score-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
+  .score-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; }
+  .libre .score-number { color: var(--libre); text-shadow: 0 0 20px rgba(0,200,83,0.4); }
+  .ocupado .score-number { color: var(--ocupado); text-shadow: 0 0 20px rgba(245,0,87,0.4); }
+  .total .score-number { color: #7cb3ff; }
+  .score-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .libre .score-dot { background: var(--libre); box-shadow: 0 0 8px var(--libre); }
+  .ocupado .score-dot { background: var(--ocupado); box-shadow: 0 0 8px var(--ocupado); }
+  .controls-bar { display: flex; justify-content: center; gap: 10px; padding: 18px 20px 0; flex-wrap: wrap; }
+  .btn-reset {
+    background: linear-gradient(135deg, #1a237e, #283593); border: 1px solid rgba(100,130,255,0.3);
+    color: #90caf9; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 22px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-reset:hover { background: linear-gradient(135deg, #283593, #3949ab); border-color: rgba(100,130,255,0.6); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(40,53,147,0.4); }
+  .search-box {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Barlow', sans-serif; font-size: 0.85rem; padding: 10px 16px;
+    border-radius: 8px; outline: none; width: 200px; transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-dim); }
+  .grid-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s; position: relative;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .card.libre { border-color: rgba(0,200,83,0.25); }
+  .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
+  .card-top { display: flex; align-items: center; gap: 12px; padding: 14px 16px 10px; }
+  .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text-dim); min-width: 36px; line-height: 1; }
+  .card-name-input { background: transparent; border: none; outline: none; color: var(--text); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text; }
+  .card-name-input::placeholder { color: var(--text-dim); }
+  .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; transition: all 0.25s; }
+  .libre .status-badge { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
+  .ocupado .status-badge { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
+  .card-body { padding: 0 16px 14px; }
+  .toggle-btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'Barlow', sans-serif;
+    font-weight: 800; font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .toggle-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
+  .libre .toggle-btn { background: linear-gradient(135deg, var(--libre), var(--libre-dark)); color: #fff; box-shadow: 0 4px 16px rgba(0,200,83,0.3); }
+  .libre .toggle-btn:hover { background: linear-gradient(135deg, #00e676, var(--libre)); box-shadow: 0 6px 24px rgba(0,200,83,0.5); transform: translateY(-1px); }
+  .ocupado .toggle-btn { background: linear-gradient(135deg, var(--ocupado), var(--ocupado-dark)); color: #fff; box-shadow: 0 4px 16px rgba(245,0,87,0.3); }
+  .ocupado .toggle-btn:hover { background: linear-gradient(135deg, #ff4081, var(--ocupado)); box-shadow: 0 6px 24px rgba(245,0,87,0.5); transform: translateY(-1px); }
+  .toggle-btn:active { transform: scale(0.97) !important; }
+  .card-footer { display: flex; align-items: center; gap: 8px; padding: 8px 16px 14px; min-height: 40px; }
+  .time-label { font-size: 0.72rem; color: var(--text-dim); }
+  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--ocupado); letter-spacing: 0.08em; }
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,0,87,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(245,0,87,0); }
+  }
+  .card.ocupado { animation: pulse-border 2.5s ease-in-out infinite; }
+  .card.ocupado .card-num { color: rgba(245,0,87,0.5); }
+  footer { text-align: center; padding: 30px 20px; color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; }
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+    white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-container { padding: 12px; }
+    .card-top { padding: 10px 12px 6px; gap: 8px; }
+    .card-body { padding: 0 12px 10px; }
+    .card-footer { padding: 4px 12px 10px; }
+    .card-name-input { font-size: 0.85rem; }
+    .toggle-btn { font-size: 0.78rem; padding: 10px; }
   }
 </style>
 </head>
 <body>
 
-<div id="lock-screen">
-  <div class="lock-icon">🔒</div>
-  <h2>ACCESO RESTRINGIDO</h2>
-  <p>Introduce el PIN de 4 dígitos para continuar</p>
-  <div class="pin-dots">
-    <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
-    <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
-  </div>
-  <div class="pin-error" id="pin-error"></div>
-  <div class="pin-keypad">
-    <button class="pin-key" onclick="pinKey('1')">1</button>
-    <button class="pin-key" onclick="pinKey('2')">2</button>
-    <button class="pin-key" onclick="pinKey('3')">3</button>
-    <button class="pin-key" onclick="pinKey('4')">4</button>
-    <button class="pin-key" onclick="pinKey('5')">5</button>
-    <button class="pin-key" onclick="pinKey('6')">6</button>
-    <button class="pin-key" onclick="pinKey('7')">7</button>
-    <button class="pin-key" onclick="pinKey('8')">8</button>
-    <button class="pin-key" onclick="pinKey('9')">9</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
-    <button class="pin-key zero" onclick="pinKey('0')">0</button>
-  </div>
-  <p class="pin-hint">PIN por defecto: <strong style="color:var(--gold)">1234</strong> — cámbialo en Ajustes</p>
-</div>
-
-<div id="app" style="display:none">
 <header>
-  <div class="header-top">
-    <div class="header-icon">⚽</div>
-    <div><h1>Control de Futbolines</h1><p class="subtitle">Panel de gestión · Evento en vivo</p></div>
-    <button class="btn-hdr" onclick="openSettings()" style="margin-left:10px">⚙ Ajustes</button>
-    <button class="btn-hdr" onclick="lockApp()">🔒 Bloquear</button>
+  <div class="header-icon">
+    <span style="font-family: 'Permanent Marker', cursive; font-size: clamp(3.5rem, 12vw, 6rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4);">amf</span>
   </div>
+  <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
+  <p class="subtitle">Panel de gestión · Evento en vivo</p>
 </header>
 
 <div class="scoreboard">
-  <div class="score-card libre">  <div class="score-label"><span class="score-dot"></span>Libres</div>  <div class="score-number" id="count-libre">30</div></div>
-  <div class="score-card ocupado"><div class="score-label"><span class="score-dot"></span>Ocupados</div><div class="score-number" id="count-ocupado">0</div></div>
-  <div class="score-card alerta"> <div class="score-label"><span class="score-dot"></span>⚠ Tiempo</div><div class="score-number" id="count-alerta">0</div></div>
-  <div class="score-card total">  <div class="score-label">Total mesas</div><div class="score-number">30</div></div>
+  <div class="score-card libre">
+    <div class="score-label"><span class="score-dot"></span>Libres</div>
+    <div class="score-number" id="count-libre">30</div>
+  </div>
+  <div class="score-card ocupado">
+    <div class="score-label"><span class="score-dot"></span>Ocupados</div>
+    <div class="score-number" id="count-ocupado">0</div>
+  </div>
+  <div class="score-card total">
+    <div class="score-label">Total mesas</div>
+    <div class="score-number">30</div>
+  </div>
 </div>
 
 <div class="controls-bar">
-  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar mesa..." oninput="applyFilters()">
-  <div class="time-control">
-    <label>⏱ Límite</label>
-    <input type="number" id="time-limit" value="10" min="1" max="99" onchange="timeLimitMin=parseInt(this.value)||10">
-    <span>min</span>
-  </div>
+  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar futbolín..." oninput="filterCards()">
   <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
 </div>
 
-<div class="cat-filter">
-  <span class="cat-filter-label">Ver:</span>
-  <button class="cat-btn active-all" id="filter-all"    onclick="setFilter('all')">Todas</button>
-  <button class="cat-btn"            id="filter-oro"    onclick="setFilter('oro')">🥇 Oro</button>
-  <button class="cat-btn"            id="filter-plata"  onclick="setFilter('plata')">🥈 Plata</button>
-  <button class="cat-btn"            id="filter-bronce" onclick="setFilter('bronce')">🥉 Bronce</button>
-  <button class="cat-btn"            id="filter-rookie" onclick="setFilter('rookie')">⭐ Rookie</button>
-  <button class="cat-btn"            id="filter-none"   onclick="setFilter('none')">Sin categoría</button>
+<div class="grid-container">
+  <div class="grid" id="grid"></div>
 </div>
 
-<div class="grid-container"><div class="grid" id="grid"></div></div>
-<footer>Haz clic en el botón para cambiar estado · Para liberar: doble confirmación en 3s · Nombres y notas editables</footer>
-</div>
-
-<div class="modal-overlay" id="settings-modal">
-  <div class="modal">
-    <h3>⚙ Ajustes</h3>
-    <div class="modal-row"><label>PIN actual</label><input class="modal-input" type="password" id="set-current-pin" placeholder="PIN actual" maxlength="4"></div>
-    <div class="modal-row"><label>Nuevo PIN (4 dígitos)</label><input class="modal-input" type="password" id="set-new-pin" placeholder="Nuevo PIN" maxlength="4"></div>
-    <div class="modal-row"><label>Confirmar nuevo PIN</label><input class="modal-input" type="password" id="set-confirm-pin" placeholder="Repetir PIN" maxlength="4"></div>
-    <div id="settings-error" style="color:var(--ocupado);font-size:.82rem;min-height:18px;margin-top:2px;"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeSettings()">Cancelar</button>
-      <button class="btn-primary"   onclick="savePin()">Guardar PIN</button>
-    </div>
-  </div>
-</div>
-
+<footer>Haz clic en cada tarjeta para cambiar el estado · Los nombres son editables</footer>
 <div id="toast"></div>
 
 <script>
 const TOTAL = 30;
-let PIN = '1234';
-let pinBuffer = '';
-let timeLimitMin = 10;
-let activeFilter = 'all';
-const pendingRelease = {};
-
-const CATS = {
-  none:   { label:'Sin categoría', emoji:'' },
-  oro:    { label:'Oro',    emoji:'🥇' },
-  plata:  { label:'Plata',  emoji:'🥈' },
-  bronce: { label:'Bronce', emoji:'🥉' },
-  rookie: { label:'Rookie', emoji:'⭐' },
-};
-
 const state = [];
-for (let i=1;i<=TOTAL;i++) {
-  state.push({ id:i, name:`Futbolín ${String(i).padStart(2,'0')}`, libre:true, time:null, alerted:false, cat:'none', note:'' });
+for (let i = 1; i <= TOTAL; i++) {
+  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null });
 }
-
-// PIN
-function pinKey(d) {
-  if (pinBuffer.length>=4) return;
-  pinBuffer+=d;
-  document.getElementById(`dot-${pinBuffer.length-1}`).classList.add('filled');
-  if (pinBuffer.length===4) setTimeout(checkPin,180);
-}
-function pinDel() {
-  if (!pinBuffer.length) return;
-  document.getElementById(`dot-${pinBuffer.length-1}`).classList.remove('filled');
-  pinBuffer=pinBuffer.slice(0,-1);
-  document.getElementById('pin-error').textContent='';
-}
-function checkPin() {
-  if (pinBuffer===PIN) {
-    document.getElementById('lock-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    pinBuffer='';
-  } else {
-    const el=document.getElementById('pin-error');
-    el.style.animation='none'; el.textContent='❌ PIN incorrecto. Inténtalo de nuevo.';
-    void el.offsetWidth; el.style.animation='shake .3s ease';
-    pinBuffer='';
-    for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
-  }
-}
-function lockApp() {
-  document.getElementById('app').style.display='none';
-  document.getElementById('lock-screen').style.display='flex';
-  document.getElementById('pin-error').textContent='';
-  pinBuffer='';
-  for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
-}
-document.addEventListener('keydown',e=>{
-  if (document.getElementById('lock-screen').style.display==='none') return;
-  if (e.key>='0'&&e.key<='9') pinKey(e.key);
-  if (e.key==='Backspace') pinDel();
-});
-
-// Settings
-function openSettings() {
-  ['set-current-pin','set-new-pin','set-confirm-pin'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('settings-error').textContent='';
-  document.getElementById('settings-modal').classList.add('open');
-}
-function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
-function savePin() {
-  const cur=document.getElementById('set-current-pin').value;
-  const nw=document.getElementById('set-new-pin').value;
-  const cnf=document.getElementById('set-confirm-pin').value;
-  const err=document.getElementById('settings-error');
-  if (cur!==PIN)            { err.textContent='❌ El PIN actual no es correcto.'; return; }
-  if (!/^\d{4}$/.test(nw)) { err.textContent='❌ El nuevo PIN debe tener exactamente 4 dígitos.'; return; }
-  if (nw!==cnf)             { err.textContent='❌ Los PINs no coinciden.'; return; }
-  PIN=nw; err.style.color='var(--libre)'; err.textContent='✅ PIN actualizado.';
-  setTimeout(closeSettings,1200); showToast('✅ PIN actualizado');
-}
-
-// Helpers
-function pad(n) { return String(n).padStart(2,'0'); }
-function fmtTime(sec) { return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; }
-function elapsedSec(d) { return Math.floor((Date.now()-d.getTime())/1000); }
-function getCardClass(s) {
-  if (s.libre) return 'libre';
-  if (elapsedSec(s.time)>=timeLimitMin*60) return 'alerta';
-  return 'ocupado';
-}
-
-// Toggle con doble confirmación para liberar
-function toggle(id) {
-  const s = state[id-1];
-
-  if (s.libre) {
-    s.libre=false; s.time=new Date(); s.alerted=false;
-    renderCard(id); updateCounters();
-    const catTag = s.cat!=='none' ? ` [${CATS[s.cat].emoji} ${CATS[s.cat].label}]` : '';
-    showToast(`🔴 ${s.name} OCUPADO${catTag}`);
-    return;
-  }
-
-  if (pendingRelease[id]) {
-    clearInterval(pendingRelease[id].timer);
-    delete pendingRelease[id];
-    s.libre=true; s.time=null; s.alerted=false;
-    renderCard(id); updateCounters();
-    showToast(`✅ ${s.name} ahora está LIBRE`);
-    return;
-  }
-
-  let secs=3;
-  const btn=document.querySelector(`#card-${id} .toggle-btn`);
-  btn.textContent=`⚠ ¿Confirmar? Pulsa de nuevo (${secs}s)`;
-  btn.classList.add('confirm-pending');
-
-  const timer=setInterval(()=>{
-    secs--;
-    if (secs>0) {
-      const b=document.querySelector(`#card-${id} .toggle-btn`);
-      if (b) b.textContent=`⚠ ¿Confirmar? Pulsa de nuevo (${secs}s)`;
-    } else {
-      clearInterval(pendingRelease[id]?.timer);
-      delete pendingRelease[id];
-      const b=document.querySelector(`#card-${id} .toggle-btn`);
-      if (b) { b.textContent='✓ Liberar mesa'; b.classList.remove('confirm-pending'); }
-      showToast(`↩ ${s.name} — liberación cancelada`);
-    }
-  },1000);
-  pendingRelease[id]={timer};
-}
-
-// Category & note
-function changeCategory(id,val) {
-  state[id-1].cat=val;
-  const card=document.getElementById(`card-${id}`);
-  card.querySelector('.cat-stripe').className=`cat-stripe ${val}`;
-  card.querySelector('.cat-select').className=`cat-select ${val}`;
-  applyFilters();
-}
-function changeNote(id,val) { state[id-1].note=val; }
-
-// Render
-function renderCard(id) {
-  const s=state[id-1];
-  const card=document.getElementById(`card-${id}`);
-  if (!card) return;
-  const cls=getCardClass(s);
-  card.className=`card ${cls}`;
-  card.querySelector('.status-badge').textContent=
-    cls==='libre'?'● Libre':cls==='alerta'?'⚠ Tiempo excedido':'● Ocupado';
-  if (!pendingRelease[id]) {
-    card.querySelector('.toggle-btn').textContent=
-      cls==='libre'?'⚡ Marcar como OCUPADO':'✓ Liberar mesa';
-  }
-  const timerEl=card.querySelector('.timer-display');
-  const barFill=card.querySelector('.timer-bar-fill');
-  if (!s.libre&&s.time) {
-    const elapsed=elapsedSec(s.time);
-    const limitSec=timeLimitMin*60;
-    const pct=Math.min((elapsed/limitSec)*100,100);
-    timerEl.textContent=fmtTime(elapsed);
-    barFill.style.background=pct<60?'var(--libre)':pct<90?'var(--gold)':'var(--warning)';
-    barFill.style.width=pct+'%';
-    if (elapsed>=limitSec&&!s.alerted) { s.alerted=true; showToast(`⚠ ${s.name} — ¡Tiempo límite superado!`,true); }
-  } else { timerEl.textContent=''; barFill.style.width='0%'; }
-}
-
+function pad(n) { return String(n).padStart(2, '0'); }
+function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
 function updateCounters() {
-  let libres=0,ocupados=0,alertas=0;
-  state.forEach(s=>{ if(s.libre){libres++;return;} getCardClass(s)==='alerta'?alertas++:ocupados++; });
-  document.getElementById('count-libre').textContent=libres;
-  document.getElementById('count-ocupado').textContent=ocupados;
-  document.getElementById('count-alerta').textContent=alertas;
+  const libres = state.filter(s => s.libre).length;
+  document.getElementById('count-libre').textContent = libres;
+  document.getElementById('count-ocupado').textContent = TOTAL - libres;
 }
-
-function setFilter(f) {
-  activeFilter=f;
-  document.querySelectorAll('.cat-btn').forEach(b=>{ b.className='cat-btn'; if(b.id===`filter-${f}`) b.classList.add(`active-${f}`); });
-  applyFilters();
+function toggle(id) {
+  const s = state[id - 1];
+  s.libre = !s.libre;
+  s.time = s.libre ? null : new Date();
+  renderCard(id);
+  updateCounters();
+  showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
 }
-function applyFilters() {
-  const q=document.getElementById('search').value.toLowerCase();
-  for (let i=1;i<=TOTAL;i++) {
-    const s=state[i-1];
-    const card=document.getElementById(`card-${i}`);
-    card.style.display=(s.name.toLowerCase().includes(q)||String(i).includes(q))&&(activeFilter==='all'||s.cat===activeFilter)?'':'none';
+function renderCard(id) {
+  const s = state[id - 1];
+  const card = document.getElementById(`card-${id}`);
+  if (!card) return;
+  card.className = `card ${s.libre ? 'libre' : 'ocupado'}`;
+  card.querySelector('.status-badge').textContent = s.libre ? '● Libre' : '● Ocupado';
+  card.querySelector('.toggle-btn').textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
+  const timeVal = card.querySelector('.time-value');
+  if (s.time && !s.libre) {
+    card.querySelector('.time-label').textContent = 'Ocupado desde:';
+    timeVal.textContent = timeStr(s.time);
+  } else {
+    card.querySelector('.time-label').textContent = '';
+    timeVal.textContent = '';
   }
 }
-
 function buildGrid() {
-  const grid=document.getElementById('grid');
-  grid.innerHTML='';
-  for (let i=1;i<=TOTAL;i++) {
-    const s=state[i-1];
-    const card=document.createElement('div');
-    card.className='card libre'; card.id=`card-${i}`;
-    const catOptions=Object.entries(CATS).map(([val,{label,emoji}])=>
-      `<option value="${val}" ${val===s.cat?'selected':''}>${emoji?emoji+' ':''}${label}</option>`).join('');
-    card.innerHTML=`
-      <div class="cat-stripe none"></div>
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = state[i - 1];
+    const card = document.createElement('div');
+    card.className = 'card libre';
+    card.id = `card-${i}`;
+    card.innerHTML = `
       <div class="card-top">
-        <div class="card-num">${String(i).padStart(2,'00')}</div>
-        <div style="flex:1"><input class="card-name-input" value="${s.name}" onclick="event.stopPropagation()" onchange="state[${i-1}].name=this.value" placeholder="Nombre de la mesa"></div>
+        <div class="card-num">${String(i).padStart(2,'0')}</div>
+        <div style="flex:1">
+          <input class="card-name-input" value="${s.name}"
+            onclick="event.stopPropagation()"
+            onchange="state[${i-1}].name=this.value"
+            title="Haz clic para editar el nombre">
+        </div>
         <div class="status-badge">● Libre</div>
       </div>
-      <div class="card-meta">
-        <select class="cat-select none" onclick="event.stopPropagation()" onchange="changeCategory(${i},this.value)">${catOptions}</select>
-        <input class="note-input" type="text" placeholder="📝 Añadir nota..." value="${s.note}" onclick="event.stopPropagation()" oninput="changeNote(${i},this.value)" maxlength="60">
+      <div class="card-body">
+        <button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button>
       </div>
-      <div class="timer-bar-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill" style="width:0%"></div></div></div>
-      <div class="card-body"><button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button></div>
-      <div class="card-footer"><div class="timer-display"></div><div class="alerta-tag">⚠ TIEMPO LÍMITE</div></div>`;
+      <div class="card-footer">
+        <span class="time-label"></span>
+        <span class="time-value"></span>
+      </div>`;
     grid.appendChild(card);
   }
 }
-
 function resetAll() {
   if (!confirm('¿Poner todos los futbolines en LIBRE?')) return;
-  Object.keys(pendingRelease).forEach(id=>{ clearInterval(pendingRelease[id].timer); delete pendingRelease[id]; });
-  state.forEach(s=>{ s.libre=true; s.time=null; s.alerted=false; });
-  for (let i=1;i<=TOTAL;i++) renderCard(i);
-  updateCounters(); showToast('✅ Todos los futbolines liberados');
+  state.forEach(s => { s.libre = true; s.time = null; });
+  for (let i = 1; i <= TOTAL; i++) renderCard(i);
+  updateCounters();
+  showToast('✅ Todos los futbolines liberados');
 }
-
-setInterval(()=>{
-  let need=false;
-  for (let i=1;i<=TOTAL;i++) { if (!state[i-1].libre&&state[i-1].time) { renderCard(i); need=true; } }
-  if (need) updateCounters();
-},1000);
-
+function filterCards() {
+  const q = document.getElementById('search').value.toLowerCase();
+  for (let i = 1; i <= TOTAL; i++) {
+    const card = document.getElementById(`card-${i}`);
+    card.style.display = (state[i-1].name.toLowerCase().includes(q) || String(i).includes(q)) ? '' : 'none';
+  }
+}
 let toastTimer;
-function showToast(msg,warn=false) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=warn?'warn show':'show';
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className='',3200);
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
 }
-
 buildGrid();
 updateCounters();
 </script>
