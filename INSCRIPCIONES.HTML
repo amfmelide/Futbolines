@@ -28,11 +28,9 @@
   .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
   h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: 0.06em; color: #fff; text-shadow: 0 0 40px rgba(21,101,192,0.5); line-height: 1; }
   .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
-
   .tabs { display: flex; justify-content: center; gap: 10px; padding: 24px 20px 0; }
   .tab-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 24px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
   .form-wrap { max-width: 560px; margin: 30px auto 0; padding: 0 20px; }
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; }
   .form-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 24px; text-align: center; }
@@ -46,23 +44,19 @@
   .btn-submit { width: 100%; margin-top: 24px; padding: 16px; border: none; border-radius: 10px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(21,101,192,0.4); }
   .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(21,101,192,0.5); }
   .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
   .success-msg { display: none; text-align: center; padding: 30px; background: rgba(0,200,83,0.08); border: 1px solid rgba(0,200,83,0.3); border-radius: 16px; margin-top: 20px; }
   .success-msg .icon { font-size: 3rem; margin-bottom: 12px; }
   .success-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--libre); margin-bottom: 8px; }
   .success-msg p { color: var(--text-dim); font-size: 0.9rem; }
-
   .admin-wrap { max-width: 1200px; margin: 30px auto 0; padding: 0 20px; }
   .admin-login { max-width: 360px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
   .admin-login h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 20px; }
   .admin-login input { margin-bottom: 14px; }
   .btn-login { width: 100%; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #1a237e, #283593); color: #90caf9; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
   .btn-login:hover { background: linear-gradient(135deg, #283593, #3949ab); color: #fff; }
-
   .admin-panel { display: none; }
   .admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
   .admin-header h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); }
-
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
   .stat-label { font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-weight: 700; }
@@ -72,39 +66,32 @@
   .stat-card.bronce .stat-num { color: #cd7f32; }
   .stat-card.rookie .stat-num { color: #ce93d8; }
   .stat-card.pagado .stat-num { color: var(--libre); }
-
   .table-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
   .filter-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Barlow', sans-serif; font-size: 0.8rem; padding: 8px 12px; border-radius: 8px; outline: none; cursor: pointer; }
   .btn-export { background: linear-gradient(135deg, #1b5e20, #2e7d32); border: none; color: #a5d6a7; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .btn-export:hover { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
   .btn-refresh { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem; padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .btn-refresh:hover { border-color: var(--accent); color: var(--text); }
-
   .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
   thead { background: var(--surface2); }
   th { padding: 12px 14px; text-align: left; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
   td { padding: 12px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
   tr:hover td { background: rgba(255,255,255,0.02); }
-
   .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
   .badge.elite { background: rgba(255,215,0,0.15); color: #ffd700; border: 1px solid rgba(255,215,0,0.3); }
   .badge.plata { background: rgba(176,190,197,0.15); color: #b0bec5; border: 1px solid rgba(176,190,197,0.3); }
   .badge.bronce { background: rgba(205,127,50,0.15); color: #cd7f32; border: 1px solid rgba(205,127,50,0.3); }
   .badge.rookie { background: rgba(156,39,176,0.15); color: #ce93d8; border: 1px solid rgba(156,39,176,0.3); }
-
   .btn-pago { padding: 5px 14px; border: none; border-radius: 20px; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .btn-pago.no { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
   .btn-pago.no:hover { background: rgba(245,0,87,0.3); }
   .btn-pago.si { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
   .btn-pago.si:hover { background: rgba(0,200,83,0.3); }
-
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-
   #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   #toast.show { transform: translateX(-50%) translateY(0); }
-
   @media (max-width: 600px) {
     .form-row { grid-template-columns: 1fr; }
     .form-card { padding: 20px; }
@@ -126,7 +113,6 @@
   <button class="tab-btn" onclick="showTab('admin', this)">🔐 Panel Admin</button>
 </div>
 
-<!-- FORMULARIO -->
 <div id="tab-inscripcion">
   <div class="form-wrap">
     <div class="form-card" id="form-card">
@@ -188,7 +174,6 @@
   </div>
 </div>
 
-<!-- ADMIN -->
 <div id="tab-admin" style="display:none">
   <div class="admin-wrap">
     <div class="admin-login" id="admin-login">
@@ -242,7 +227,7 @@
 <div id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
 const ADMIN_PASS = 'amf2025';
 let allData = [];
 
