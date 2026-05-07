@@ -3,238 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Asociación Melide Futbolín</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --libre: #00c853;
-    --libre-dark: #009624;
-    --ocupado: #f50057;
-    --ocupado-dark: #bb002f;
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2236;
-    --border: #1e2d45;
-    --text: #e8edf5;
-    --text-dim: #7a8fa8;
-    --accent: #1565c0;
-    --gold: #ffc107;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Barlow', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px);
-  }
+<title>Control de Futbolines</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Copyright (c) 2025. Todos los derechos reservados. Prohibida su reproduccion sin autorizacion. -->
+<style>:root{--libre:#00c853;--libre-dark:#009624;--ocupado:#f50057;--ocupado-dark:#bb002f;--warning:#ff6d00;--warning-dark:#e65100;--bg:#0a0e1a;--surface:#111827;--surface2:#1a2236;--border:#1e2d45;--text:#e8edf5;--text-dim:#7a8fa8;--accent:#1565c0;--gold:#ffc107;--cat-oro:#ffd700;--cat-oro-bg:rgba(255,215,0,0.10);--cat-plata:#c0c0c0;--cat-plata-bg:rgba(192,192,192,0.10);--cat-bronce:#cd7f32;--cat-bronce-bg:rgba(205,127,50,0.10);--cat-rookie:#7c4dff;--cat-rookie-bg:rgba(124,77,255,0.10);}*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(21,101,192,0.18) 0%,transparent 70%),repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(30,45,69,0.3) 39px,rgba(30,45,69,0.3) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(30,45,69,0.3) 39px,rgba(30,45,69,0.3) 40px);}#lock-screen{position:fixed;inset:0;z-index:1000;background:#070b14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;}#lock-screen .lock-icon{font-size:3rem;}#lock-screen h2{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#fff;}#lock-screen p{color:var(--text-dim);font-size:.9rem;}.pin-dots{display:flex;gap:14px;margin:4px 0;}.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--accent);background:transparent;transition:background .15s,transform .15s;}.pin-dot.filled{background:var(--accent);transform:scale(1.15);}.pin-keypad{display:grid;grid-template-columns:repeat(3,72px);gap:10px;}.pin-key{height:72px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',sans-serif;font-size:1.8rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}.pin-key:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.05);}.pin-key:active{transform:scale(.95);}.pin-key.del{font-size:1.2rem;color:var(--text-dim);}.pin-key.zero{grid-column:2;}.pin-error{color:var(--ocupado);font-size:.85rem;font-weight:700;min-height:20px;letter-spacing:.05em;}@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}.pin-hint{color:var(--text-dim);font-size:.75rem;margin-top:-8px;}header{text-align:center;padding:24px 20px 14px;position:relative;}header::after{content:'';display:block;height:2px;margin-top:14px;background:linear-gradient(90deg,transparent,var(--accent),var(--gold),var(--accent),transparent);}.header-top{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}.header-icon{font-size:2rem;}h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,5vw,3.2rem);letter-spacing:.06em;color:#fff;text-shadow:0 0 40px rgba(21,101,192,.5);line-height:1;}.subtitle{font-size:.78rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-top:3px;}.btn-hdr{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:7px 13px;border-radius:8px;cursor:pointer;font-size:.78rem;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:.05em;transition:all .2s;}.btn-hdr:hover{border-color:var(--accent);color:var(--text);}.scoreboard{display:flex;justify-content:center;gap:10px;padding:16px 20px 0;flex-wrap:wrap;}.score-card{flex:1;max-width:175px;min-width:110px;border-radius:12px;padding:12px 14px 10px;text-align:center;border:1px solid transparent;transition:transform .2s;}.score-card:hover{transform:translateY(-2px);}.score-card.libre{background:linear-gradient(135deg,rgba(0,200,83,.12),rgba(0,150,36,.06));border-color:rgba(0,200,83,.25);}.score-card.ocupado{background:linear-gradient(135deg,rgba(245,0,87,.12),rgba(187,0,47,.06));border-color:rgba(245,0,87,.25);}.score-card.alerta{background:linear-gradient(135deg,rgba(255,109,0,.12),rgba(230,81,0,.06));border-color:rgba(255,109,0,.35);}.score-card.total{background:linear-gradient(135deg,rgba(21,101,192,.15),rgba(13,71,161,.08));border-color:rgba(21,101,192,.3);}.score-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;font-weight:600;}.score-number{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;line-height:1;}.libre .score-number{color:var(--libre);text-shadow:0 0 18px rgba(0,200,83,.4);}.ocupado .score-number{color:var(--ocupado);text-shadow:0 0 18px rgba(245,0,87,.4);}.alerta .score-number{color:var(--warning);text-shadow:0 0 18px rgba(255,109,0,.5);}.total .score-number{color:#7cb3ff;}.score-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}.libre .score-dot{background:var(--libre);box-shadow:0 0 5px var(--libre);}.ocupado .score-dot{background:var(--ocupado);box-shadow:0 0 5px var(--ocupado);}.alerta .score-dot{background:var(--warning);box-shadow:0 0 5px var(--warning);}.controls-bar{display:flex;justify-content:center;gap:8px;padding:14px 20px 0;flex-wrap:wrap;align-items:center;}.btn-reset{background:linear-gradient(135deg,#1a237e,#283593);border:1px solid rgba(100,130,255,.3);color:#90caf9;font-family:'Barlow',sans-serif;font-weight:700;font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;padding:8px 16px;border-radius:8px;cursor:pointer;transition:all .2s;}.btn-reset:hover{background:linear-gradient(135deg,#283593,#3949ab);color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(40,53,147,.4);}.search-box{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:.83rem;padding:8px 13px;border-radius:8px;outline:none;width:175px;transition:border-color .2s;}.search-box:focus{border-color:var(--accent);}.search-box::placeholder{color:var(--text-dim);}.time-control{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);padding:5px 11px;border-radius:8px;}.time-control label{font-size:.72rem;color:var(--text-dim);font-weight:600;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}.time-control input[type=number]{background:transparent;border:none;outline:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.35rem;width:42px;text-align:center;}.time-control span{color:var(--text-dim);font-size:.72rem;}.cat-filter{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;padding:10px 20px 0;}.cat-filter-label{font-size:.7rem;color:var(--text-dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-right:2px;}.cat-btn{padding:5px 14px;border-radius:20px;border:1px solid transparent;font-family:'Barlow',sans-serif;font-weight:700;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .18s;background:var(--surface2);color:var(--text-dim);border-color:var(--border);}.cat-btn:hover{transform:translateY(-1px);}.cat-btn.active-all{background:var(--accent);color:#fff;border-color:var(--accent);}.cat-btn.active-oro{background:var(--cat-oro-bg);color:var(--cat-oro);border-color:var(--cat-oro);}.cat-btn.active-plata{background:var(--cat-plata-bg);color:var(--cat-plata);border-color:var(--cat-plata);}.cat-btn.active-bronce{background:var(--cat-bronce-bg);color:var(--cat-bronce);border-color:var(--cat-bronce);}.cat-btn.active-rookie{background:var(--cat-rookie-bg);color:var(--cat-rookie);border-color:var(--cat-rookie);}.grid-container{padding:14px 20px 20px;max-width:1400px;margin:0 auto;}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px;}.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .3s;position:relative;}.card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.3);}.card.libre{border-color:rgba(0,200,83,.2);}.card.ocupado{border-color:rgba(245,0,87,.3);}.card.alerta{border-color:rgba(255,109,0,.6) !important;}@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(245,0,87,.13)}50%{box-shadow:0 0 0 6px rgba(245,0,87,0)}}@keyframes pulse-warn{0%,100%{box-shadow:0 0 0 0 rgba(255,109,0,.28)}50%{box-shadow:0 0 0 8px rgba(255,109,0,0)}}.card.ocupado{animation:pulse-red 2.5s ease-in-out infinite;}.card.alerta{animation:pulse-warn 1.2s ease-in-out infinite;}.cat-stripe{height:4px;width:100%;transition:background .3s;}.cat-stripe.oro{background:linear-gradient(90deg,var(--cat-oro),#ffe066,var(--cat-oro));}.cat-stripe.plata{background:linear-gradient(90deg,var(--cat-plata),#e8e8e8,var(--cat-plata));}.cat-stripe.bronce{background:linear-gradient(90deg,var(--cat-bronce),#e09050,var(--cat-bronce));}.cat-stripe.rookie{background:linear-gradient(90deg,var(--cat-rookie),#b47aff,var(--cat-rookie));}.cat-stripe.none{background:var(--border);}.card-top{display:flex;align-items:center;gap:9px;padding:10px 13px 7px;}.card-num{font-family:'Bebas Neue',sans-serif;font-size:1.65rem;color:var(--text-dim);min-width:32px;line-height:1;transition:color .3s;}.ocupado .card-num{color:rgba(245,0,87,.4);}.alerta .card-num{color:rgba(255,109,0,.55);}.libre .card-num{color:rgba(0,200,83,.35);}.card-name-input{background:transparent;border:none;outline:none;color:var(--text);font-family:'Barlow',sans-serif;font-weight:700;font-size:.92rem;width:100%;cursor:text;}.card-name-input::placeholder{color:var(--text-dim);}.status-badge{padding:3px 9px;border-radius:20px;font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;transition:all .25s;}.libre .status-badge{background:rgba(0,200,83,.12);color:var(--libre);border:1px solid rgba(0,200,83,.25);}.ocupado .status-badge{background:rgba(245,0,87,.12);color:var(--ocupado);border:1px solid rgba(245,0,87,.25);}.alerta .status-badge{background:rgba(255,109,0,.14);color:var(--warning);border:1px solid rgba(255,109,0,.4);}.card-meta{display:flex;align-items:center;gap:7px;padding:0 13px 8px;}.cat-select{appearance:none;-webkit-appearance:none;border:none;outline:none;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:700;font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;padding:4px 22px 4px 9px;border-radius:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8fa8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 7px center;transition:all .2s;flex-shrink:0;}.cat-select.oro{background-color:var(--cat-oro-bg);color:var(--cat-oro);border:1px solid rgba(255,215,0,.35);}.cat-select.plata{background-color:var(--cat-plata-bg);color:var(--cat-plata);border:1px solid rgba(192,192,192,.35);}.cat-select.bronce{background-color:var(--cat-bronce-bg);color:var(--cat-bronce);border:1px solid rgba(205,127,50,.35);}.cat-select.rookie{background-color:var(--cat-rookie-bg);color:var(--cat-rookie);border:1px solid rgba(124,77,255,.35);}.cat-select.none{background-color:var(--surface2);color:var(--text-dim);border:1px solid var(--border);}.cat-select option{background:var(--surface);color:var(--text);}.note-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);outline:none;color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.75rem;padding:2px 4px;transition:border-color .2s,color .2s;min-width:0;}.note-input:focus{border-color:var(--accent);color:var(--text);}.note-input::placeholder{color:rgba(122,143,168,.5);font-style:italic;}.timer-bar-wrap{padding:0 13px 5px;display:none;}.card.ocupado .timer-bar-wrap,.card.alerta .timer-bar-wrap{display:block;}.timer-bar-bg{height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;}.timer-bar-fill{height:100%;border-radius:2px;transition:width 1s linear,background .5s;background:var(--libre);}.card-body{padding:0 13px 11px;}.toggle-btn{width:100%;padding:10px;border:none;border-radius:10px;font-family:'Barlow',sans-serif;font-weight:800;font-size:.83rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}.toggle-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.08) 0%,transparent 100%);pointer-events:none;}.libre .toggle-btn{background:linear-gradient(135deg,var(--libre),var(--libre-dark));color:#fff;box-shadow:0 4px 12px rgba(0,200,83,.22);}.libre .toggle-btn:hover{box-shadow:0 6px 20px rgba(0,200,83,.42);transform:translateY(-1px);}.ocupado .toggle-btn{background:linear-gradient(135deg,var(--ocupado),var(--ocupado-dark));color:#fff;box-shadow:0 4px 12px rgba(245,0,87,.22);}.ocupado .toggle-btn:hover{box-shadow:0 6px 20px rgba(245,0,87,.42);transform:translateY(-1px);}.alerta .toggle-btn{background:linear-gradient(135deg,var(--warning),var(--warning-dark));color:#fff;box-shadow:0 4px 12px rgba(255,109,0,.3);}.alerta .toggle-btn:hover{box-shadow:0 6px 20px rgba(255,109,0,.5);transform:translateY(-1px);}.toggle-btn:active{transform:scale(.97) !important;}.toggle-btn.confirm-pending{background:linear-gradient(135deg,#e65100,#bf360c) !important;box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4) !important;animation:confirm-pulse 0.6s ease-in-out infinite !important;font-size:.78rem;}@keyframes confirm-pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4);}50%{box-shadow:0 0 0 8px rgba(255,109,0,.1),0 6px 20px rgba(230,81,0,.6);}}.card-footer{display:flex;align-items:center;justify-content:space-between;padding:5px 13px 11px;min-height:32px;}.timer-display{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:.06em;line-height:1;transition:color .3s;}.libre .timer-display{color:transparent;}.ocupado .timer-display{color:#fff;}.alerta .timer-display{color:var(--warning);}.alerta-tag{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warning);display:none;}.alerta .alerta-tag{display:block;}footer{text-align:center;padding:20px;color:var(--text-dim);font-size:.7rem;letter-spacing:.08em;line-height:1.6;}#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:40px;font-size:.82rem;font-weight:600;transition:transform .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,.4);}#toast.show{transform:translateX(-50%) translateY(0);}#toast.warn{border-color:rgba(255,109,0,.5);color:var(--warning);}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;display:none;align-items:center;justify-content:center;}.modal-overlay.open{display:flex;}.modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;width:340px;max-width:90vw;}.modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.1em;margin-bottom:16px;}.modal-row{margin-bottom:12px;}.modal-row label{display:block;font-size:.72rem;color:var(--text-dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}.modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1rem;padding:9px 13px;border-radius:8px;outline:none;}.modal-input:focus{border-color:var(--accent);}.modal-actions{display:flex;gap:9px;margin-top:18px;}.btn-primary{flex:1;background:var(--accent);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:700;font-size:.88rem;padding:10px;border-radius:8px;cursor:pointer;transition:all .2s;}.btn-primary:hover{background:#1976d2;transform:translateY(-1px);}.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:600;font-size:.88rem;padding:10px 16px;border-radius:8px;cursor:pointer;transition:all .2s;}.btn-secondary:hover{border-color:var(--text-dim);color:var(--text);}@media(max-width:600px){.grid{grid-template-columns:1fr 1fr;gap:7px;}.grid-container{padding:10px 10px 16px;}.card-top{padding:8px 10px 5px;gap:6px;}.card-meta{padding:0 10px 6px;}.card-body{padding:0 10px 9px;}.card-footer{padding:4px 10px 9px;}.toggle-btn{font-size:.73rem;padding:8px;}.timer-display{font-size:1.1rem;}.cat-select{font-size:.65rem;}.note-input{font-size:.7rem;}}</style>
+</head>
 
-  header { text-align: center; padding: 32px 20px 20px; position: relative; }
-  header::after {
-    content: '';
-    display: block;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
-    margin-top: 20px;
-  }
-  .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2rem, 5vw, 3.6rem);
-    letter-spacing: 0.06em;
-    color: #fff;
-    text-shadow: 0 0 40px rgba(21,101,192,0.5);
-    line-height: 1;
-  }
-  .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
-
-  .scoreboard { display: flex; justify-content: center; gap: 16px; padding: 20px 20px 0; flex-wrap: wrap; }
-  .score-card {
-    flex: 1; max-width: 220px; min-width: 140px; border-radius: 14px;
-    padding: 18px 20px 14px; text-align: center; border: 1px solid transparent; transition: transform 0.2s;
-  }
-  .score-card:hover { transform: translateY(-2px); }
-  .score-card.libre { background: linear-gradient(135deg, rgba(0,200,83,0.12), rgba(0,150,36,0.06)); border-color: rgba(0,200,83,0.25); }
-  .score-card.ocupado { background: linear-gradient(135deg, rgba(245,0,87,0.12), rgba(187,0,47,0.06)); border-color: rgba(245,0,87,0.25); }
-  .score-card.total { background: linear-gradient(135deg, rgba(21,101,192,0.15), rgba(13,71,161,0.08)); border-color: rgba(21,101,192,0.3); }
-  .score-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
-  .score-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; }
-  .libre .score-number { color: var(--libre); text-shadow: 0 0 20px rgba(0,200,83,0.4); }
-  .ocupado .score-number { color: var(--ocupado); text-shadow: 0 0 20px rgba(245,0,87,0.4); }
-  .total .score-number { color: #7cb3ff; }
-  .score-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-  .libre .score-dot { background: var(--libre); box-shadow: 0 0 8px var(--libre); }
-  .ocupado .score-dot { background: var(--ocupado); box-shadow: 0 0 8px var(--ocupado); }
-
-  .controls-bar { display: flex; justify-content: center; gap: 10px; padding: 18px 20px 0; flex-wrap: wrap; }
-  .btn-reset {
-    background: linear-gradient(135deg, #1a237e, #283593); border: 1px solid rgba(100,130,255,0.3);
-    color: #90caf9; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem;
-    letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 22px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
-  }
-  .btn-reset:hover { background: linear-gradient(135deg, #283593, #3949ab); border-color: rgba(100,130,255,0.6); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(40,53,147,0.4); }
-  .search-box {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    font-family: 'Barlow', sans-serif; font-size: 0.85rem; padding: 10px 16px;
-    border-radius: 8px; outline: none; width: 200px; transition: border-color 0.2s;
-  }
-  .search-box:focus { border-color: var(--accent); }
-  .search-box::placeholder { color: var(--text-dim); }
-
-  .filter-bar { display: flex; justify-content: center; gap: 8px; padding: 14px 20px 0; flex-wrap: wrap; }
-  .filter-btn {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
-    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.75rem;
-    letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px;
-    border-radius: 20px; cursor: pointer; transition: all 0.2s;
-  }
-  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
-  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .filter-btn.elite.active { background: #1a237e; border-color: #7986cb; color: #fff; }
-  .filter-btn.oro.active { background: #b8860b; border-color: #ffc107; color: #fff; }
-  .filter-btn.plata.active { background: #607d8b; border-color: #b0bec5; color: #fff; }
-  .filter-btn.bronce.active { background: #795548; border-color: #cd7f32; color: #fff; }
-  .filter-btn.rookie.active { background: #4a148c; border-color: #9c27b0; color: #fff; }
-
-  .grid-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-
-  .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    overflow: hidden; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s; position: relative;
-  }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-  .card.libre { border-color: rgba(0,200,83,0.25); }
-  .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
-  .card.overtime { border-color: #ff6d00 !important; box-shadow: 0 0 24px rgba(255,109,0,0.4) !important; }
-  .card.cat-elite { border-color: rgba(121,134,203,0.6) !important; box-shadow: 0 0 20px rgba(121,134,203,0.2) !important; background: linear-gradient(135deg, #111827, rgba(121,134,203,0.06)) !important; }
-  .card.cat-elite .card-num { color: rgba(121,134,203,0.8); }
-  .card.cat-oro { border-color: rgba(255,193,7,0.6) !important; box-shadow: 0 0 20px rgba(255,193,7,0.2) !important; background: linear-gradient(135deg, #111827, rgba(255,193,7,0.06)) !important; }
-  .card.cat-oro .card-num { color: rgba(255,193,7,0.6); }
-  .card.cat-plata { border-color: rgba(176,190,197,0.6) !important; box-shadow: 0 0 20px rgba(176,190,197,0.15) !important; background: linear-gradient(135deg, #111827, rgba(176,190,197,0.06)) !important; }
-  .card.cat-plata .card-num { color: rgba(176,190,197,0.6); }
-  .card.cat-bronce { border-color: rgba(205,127,50,0.6) !important; box-shadow: 0 0 20px rgba(205,127,50,0.15) !important; background: linear-gradient(135deg, #111827, rgba(205,127,50,0.06)) !important; }
-  .card.cat-bronce .card-num { color: rgba(205,127,50,0.6); }
-  .card.cat-rookie { border-color: rgba(156,39,176,0.6) !important; box-shadow: 0 0 20px rgba(156,39,176,0.15) !important; background: linear-gradient(135deg, #111827, rgba(156,39,176,0.06)) !important; }
-  .card.cat-rookie .card-num { color: rgba(156,39,176,0.6); }
-
-  .card-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; }
-  .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text-dim); min-width: 36px; line-height: 1; }
-  .card-name-input {
-    background: transparent; border: none; outline: none; color: var(--text);
-    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text;
-  }
-  .card-name-input::placeholder { color: var(--text-dim); }
-  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
-  .libre .status-badge { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
-  .ocupado .status-badge { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
-
-  .card-meta { padding: 0 16px 10px; }
-  .cat-select {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
-    font-family: 'Barlow', sans-serif; font-size: 0.75rem; font-weight: 600;
-    padding: 5px 10px; border-radius: 8px; cursor: pointer; outline: none;
-    transition: border-color 0.2s; width: 100%;
-  }
-  .cat-select:focus { border-color: var(--accent); }
-  .cat-select.elite { border-color: #7986cb; color: #7986cb; }
-  .cat-select.oro { border-color: #ffc107; color: #ffc107; }
-  .cat-select.plata { border-color: #b0bec5; color: #b0bec5; }
-  .cat-select.bronce { border-color: #cd7f32; color: #cd7f32; }
-  .cat-select.rookie { border-color: #9c27b0; color: #ce93d8; }
-
-  .card-body { padding: 0 16px 10px; }
-  .toggle-btn {
-    width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'Barlow', sans-serif;
-    font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
-    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
-  }
-  .toggle-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
-  .libre .toggle-btn { background: linear-gradient(135deg, var(--libre), var(--libre-dark)); color: #fff; box-shadow: 0 4px 16px rgba(0,200,83,0.3); }
-  .libre .toggle-btn:hover { background: linear-gradient(135deg, #00e676, var(--libre)); box-shadow: 0 6px 24px rgba(0,200,83,0.5); transform: translateY(-1px); }
-  .ocupado .toggle-btn { background: linear-gradient(135deg, var(--ocupado), var(--ocupado-dark)); color: #fff; box-shadow: 0 4px 16px rgba(245,0,87,0.3); }
-  .ocupado .toggle-btn:hover { background: linear-gradient(135deg, #ff4081, var(--ocupado)); box-shadow: 0 6px 24px rgba(245,0,87,0.5); transform: translateY(-1px); }
-  .toggle-btn.confirming { opacity: 0.85; animation: pulse-btn 0.5s ease-in-out infinite alternate; }
-  @keyframes pulse-btn { from { transform: scale(1); } to { transform: scale(1.02); } }
-  .toggle-btn:active { transform: scale(0.97) !important; }
-
-  /* TIMER */
-  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 16px 14px; min-height: 36px; }
-  .time-info { display: flex; flex-direction: column; gap: 2px; }
-  .time-label { font-size: 0.68rem; color: var(--text-dim); }
-  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; color: var(--ocupado); letter-spacing: 0.08em; }
-  .timer-display {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.3rem;
-    letter-spacing: 0.1em;
-    color: var(--libre);
-    text-align: right;
-    transition: color 0.3s;
-  }
-  .timer-display.warning { color: #ff6d00; }
-  .timer-display.overtime-text { color: #ff1744; animation: blink 1s step-start infinite; }
-  @keyframes blink { 50% { opacity: 0.3; } }
-
-  @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245,0,87,0.2); }
-    50% { box-shadow: 0 0 0 6px rgba(245,0,87,0); }
-  }
-  .card.ocupado:not(.overtime) { animation: pulse-border 2.5s ease-in-out infinite; }
-  .card.ocupado .card-num { color: rgba(245,0,87,0.5); }
-  .card.overtime .card-num { color: rgba(255,109,0,0.7); }
-
-  /* NOTIF BANNER */
-  #notif-banner {
-    display: none;
-    text-align: center;
-    padding: 10px 20px;
-    background: rgba(255,109,0,0.15);
-    border-bottom: 1px solid rgba(255,109,0,0.3);
-    color: #ff6d00;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-  }
-
-  footer { text-align: center; padding: 30px 20px; color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; }
-  #toast {
-    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600;
-    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
-    white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid-container { padding: 12px; }
-    .card-top { padding: 10px 12px 6px; gap: 6px; }
-    .card-meta { padding: 0 12px 8px; }
-    .card-body { padding: 0 12px 8px; }
-    .card-footer { padding: 4px 12px 10px; }
-    .card-name-input { font-size: 0.85rem; }
-    .toggle-btn { font-size: 0.75rem; padding: 10px; }
-    .timer-display { font-size: 1.1rem; }
-  }
-</style>
 </head>
 <body>
 
-<div id="notif-banner" onclick="requestNotifPermission()">
-  🔔 Activa las notificaciones para recibir avisos a los 25 min — toca aquí
+<!-- ── PIN ── -->
+<div id="lock-screen">
+  <div class="lock-icon">🔒</div>
+  <h2>ACCESO RESTRINGIDO</h2>
+  <p>Introduce el PIN de 4 dígitos para continuar</p>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-keypad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key del" onclick="pinDel()">⌫</button>
+    <button class="pin-key zero" onclick="pinKey('0')">0</button>
+  </div>
+  <p class="pin-hint">PIN por defecto: <strong style="color:var(--gold)">1234</strong> — cámbialo en Ajustes</p>
 </div>
 
+<!-- ── APP ── -->
+<div id="app" style="display:none">
+
 <header>
-  <div class="header-icon">
-    <span style="font-family: 'Permanent Marker', cursive; font-size: clamp(3.5rem, 12vw, 6rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4);">amf</span>
+  <div class="header-top">
+    <div class="header-icon">⚽</div>
+    <div>
+      <h1>Control de Futbolines</h1>
+      <p class="subtitle">Panel de gestión · Evento en vivo</p>
+    </div>
+    <button class="btn-hdr" onclick="openSettings()" style="margin-left:10px">⚙ Ajustes</button>
+    <button class="btn-hdr" onclick="lockApp()">🔒 Bloquear</button>
   </div>
-  <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
-  <p class="subtitle">Panel de gestión · Evento en vivo</p>
 </header>
 
 <div class="scoreboard">
@@ -246,319 +63,80 @@
     <div class="score-label"><span class="score-dot"></span>Ocupados</div>
     <div class="score-number" id="count-ocupado">0</div>
   </div>
+  <div class="score-card alerta">
+    <div class="score-label"><span class="score-dot"></span>⚠ Tiempo</div>
+    <div class="score-number" id="count-alerta">0</div>
+  </div>
   <div class="score-card total">
     <div class="score-label">Total mesas</div>
-    <div class="score-number" id="count-total">30</div>
+    <div class="score-number">30</div>
   </div>
 </div>
 
 <div class="controls-bar">
-  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar futbolín..." oninput="filterCards()">
-  <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
-  <button class="btn-reset" onclick="toggleSettings()" style="background:linear-gradient(135deg,#1a2236,#1e2d45);border-color:rgba(100,130,255,0.2);">⚙️ Ajustes</button>
-</div>
-
-<div id="settings-panel" style="display:none;max-width:400px;margin:16px auto 0;padding:0 20px;">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:18px;">⚙️ AJUSTES</div>
-    <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Número de futbolines</label>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input type="number" id="total-input" min="1" max="200" value="30"
-        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1.1rem;padding:10px 14px;border-radius:8px;outline:none;width:100px;">
-      <button onclick="applyTotal()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;cursor:pointer;">Aplicar</button>
-    </div>
-    <div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;">⚠️ Cambiar el número reiniciará todos los estados</div>
+  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar mesa..." oninput="applyFilters()">
+  <div class="time-control">
+    <label>⏱ Límite</label>
+    <input type="number" id="time-limit" value="10" min="1" max="99" onchange="timeLimitMin=parseInt(this.value)||10">
+    <span>min</span>
   </div>
+  <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
 </div>
 
-<div class="filter-bar">
-  <button class="filter-btn active" onclick="setFilter('todas', this)">TODAS</button>
-  <button class="filter-btn elite" onclick="setFilter('elite', this)">🏆 ELITE</button>
-  <button class="filter-btn oro" onclick="setFilter('oro', this)">🥇 ORO</button>
-  <button class="filter-btn plata" onclick="setFilter('plata', this)">🥈 PLATA</button>
-  <button class="filter-btn bronce" onclick="setFilter('bronce', this)">🥉 BRONCE</button>
-  <button class="filter-btn" onclick="setFilter('sin', this)">SIN CAT.</button>
+<!-- Filtros de categoría -->
+<div class="cat-filter">
+  <span class="cat-filter-label">Ver:</span>
+  <button class="cat-btn active-all" id="filter-all"    onclick="setFilter('all')">Todas</button>
+  <button class="cat-btn"            id="filter-oro"    onclick="setFilter('oro')">🥇 Oro</button>
+  <button class="cat-btn"            id="filter-plata"  onclick="setFilter('plata')">🥈 Plata</button>
+  <button class="cat-btn"            id="filter-bronce" onclick="setFilter('bronce')">🥉 Bronce</button>
+  <button class="cat-btn"            id="filter-rookie" onclick="setFilter('rookie')">⭐ Rookie</button>
+  <button class="cat-btn"            id="filter-none"   onclick="setFilter('none')">Sin categoría</button>
 </div>
 
 <div class="grid-container">
   <div class="grid" id="grid"></div>
 </div>
 
-<footer>Primera pulsación pide confirmación · Segunda pulsación en 3s confirma el cambio</footer>
+<footer>
+  Haz clic en el botón de cada mesa para cambiar estado · Nombres y notas editables<br>
+  Desplegable de categoría: Oro · Plata · Bronce · Rookie · La franja de color superior identifica la categoría
+</footer>
+
+</div><!-- /app -->
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <h3>⚙ Ajustes</h3>
+    <div class="modal-row">
+      <label>PIN actual</label>
+      <input class="modal-input" type="password" id="set-current-pin" placeholder="PIN actual" maxlength="4">
+    </div>
+    <div class="modal-row">
+      <label>Nuevo PIN (4 dígitos)</label>
+      <input class="modal-input" type="password" id="set-new-pin" placeholder="Nuevo PIN" maxlength="4">
+    </div>
+    <div class="modal-row">
+      <label>Confirmar nuevo PIN</label>
+      <input class="modal-input" type="password" id="set-confirm-pin" placeholder="Repetir PIN" maxlength="4">
+    </div>
+    <div id="settings-error" style="color:var(--ocupado);font-size:.82rem;min-height:18px;margin-top:2px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeSettings()">Cancelar</button>
+      <button class="btn-primary"   onclick="savePin()">Guardar PIN</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
+
 <script>
-let TOTAL = 30;
-const LIMIT_MS = 25 * 60 * 1000; // 25 minutos
-
-const state = [];
-for (let i = 1; i <= TOTAL; i++) {
-  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
-}
-
-const pendingConfirm = {};
-let currentFilter = 'todas';
-let tickInterval = null;
-
-// NOTIFICACIONES
-function requestNotifPermission() {
-  if (!('Notification' in window)) return;
-  Notification.requestPermission().then(p => {
-    if (p === 'granted') {
-      document.getElementById('notif-banner').style.display = 'none';
-      showToast('🔔 Notificaciones activadas');
-    }
-  });
-}
-
-function checkNotifPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    document.getElementById('notif-banner').style.display = 'block';
-  }
-}
-
-function sendNotif(name) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  new Notification('⏰ Tiempo agotado', {
-    body: `${name} lleva más de 25 minutos ocupado`,
-    icon: 'https://projectamf.netlify.app/favicon.ico'
-  });
-}
-
-// UTILS
-function pad(n) { return String(n).padStart(2, '0'); }
-function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
-function elapsedStr(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${pad(m)}:${pad(s)}`;
-}
-
-function updateCounters() {
-  const libres = state.filter(s => s.libre).length;
-  document.getElementById('count-libre').textContent = libres;
-  document.getElementById('count-ocupado').textContent = TOTAL - libres;
-}
-
-// TICK — actualiza contadores de tiempo cada segundo
-function startTick() {
-  if (tickInterval) return;
-  tickInterval = setInterval(() => {
-    const now = Date.now();
-    for (let i = 1; i <= TOTAL; i++) {
-      const s = state[i - 1];
-      if (s.libre || !s.time) continue;
-      const elapsed = now - s.time.getTime();
-      const timerEl = document.querySelector(`#card-${i} .timer-display`);
-      const card = document.getElementById(`card-${i}`);
-      if (!timerEl || !card) continue;
-
-      timerEl.textContent = elapsedStr(elapsed);
-
-      if (elapsed >= LIMIT_MS) {
-        timerEl.className = 'timer-display overtime-text';
-        card.classList.add('overtime');
-        if (!s.notified) {
-          s.notified = true;
-          sendNotif(s.name);
-          showToast(`⏰ ${s.name} lleva más de 25 min`);
-        }
-      } else if (elapsed >= LIMIT_MS - 5 * 60 * 1000) {
-        // Últimos 5 minutos — aviso naranja
-        timerEl.className = 'timer-display warning';
-        card.classList.remove('overtime');
-      } else {
-        timerEl.className = 'timer-display';
-        card.classList.remove('overtime');
-      }
-    }
-  }, 1000);
-}
-
-// TOGGLE con doble confirmación
-function toggle(id) {
-  const s = state[id - 1];
-  const btn = document.querySelector(`#card-${id} .toggle-btn`);
-
-  if (pendingConfirm[id]) {
-    clearTimeout(pendingConfirm[id].timer);
-    delete pendingConfirm[id];
-    s.libre = !s.libre;
-    s.time = s.libre ? null : new Date();
-    s.notified = false;
-    renderCard(id);
-    updateCounters();
-    showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
-    return;
-  }
-
-  const emoji = s.libre ? '🔴' : '✅';
-  const action = s.libre ? 'OCUPADO' : 'LIBRE';
-  btn.textContent = `${emoji} ¿Confirmar ${action}? (3s)`;
-  btn.classList.add('confirming');
-
-  pendingConfirm[id] = {
-    timer: setTimeout(() => {
-      delete pendingConfirm[id];
-      renderCard(id);
-    }, 3000)
-  };
-}
-
-function setCategory(id, cat) {
-  state[id - 1].cat = cat;
-  const sel = document.querySelector(`#card-${id} .cat-select`);
-  if (sel) sel.className = `cat-select ${cat}`;
-  // Update card color
-  const card = document.getElementById(`card-${id}`);
-  if (card) {
-    card.classList.remove('cat-elite','cat-oro','cat-plata','cat-bronce');
-    if (cat) card.classList.add(`cat-${cat.toLowerCase()}`);
-  }
-  filterCards();
-}
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filterCards();
-}
-
-function filterCards() {
-  const q = document.getElementById('search').value.toLowerCase();
-  for (let i = 1; i <= TOTAL; i++) {
-    const s = state[i - 1];
-    const card = document.getElementById(`card-${i}`);
-    const matchSearch = s.name.toLowerCase().includes(q) || String(i).includes(q);
-    const matchFilter =
-      currentFilter === 'todas' ||
-      (currentFilter === 'sin' && s.cat === '') ||
-      s.cat === currentFilter;
-    card.style.display = (matchSearch && matchFilter) ? '' : 'none';
-  }
-}
-
-function renderCard(id) {
-  const s = state[id - 1];
-  const card = document.getElementById(`card-${id}`);
-  if (!card) return;
-  card.className = `card ${s.libre ? 'libre' : 'ocupado'}`;
-  card.querySelector('.status-badge').textContent = s.libre ? '● Libre' : '● Ocupado';
-  const btn = card.querySelector('.toggle-btn');
-  btn.textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
-  btn.classList.remove('confirming');
-
-  const timeLabel = card.querySelector('.time-label');
-  const timeVal = card.querySelector('.time-value');
-  const timerEl = card.querySelector('.timer-display');
-
-  if (!s.libre && s.time) {
-    timeLabel.textContent = 'Inicio:';
-    timeVal.textContent = timeStr(s.time);
-    timerEl.textContent = '00:00';
-    timerEl.className = 'timer-display';
-  } else {
-    timeLabel.textContent = '';
-    timeVal.textContent = '';
-    timerEl.textContent = '';
-    timerEl.className = 'timer-display';
-    card.classList.remove('overtime');
-  }
-}
-
-function buildGrid() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  for (let i = 1; i <= TOTAL; i++) {
-    const s = state[i - 1];
-    const card = document.createElement('div');
-    card.className = 'card libre';
-    card.id = `card-${i}`;
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="card-num">${String(i).padStart(2,'0')}</div>
-        <div style="flex:1">
-          <input class="card-name-input" value="${s.name}"
-            onclick="event.stopPropagation()"
-            onchange="state[${i-1}].name=this.value"
-            title="Haz clic para editar el nombre">
-        </div>
-        <div class="status-badge">● Libre</div>
-      </div>
-      <div class="card-meta">
-        <select class="cat-select" onchange="setCategory(${i}, this.value)">
-          <option value="">Sin categoría</option>
-          <option value="elite">🏆 Elite</option>
-          <option value="oro">🥇 Oro</option>
-          <option value="plata">🥈 Plata</option>
-          <option value="bronce">🥉 Bronce</option>
-        </select>
-      </div>
-      <div class="card-body">
-        <button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button>
-      </div>
-      <div class="card-footer">
-        <div class="time-info">
-          <span class="time-label"></span>
-          <span class="time-value"></span>
-        </div>
-        <div class="timer-display"></div>
-      </div>`;
-    grid.appendChild(card);
-  }
-}
-
-function resetAll() {
-  if (!confirm('¿Poner todos los futbolines en LIBRE?')) return;
-  state.forEach(s => { s.libre = true; s.time = null; s.notified = false; });
-  Object.keys(pendingConfirm).forEach(id => {
-    clearTimeout(pendingConfirm[id].timer);
-    delete pendingConfirm[id];
-  });
-  for (let i = 1; i <= TOTAL; i++) renderCard(i);
-  updateCounters();
-  showToast('✅ Todos los futbolines liberados');
-}
-
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function toggleSettings() {
-  const p = document.getElementById('settings-panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-  document.getElementById('total-input').value = TOTAL;
-}
-
-function applyTotal() {
-  const n = parseInt(document.getElementById('total-input').value);
-  if (!n || n < 1 || n > 200) { showToast('⚠️ Número no válido (1-200)'); return; }
-  if (!confirm(`¿Cambiar a ${n} futbolines? Se reiniciarán todos los estados.`)) return;
-  TOTAL = n;
-  Object.keys(pendingConfirm).forEach(id => { clearTimeout(pendingConfirm[id].timer); delete pendingConfirm[id]; });
-  state.length = 0;
-  for (let i = 1; i <= TOTAL; i++) {
-    state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
-  }
-  buildGrid();
-  updateCounters();
-  document.getElementById('count-total').textContent = TOTAL;
-  document.getElementById('settings-panel').style.display = 'none';
-  showToast(`✅ Ahora hay ${TOTAL} futbolines`);
-}
-
-buildGrid();
-updateCounters();
-startTick();
-checkNotifPermission();
+var ibcyiido=["Y29uc3QgVE9UQUwgPSAzMDsKbGV0IFBJTiA9ICcxMjM0JzsKbGV0IHBpbkJ1ZmZlciA9ICcnOwpsZXQg","dGltZUxpbWl0TWluID0gMTA7CmxldCBhY3RpdmVGaWx0ZXIgPSAnYWxsJzsKY29uc3QgQ0FUUyA9IHsK","ICBub25lOiAgIHsgbGFiZWw6ICdTaW4gY2F0ZWdvcsOtYScsIGVtb2ppOiAnJyB9LAogIG9ybzogICAg","eyBsYWJlbDogJ09ybycsICAgIGVtb2ppOiAn8J+lhycgfSwKICBwbGF0YTogIHsgbGFiZWw6ICdQbGF0","YScsICBlbW9qaTogJ/CfpYgnIH0sCiAgYnJvbmNlOiB7IGxhYmVsOiAnQnJvbmNlJywgZW1vamk6ICfw","n6WJJyB9LAogIHJvb2tpZTogeyBsYWJlbDogJ1Jvb2tpZScsIGVtb2ppOiAn4q2QJyB9LAp9Owpjb25z","dCBzdGF0ZSA9IFtdOwpmb3IgKGxldCBpID0gMTsgaSA8PSBUT1RBTDsgaSsrKSB7CiAgc3RhdGUucHVz","aCh7CiAgICBpZDogaSwKICAgIG5hbWU6IGBGdXRib2zDrW4gJHtTdHJpbmcoaSkucGFkU3RhcnQoMiwn","MCcpfWAsCiAgICBsaWJyZTogdHJ1ZSwKICAgIHRpbWU6IG51bGwsCiAgICBhbGVydGVkOiBmYWxzZSwK","ICAgIGNhdDogJ25vbmUnLAogICAgbm90ZTogJycsCiAgfSk7Cn0KZnVuY3Rpb24gcGluS2V5KGQpIHsK","ICBpZiAocGluQnVmZmVyLmxlbmd0aCA+PSA0KSByZXR1cm47CiAgcGluQnVmZmVyICs9IGQ7CiAgZG9j","dW1lbnQuZ2V0RWxlbWVudEJ5SWQoYGRvdC0ke3BpbkJ1ZmZlci5sZW5ndGgtMX1gKS5jbGFzc0xpc3Qu","YWRkKCdmaWxsZWQnKTsKICBpZiAocGluQnVmZmVyLmxlbmd0aCA9PT0gNCkgc2V0VGltZW91dChjaGVj","a1BpbiwgMTgwKTsKfQpmdW5jdGlvbiBwaW5EZWwoKSB7CiAgaWYgKCFwaW5CdWZmZXIubGVuZ3RoKSBy","ZXR1cm47CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoYGRvdC0ke3BpbkJ1ZmZlci5sZW5ndGgtMX1g","KS5jbGFzc0xpc3QucmVtb3ZlKCdmaWxsZWQnKTsKICBwaW5CdWZmZXIgPSBwaW5CdWZmZXIuc2xpY2Uo","MCwtMSk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Bpbi1lcnJvcicpLnRleHRDb250ZW50ID0g","Jyc7Cn0KZnVuY3Rpb24gY2hlY2tQaW4oKSB7CiAgaWYgKHBpbkJ1ZmZlciA9PT0gUElOKSB7CiAgICBk","b2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9jay1zY3JlZW4nKS5zdHlsZS5kaXNwbGF5ID0gJ25vbmUn","OwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2FwcCcpLnN0eWxlLmRpc3BsYXkgPSAnYmxvY2sn","OwogICAgcGluQnVmZmVyID0gJyc7CiAgfSBlbHNlIHsKICAgIGNvbnN0IGVsID0gZG9jdW1lbnQuZ2V0","RWxlbWVudEJ5SWQoJ3Bpbi1lcnJvcicpOwogICAgZWwuc3R5bGUuYW5pbWF0aW9uID0gJ25vbmUnOwog","ICAgZWwudGV4dENvbnRlbnQgPSAn4p2MIFBJTiBpbmNvcnJlY3RvLiBJbnTDqW50YWxvIGRlIG51ZXZv","Lic7CiAgICB2b2lkIGVsLm9mZnNldFdpZHRoOwogICAgZWwuc3R5bGUuYW5pbWF0aW9uID0gJ3NoYWtl","IC4zcyBlYXNlJzsKICAgIHBpbkJ1ZmZlciA9ICcnOwogICAgZm9yIChsZXQgaT0wO2k8NDtpKyspIGRv","Y3VtZW50LmdldEVsZW1lbnRCeUlkKGBkb3QtJHtpfWApLmNsYXNzTGlzdC5yZW1vdmUoJ2ZpbGxlZCcp","OwogIH0KfQpmdW5jdGlvbiBsb2NrQXBwKCkgewogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdhcHAn","KS5zdHlsZS5kaXNwbGF5ID0gJ25vbmUnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsb2NrLXNj","cmVlbicpLnN0eWxlLmRpc3BsYXkgPSAnZmxleCc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Bp","bi1lcnJvcicpLnRleHRDb250ZW50ID0gJyc7CiAgcGluQnVmZmVyID0gJyc7CiAgZm9yIChsZXQgaT0w","O2k8NDtpKyspIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGBkb3QtJHtpfWApLmNsYXNzTGlzdC5yZW1v","dmUoJ2ZpbGxlZCcpOwp9CmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2tleWRvd24nLCBlID0+IHsK","ICBpZiAoZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xvY2stc2NyZWVuJykuc3R5bGUuZGlzcGxheT09","PSdub25lJykgcmV0dXJuOwogIGlmIChlLmtleT49JzAnJiZlLmtleTw9JzknKSBwaW5LZXkoZS5rZXkp","OwogIGlmIChlLmtleT09PSdCYWNrc3BhY2UnKSBwaW5EZWwoKTsKfSk7CmZ1bmN0aW9uIG9wZW5TZXR0","aW5ncygpIHsKICBbJ3NldC1jdXJyZW50LXBpbicsJ3NldC1uZXctcGluJywnc2V0LWNvbmZpcm0tcGlu","J10uZm9yRWFjaChpZD0+ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoaWQpLnZhbHVlPScnKTsKICBkb2N1","bWVudC5nZXRFbGVtZW50QnlJZCgnc2V0dGluZ3MtZXJyb3InKS50ZXh0Q29udGVudD0nJzsKICBkb2N1","bWVudC5nZXRFbGVtZW50QnlJZCgnc2V0dGluZ3MtbW9kYWwnKS5jbGFzc0xpc3QuYWRkKCdvcGVuJyk7","Cn0KZnVuY3Rpb24gY2xvc2VTZXR0aW5ncygpIHsgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NldHRp","bmdzLW1vZGFsJykuY2xhc3NMaXN0LnJlbW92ZSgnb3BlbicpOyB9CmZ1bmN0aW9uIHNhdmVQaW4oKSB7","CiAgY29uc3QgY3VyPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzZXQtY3VycmVudC1waW4nKS52YWx1","ZTsKICBjb25zdCBudyA9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NldC1uZXctcGluJykudmFsdWU7","CiAgY29uc3QgY25mPWRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzZXQtY29uZmlybS1waW4nKS52YWx1","ZTsKICBjb25zdCBlcnI9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NldHRpbmdzLWVycm9yJyk7CiAg","aWYgKGN1ciE9PVBJTikgICAgICAgIHsgZXJyLnRleHRDb250ZW50PSfinYwgRWwgUElOIGFjdHVhbCBu","byBlcyBjb3JyZWN0by4nOyByZXR1cm47IH0KICBpZiAoIS9eXGR7NH0kLy50ZXN0KG53KSkgeyBlcnIu","dGV4dENvbnRlbnQ9J+KdjCBFbCBudWV2byBQSU4gZGViZSB0ZW5lciBleGFjdGFtZW50ZSA0IGTDrWdp","dG9zLic7IHJldHVybjsgfQogIGlmIChudyE9PWNuZikgICAgICAgICB7IGVyci50ZXh0Q29udGVudD0n","4p2MIExvcyBQSU5zIG5vIGNvaW5jaWRlbi4nOyByZXR1cm47IH0KICBQSU49bnc7CiAgZXJyLnN0eWxl","LmNvbG9yPSd2YXIoLS1saWJyZSknOwogIGVyci50ZXh0Q29udGVudD0n4pyFIFBJTiBhY3R1YWxpemFk","by4nOwogIHNldFRpbWVvdXQoY2xvc2VTZXR0aW5ncywxMjAwKTsKICBzaG93VG9hc3QoJ+KchSBQSU4g","YWN0dWFsaXphZG8nKTsKfQpmdW5jdGlvbiBwYWQobikgeyByZXR1cm4gU3RyaW5nKG4pLnBhZFN0YXJ0","KDIsJzAnKTsgfQpmdW5jdGlvbiBmbXRUaW1lKHNlYykgeyByZXR1cm4gYCR7cGFkKE1hdGguZmxvb3Io","c2VjLzYwKSl9OiR7cGFkKHNlYyU2MCl9YDsgfQpmdW5jdGlvbiBlbGFwc2VkU2VjKGQpIHsgcmV0dXJu","IE1hdGguZmxvb3IoKERhdGUubm93KCktZC5nZXRUaW1lKCkpLzEwMDApOyB9CmZ1bmN0aW9uIGdldENh","cmRDbGFzcyhzKSB7CiAgaWYgKHMubGlicmUpIHJldHVybiAnbGlicmUnOwogIGlmIChlbGFwc2VkU2Vj","KHMudGltZSkgPj0gdGltZUxpbWl0TWluKjYwKSByZXR1cm4gJ2FsZXJ0YSc7CiAgcmV0dXJuICdvY3Vw","YWRvJzsKfQpmdW5jdGlvbiBjYXRDbGFzcyhjYXQpIHsKICBjb25zdCBtYXAgPSB7IG9ybzonYWN0aXZl","LW9ybycsIHBsYXRhOidhY3RpdmUtcGxhdGEnLCBicm9uY2U6J2FjdGl2ZS1icm9uY2UnLCByb29raWU6","J2FjdGl2ZS1yb29raWUnIH07CiAgcmV0dXJuIG1hcFtjYXRdIHx8ICcnOwp9CmNvbnN0IHBlbmRpbmdS","ZWxlYXNlID0ge307IApmdW5jdGlvbiB0b2dnbGUoaWQpIHsKICBjb25zdCBzID0gc3RhdGVbaWQtMV07","CiAgaWYgKHMubGlicmUpIHsKICAgIHMubGlicmUgPSBmYWxzZTsKICAgIHMudGltZSAgPSBuZXcgRGF0","ZSgpOwogICAgcy5hbGVydGVkID0gZmFsc2U7CiAgICByZW5kZXJDYXJkKGlkKTsKICAgIHVwZGF0ZUNv","dW50ZXJzKCk7CiAgICBjb25zdCBjYXRUYWcgPSBzLmNhdCAhPT0gJ25vbmUnID8gYCBbJHtDQVRTW3Mu","Y2F0XS5lbW9qaX0gJHtDQVRTW3MuY2F0XS5sYWJlbH1dYCA6ICcnOwogICAgc2hvd1RvYXN0KGDwn5S0","ICR7cy5uYW1lfSBPQ1VQQURPJHtjYXRUYWd9YCk7CiAgICByZXR1cm47CiAgfQogIGlmIChwZW5kaW5n","UmVsZWFzZVtpZF0pIHsKICAgIGNsZWFySW50ZXJ2YWwocGVuZGluZ1JlbGVhc2VbaWRdLnRpbWVyKTsK","ICAgIGRlbGV0ZSBwZW5kaW5nUmVsZWFzZVtpZF07CiAgICBzLmxpYnJlICAgPSB0cnVlOwogICAgcy50","aW1lICAgID0gbnVsbDsKICAgIHMuYWxlcnRlZCA9IGZhbHNlOwogICAgcmVuZGVyQ2FyZChpZCk7CiAg","ICB1cGRhdGVDb3VudGVycygpOwogICAgc2hvd1RvYXN0KGDinIUgJHtzLm5hbWV9IGFob3JhIGVzdMOh","IExJQlJFYCk7CiAgICByZXR1cm47CiAgfQogIGxldCBzZWNzID0gMzsKICBjb25zdCBidG4gPSBkb2N1","bWVudC5xdWVyeVNlbGVjdG9yKGAjY2FyZC0ke2lkfSAudG9nZ2xlLWJ0bmApOwogIGJ0bi50ZXh0Q29u","dGVudCA9IGDimqAgwr9Db25maXJtYXI/IFB1bHNhIGRlIG51ZXZvICgke3NlY3N9cylgOwogIGJ0bi5j","bGFzc0xpc3QuYWRkKCdjb25maXJtLXBlbmRpbmcnKTsKICBjb25zdCB0aW1lciA9IHNldEludGVydmFs","KCgpID0+IHsKICAgIHNlY3MtLTsKICAgIGlmIChzZWNzID4gMCkgewogICAgICBjb25zdCBiID0gZG9j","dW1lbnQucXVlcnlTZWxlY3RvcihgI2NhcmQtJHtpZH0gLnRvZ2dsZS1idG5gKTsKICAgICAgaWYgKGIp","IGIudGV4dENvbnRlbnQgPSBg4pqgIMK/Q29uZmlybWFyPyBQdWxzYSBkZSBudWV2byAoJHtzZWNzfXMp","YDsKICAgIH0gZWxzZSB7CiAgICAgIGNsZWFySW50ZXJ2YWwocGVuZGluZ1JlbGVhc2VbaWRdPy50aW1l","cik7CiAgICAgIGRlbGV0ZSBwZW5kaW5nUmVsZWFzZVtpZF07CiAgICAgIGNvbnN0IGIgPSBkb2N1bWVu","dC5xdWVyeVNlbGVjdG9yKGAjY2FyZC0ke2lkfSAudG9nZ2xlLWJ0bmApOwogICAgICBpZiAoYikgewog","ICAgICAgIGIudGV4dENvbnRlbnQgPSAn4pyTIExpYmVyYXIgbWVzYSc7CiAgICAgICAgYi5jbGFzc0xp","c3QucmVtb3ZlKCdjb25maXJtLXBlbmRpbmcnKTsKICAgICAgfQogICAgICBzaG93VG9hc3QoYOKGqSAk","e3MubmFtZX0g4oCUIGxpYmVyYWNpw7NuIGNhbmNlbGFkYWApOwogICAgfQogIH0sIDEwMDApOwogIHBl","bmRpbmdSZWxlYXNlW2lkXSA9IHsgdGltZXIgfTsKfQpmdW5jdGlvbiBjaGFuZ2VDYXRlZ29yeShpZCwg","dmFsKSB7CiAgc3RhdGVbaWQtMV0uY2F0ID0gdmFsOwogIGNvbnN0IGNhcmQgPSBkb2N1bWVudC5nZXRF","bGVtZW50QnlJZChgY2FyZC0ke2lkfWApOwogIGNvbnN0IHN0cmlwZSA9IGNhcmQucXVlcnlTZWxlY3Rv","cignLmNhdC1zdHJpcGUnKTsKICBzdHJpcGUuY2xhc3NOYW1lID0gYGNhdC1zdHJpcGUgJHt2YWx9YDsK","ICBjb25zdCBzZWwgPSBjYXJkLnF1ZXJ5U2VsZWN0b3IoJy5jYXQtc2VsZWN0Jyk7CiAgc2VsLmNsYXNz","TmFtZSA9IGBjYXQtc2VsZWN0ICR7dmFsfWA7CiAgYXBwbHlGaWx0ZXJzKCk7Cn0KZnVuY3Rpb24gY2hh","bmdlTm90ZShpZCwgdmFsKSB7IHN0YXRlW2lkLTFdLm5vdGUgPSB2YWw7IH0KZnVuY3Rpb24gcmVuZGVy","Q2FyZChpZCkgewogIGNvbnN0IHMgPSBzdGF0ZVtpZC0xXTsKICBjb25zdCBjYXJkID0gZG9jdW1lbnQu","Z2V0RWxlbWVudEJ5SWQoYGNhcmQtJHtpZH1gKTsKICBpZiAoIWNhcmQpIHJldHVybjsKICBjb25zdCBj","bHMgPSBnZXRDYXJkQ2xhc3Mocyk7CiAgY2FyZC5jbGFzc05hbWUgPSBgY2FyZCAke2Nsc31gOwogIGNh","cmQucXVlcnlTZWxlY3RvcignLnN0YXR1cy1iYWRnZScpLnRleHRDb250ZW50ID0KICAgIGNscz09PSds","aWJyZScgPyAn4pePIExpYnJlJyA6IGNscz09PSdhbGVydGEnID8gJ+KaoCBUaWVtcG8gZXhjZWRpZG8n","IDogJ+KXjyBPY3VwYWRvJzsKICBjYXJkLnF1ZXJ5U2VsZWN0b3IoJy50b2dnbGUtYnRuJykudGV4dENv","bnRlbnQgPQogICAgY2xzPT09J2xpYnJlJyA/ICfimqEgTWFyY2FyIGNvbW8gT0NVUEFETycgOiAn4pyT","IExpYmVyYXIgbWVzYSc7CiAgY29uc3QgdGltZXJFbCA9IGNhcmQucXVlcnlTZWxlY3RvcignLnRpbWVy","LWRpc3BsYXknKTsKICBjb25zdCBiYXJGaWxsID0gY2FyZC5xdWVyeVNlbGVjdG9yKCcudGltZXItYmFy","LWZpbGwnKTsKICBpZiAoIXMubGlicmUgJiYgcy50aW1lKSB7CiAgICBjb25zdCBlbGFwc2VkID0gZWxh","cHNlZFNlYyhzLnRpbWUpOwogICAgY29uc3QgbGltaXRTZWMgPSB0aW1lTGltaXRNaW4qNjA7CiAgICBj","b25zdCBwY3QgPSBNYXRoLm1pbigoZWxhcHNlZC9saW1pdFNlYykqMTAwLDEwMCk7CiAgICB0aW1lckVs","LnRleHRDb250ZW50ID0gZm10VGltZShlbGFwc2VkKTsKICAgIGJhckZpbGwuc3R5bGUuYmFja2dyb3Vu","ZCA9IHBjdDw2MCA/ICd2YXIoLS1saWJyZSknIDogcGN0PDkwID8gJ3ZhcigtLWdvbGQpJyA6ICd2YXIo","LS13YXJuaW5nKSc7CiAgICBiYXJGaWxsLnN0eWxlLndpZHRoID0gcGN0KyclJzsKICAgIGlmIChlbGFw","c2VkPj1saW1pdFNlYyAmJiAhcy5hbGVydGVkKSB7CiAgICAgIHMuYWxlcnRlZCA9IHRydWU7CiAgICAg","IHNob3dUb2FzdChg4pqgICR7cy5uYW1lfSDigJQgwqFUaWVtcG8gbMOtbWl0ZSBzdXBlcmFkbyFgLCB0","cnVlKTsKICAgIH0KICB9IGVsc2UgewogICAgdGltZXJFbC50ZXh0Q29udGVudCA9ICcnOwogICAgYmFy","RmlsbC5zdHlsZS53aWR0aCA9ICcwJSc7CiAgfQp9CmZ1bmN0aW9uIHVwZGF0ZUNvdW50ZXJzKCkgewog","IGxldCBsaWJyZXM9MCwgb2N1cGFkb3M9MCwgYWxlcnRhcz0wOwogIHN0YXRlLmZvckVhY2gocyA9PiB7","CiAgICBpZiAocy5saWJyZSkgeyBsaWJyZXMrKzsgcmV0dXJuOyB9CiAgICBnZXRDYXJkQ2xhc3Mocyk9","PT0nYWxlcnRhJyA/IGFsZXJ0YXMrKyA6IG9jdXBhZG9zKys7CiAgfSk7CiAgZG9jdW1lbnQuZ2V0RWxl","bWVudEJ5SWQoJ2NvdW50LWxpYnJlJykudGV4dENvbnRlbnQgICA9IGxpYnJlczsKICBkb2N1bWVudC5n","ZXRFbGVtZW50QnlJZCgnY291bnQtb2N1cGFkbycpLnRleHRDb250ZW50ID0gb2N1cGFkb3M7CiAgZG9j","dW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2NvdW50LWFsZXJ0YScpLnRleHRDb250ZW50ICA9IGFsZXJ0YXM7","Cn0KZnVuY3Rpb24gc2V0RmlsdGVyKGYpIHsKICBhY3RpdmVGaWx0ZXIgPSBmOwogIGRvY3VtZW50LnF1","ZXJ5U2VsZWN0b3JBbGwoJy5jYXQtYnRuJykuZm9yRWFjaChiID0+IHsKICAgIGIuY2xhc3NOYW1lID0g","J2NhdC1idG4nOwogICAgaWYgKGIuaWQgPT09IGBmaWx0ZXItJHtmfWApIGIuY2xhc3NMaXN0LmFkZChg","YWN0aXZlLSR7Zn1gKTsKICB9KTsKICBhcHBseUZpbHRlcnMoKTsKfQpmdW5jdGlvbiBhcHBseUZpbHRl","cnMoKSB7CiAgY29uc3QgcSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzZWFyY2gnKS52YWx1ZS50","b0xvd2VyQ2FzZSgpOwogIGZvciAobGV0IGk9MTtpPD1UT1RBTDtpKyspIHsKICAgIGNvbnN0IHMgPSBz","dGF0ZVtpLTFdOwogICAgY29uc3QgY2FyZCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGBjYXJkLSR7","aX1gKTsKICAgIGNvbnN0IG1hdGNoU2VhcmNoID0gcy5uYW1lLnRvTG93ZXJDYXNlKCkuaW5jbHVkZXMo","cSkgfHwgU3RyaW5nKGkpLmluY2x1ZGVzKHEpOwogICAgY29uc3QgbWF0Y2hDYXQgICAgPSBhY3RpdmVG","aWx0ZXI9PT0nYWxsJyB8fCBzLmNhdD09PWFjdGl2ZUZpbHRlcjsKICAgIGNhcmQuc3R5bGUuZGlzcGxh","eSA9IChtYXRjaFNlYXJjaCAmJiBtYXRjaENhdCkgPyAnJyA6ICdub25lJzsKICB9Cn0KZnVuY3Rpb24g","YnVpbGRHcmlkKCkgewogIGNvbnN0IGdyaWQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZ3JpZCcp","OwogIGdyaWQuaW5uZXJIVE1MID0gJyc7CiAgZm9yIChsZXQgaT0xO2k8PVRPVEFMO2krKykgewogICAg","Y29uc3QgcyA9IHN0YXRlW2ktMV07CiAgICBjb25zdCBjYXJkID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVu","dCgnZGl2Jyk7CiAgICBjYXJkLmNsYXNzTmFtZSA9ICdjYXJkIGxpYnJlJzsKICAgIGNhcmQuaWQgPSBg","Y2FyZC0ke2l9YDsKICAgIGNvbnN0IGNhdE9wdGlvbnMgPSBPYmplY3QuZW50cmllcyhDQVRTKS5tYXAo","KFt2YWwse2xhYmVsLGVtb2ppfV0pID0+CiAgICAgIGA8b3B0aW9uIHZhbHVlPSIke3ZhbH0iICR7dmFs","PT09cy5jYXQ/J3NlbGVjdGVkJzonJ30+JHtlbW9qaT9lbW9qaSsnICc6Jyd9JHtsYWJlbH08L29wdGlv","bj5gCiAgICApLmpvaW4oJycpOwogICAgY2FyZC5pbm5lckhUTUwgPSBgCiAgICAgIDxkaXYgY2xhc3M9","ImNhdC1zdHJpcGUgbm9uZSI+PC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9ImNhcmQtdG9wIj4KICAgICAg","ICA8ZGl2IGNsYXNzPSJjYXJkLW51bSI+JHtTdHJpbmcoaSkucGFkU3RhcnQoMiwnMCcpfTwvZGl2Pgog","ICAgICAgIDxkaXYgc3R5bGU9ImZsZXg6MSI+CiAgICAgICAgICA8aW5wdXQgY2xhc3M9ImNhcmQtbmFt","ZS1pbnB1dCIgdmFsdWU9IiR7cy5uYW1lfSIKICAgICAgICAgICAgb25jbGljaz0iZXZlbnQuc3RvcFBy","b3BhZ2F0aW9uKCkiCiAgICAgICAgICAgIG9uY2hhbmdlPSJzdGF0ZVske2ktMX1dLm5hbWU9dGhpcy52","YWx1ZSIKICAgICAgICAgICAgcGxhY2Vob2xkZXI9Ik5vbWJyZSBkZSBsYSBtZXNhIj4KICAgICAgICA8","L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJzdGF0dXMtYmFkZ2UiPuKXjyBMaWJyZTwvZGl2PgogICAg","ICA8L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0iY2FyZC1tZXRhIj4KICAgICAgICA8c2VsZWN0IGNsYXNz","PSJjYXQtc2VsZWN0IG5vbmUiCiAgICAgICAgICBvbmNsaWNrPSJldmVudC5zdG9wUHJvcGFnYXRpb24o","KSIKICAgICAgICAgIG9uY2hhbmdlPSJjaGFuZ2VDYXRlZ29yeSgke2l9LCB0aGlzLnZhbHVlKSI+CiAg","ICAgICAgICAke2NhdE9wdGlvbnN9CiAgICAgICAgPC9zZWxlY3Q+CiAgICAgICAgPGlucHV0IGNsYXNz","PSJub3RlLWlucHV0IiB0eXBlPSJ0ZXh0IiBwbGFjZWhvbGRlcj0i8J+TnSBBw7FhZGlyIG5vdGEuLi4i","CiAgICAgICAgICB2YWx1ZT0iJHtzLm5vdGV9IgogICAgICAgICAgb25jbGljaz0iZXZlbnQuc3RvcFBy","b3BhZ2F0aW9uKCkiCiAgICAgICAgICBvbmNoYW5nZT0iY2hhbmdlTm90ZSgke2l9LCB0aGlzLnZhbHVl","KSIKICAgICAgICAgIG9uaW5wdXQ9ImNoYW5nZU5vdGUoJHtpfSwgdGhpcy52YWx1ZSkiCiAgICAgICAg","ICBtYXhsZW5ndGg9IjYwIj4KICAgICAgPC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9InRpbWVyLWJhci13","cmFwIj4KICAgICAgICA8ZGl2IGNsYXNzPSJ0aW1lci1iYXItYmciPjxkaXYgY2xhc3M9InRpbWVyLWJh","ci1maWxsIiBzdHlsZT0id2lkdGg6MCUiPjwvZGl2PjwvZGl2PgogICAgICA8L2Rpdj4KICAgICAgPGRp","diBjbGFzcz0iY2FyZC1ib2R5Ij4KICAgICAgICA8YnV0dG9uIGNsYXNzPSJ0b2dnbGUtYnRuIiBvbmNs","aWNrPSJ0b2dnbGUoJHtpfSkiPuKaoSBNYXJjYXIgY29tbyBPQ1VQQURPPC9idXR0b24+CiAgICAgIDwv","ZGl2PgogICAgICA8ZGl2IGNsYXNzPSJjYXJkLWZvb3RlciI+CiAgICAgICAgPGRpdiBjbGFzcz0idGlt","ZXItZGlzcGxheSI+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0iYWxlcnRhLXRhZyI+4pqgIFRJRU1Q","TyBMw41NSVRFPC9kaXY+CiAgICAgIDwvZGl2PmA7CiAgICBncmlkLmFwcGVuZENoaWxkKGNhcmQpOwog","IH0KfQpmdW5jdGlvbiByZXNldEFsbCgpIHsKICBpZiAoIWNvbmZpcm0oJ8K/UG9uZXIgdG9kb3MgbG9z","IGZ1dGJvbGluZXMgZW4gTElCUkU/JykpIHJldHVybjsKICBzdGF0ZS5mb3JFYWNoKHMgPT4geyBzLmxp","YnJlPXRydWU7IHMudGltZT1udWxsOyBzLmFsZXJ0ZWQ9ZmFsc2U7IH0pOwogIGZvciAobGV0IGk9MTtp","PD1UT1RBTDtpKyspIHJlbmRlckNhcmQoaSk7CiAgdXBkYXRlQ291bnRlcnMoKTsKICBzaG93VG9hc3Qo","J+KchSBUb2RvcyBsb3MgZnV0Ym9saW5lcyBsaWJlcmFkb3MnKTsKfQpzZXRJbnRlcnZhbCgoKSA9PiB7","CiAgbGV0IG5lZWRVcGRhdGUgPSBmYWxzZTsKICBmb3IgKGxldCBpPTE7aTw9VE9UQUw7aSsrKSB7CiAg","ICBpZiAoIXN0YXRlW2ktMV0ubGlicmUgJiYgc3RhdGVbaS0xXS50aW1lKSB7IHJlbmRlckNhcmQoaSk7","IG5lZWRVcGRhdGU9dHJ1ZTsgfQogIH0KICBpZiAobmVlZFVwZGF0ZSkgdXBkYXRlQ291bnRlcnMoKTsK","fSwgMTAwMCk7CmxldCB0b2FzdFRpbWVyOwpmdW5jdGlvbiBzaG93VG9hc3QobXNnLCB3YXJuPWZhbHNl","KSB7CiAgY29uc3QgdCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCd0b2FzdCcpOwogIHQudGV4dENv","bnRlbnQgPSBtc2c7CiAgdC5jbGFzc05hbWUgPSB3YXJuID8gJ3dhcm4gc2hvdycgOiAnc2hvdyc7CiAg","Y2xlYXJUaW1lb3V0KHRvYXN0VGltZXIpOwogIHRvYXN0VGltZXIgPSBzZXRUaW1lb3V0KCgpPT50LmNs","YXNzTmFtZT0nJywgMzIwMCk7Cn0KYnVpbGRHcmlkKCk7CnVwZGF0ZUNvdW50ZXJzKCk7"];
+var uykfswxe=ibcyiido.join('');
+var sppgmxxn=atob(uykfswxe);
+(new Function(sppgmxxn))();
 </script>
 </body>
 </html>
