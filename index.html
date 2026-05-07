@@ -221,9 +221,61 @@
     .toggle-btn { font-size: 0.75rem; padding: 10px; }
     .timer-display { font-size: 1.1rem; }
   }
+
+  /* PIN SCREEN */
+  #lock-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 99999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%);
+  }
+  .pin-logo { font-family: 'Permanent Marker', cursive; font-size: 4rem; color: white; text-shadow: 0 0 30px rgba(21,101,192,0.4); }
+  .pin-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.15em; color: var(--text-dim); }
+  .pin-dots { display: flex; gap: 16px; margin: 8px 0; }
+  .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-dim); transition: all 0.15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(21,101,192,0.6); }
+  .pin-grid { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+  .pin-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; cursor: pointer; transition: all 0.15s;
+  }
+  .pin-btn:hover { background: var(--surface2); border-color: var(--accent); }
+  .pin-btn:active { transform: scale(0.93); background: var(--accent); }
+  .pin-btn.del { font-size: 1.2rem; color: var(--text-dim); }
+  .pin-error { color: var(--ocupado); font-size: 0.85rem; font-weight: 700; min-height: 20px; letter-spacing: 0.05em; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 </style>
 </head>
 <body>
+
+<!-- PIN SCREEN -->
+<div id="lock-screen">
+  <div class="pin-logo">amf</div>
+  <div class="pin-title">INTRODUCE TU PIN</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <div class="pin-grid">
+    <button class="pin-btn" onclick="pinKey('1')">1</button>
+    <button class="pin-btn" onclick="pinKey('2')">2</button>
+    <button class="pin-btn" onclick="pinKey('3')">3</button>
+    <button class="pin-btn" onclick="pinKey('4')">4</button>
+    <button class="pin-btn" onclick="pinKey('5')">5</button>
+    <button class="pin-btn" onclick="pinKey('6')">6</button>
+    <button class="pin-btn" onclick="pinKey('7')">7</button>
+    <button class="pin-btn" onclick="pinKey('8')">8</button>
+    <button class="pin-btn" onclick="pinKey('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="pinKey('0')">0</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
 
 <div id="notif-banner" onclick="requestNotifPermission()">
   🔔 Activa las notificaciones para recibir avisos a los 25 min — toca aquí
@@ -268,6 +320,14 @@
       <button onclick="applyTotal()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;cursor:pointer;">Aplicar</button>
     </div>
     <div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;">⚠️ Cambiar el número reiniciará todos los estados</div>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Cambiar PIN</label>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="password" id="new-pin" maxlength="4" placeholder="Nuevo PIN (4 dígitos)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1rem;padding:10px 14px;border-radius:8px;outline:none;width:180px;">
+        <button onclick="cambiarPin()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 16px;border-radius:8px;cursor:pointer;">Cambiar</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -288,6 +348,42 @@
 <div id="toast"></div>
 
 <script>
+let PIN = '1234';
+let pinBuffer = '';
+
+function pinKey(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  document.getElementById(`dot-${pinBuffer.length-1}`).classList.add('filled');
+  if (pinBuffer.length === 4) setTimeout(checkPin, 180);
+}
+function pinDel() {
+  if (!pinBuffer.length) return;
+  document.getElementById(`dot-${pinBuffer.length-1}`).classList.remove('filled');
+  pinBuffer = pinBuffer.slice(0,-1);
+  document.getElementById('pin-error').textContent = '';
+}
+function checkPin() {
+  if (pinBuffer === PIN) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    pinBuffer = '';
+  } else {
+    const el = document.getElementById('pin-error');
+    el.style.animation = 'none';
+    el.textContent = '❌ PIN incorrecto. Inténtalo de nuevo.';
+    void el.offsetWidth;
+    el.style.animation = 'shake .3s ease';
+    pinBuffer = '';
+    for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
+  }
+}
+document.addEventListener('keydown', e => {
+  if (document.getElementById('lock-screen').style.display === 'none') return;
+  if (e.key>='0' && e.key<='9') pinKey(e.key);
+  if (e.key === 'Backspace') pinDel();
+});
+
 let TOTAL = 30;
 const LIMIT_MS = 25 * 60 * 1000; // 25 minutos
 
@@ -532,6 +628,15 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+function cambiarPin() {
+  const np = document.getElementById('new-pin').value;
+  if (!/^\d{4}$/.test(np)) { showToast('⚠️ El PIN debe tener exactamente 4 dígitos'); return; }
+  PIN = np;
+  document.getElementById('new-pin').value = '';
+  document.getElementById('settings-panel').style.display = 'none';
+  showToast('✅ PIN actualizado');
+}
+
 function toggleSettings() {
   const p = document.getElementById('settings-panel');
   p.style.display = p.style.display === 'none' ? 'block' : 'none';
@@ -560,5 +665,6 @@ updateCounters();
 startTick();
 checkNotifPermission();
 </script>
+</div><!-- end app -->
 </body>
 </html>
