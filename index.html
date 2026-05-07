@@ -93,6 +93,7 @@
   }
   .filter-btn:hover { border-color: var(--accent); color: var(--text); }
   .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn.elite.active { background: #1a237e; border-color: #7986cb; color: #fff; }
   .filter-btn.oro.active { background: #b8860b; border-color: #ffc107; color: #fff; }
   .filter-btn.plata.active { background: #607d8b; border-color: #b0bec5; color: #fff; }
   .filter-btn.bronce.active { background: #795548; border-color: #cd7f32; color: #fff; }
@@ -109,6 +110,8 @@
   .card.libre { border-color: rgba(0,200,83,0.25); }
   .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
   .card.overtime { border-color: #ff6d00 !important; box-shadow: 0 0 24px rgba(255,109,0,0.4) !important; }
+  .card.cat-elite { border-color: rgba(121,134,203,0.6) !important; box-shadow: 0 0 20px rgba(121,134,203,0.2) !important; background: linear-gradient(135deg, #111827, rgba(121,134,203,0.06)) !important; }
+  .card.cat-elite .card-num { color: rgba(121,134,203,0.8); }
   .card.cat-oro { border-color: rgba(255,193,7,0.6) !important; box-shadow: 0 0 20px rgba(255,193,7,0.2) !important; background: linear-gradient(135deg, #111827, rgba(255,193,7,0.06)) !important; }
   .card.cat-oro .card-num { color: rgba(255,193,7,0.6); }
   .card.cat-plata { border-color: rgba(176,190,197,0.6) !important; box-shadow: 0 0 20px rgba(176,190,197,0.15) !important; background: linear-gradient(135deg, #111827, rgba(176,190,197,0.06)) !important; }
@@ -137,6 +140,7 @@
     transition: border-color 0.2s; width: 100%;
   }
   .cat-select:focus { border-color: var(--accent); }
+  .cat-select.elite { border-color: #7986cb; color: #7986cb; }
   .cat-select.oro { border-color: #ffc107; color: #ffc107; }
   .cat-select.plata { border-color: #b0bec5; color: #b0bec5; }
   .cat-select.bronce { border-color: #cd7f32; color: #cd7f32; }
@@ -269,10 +273,10 @@
 
 <div class="filter-bar">
   <button class="filter-btn active" onclick="setFilter('todas', this)">TODAS</button>
+  <button class="filter-btn elite" onclick="setFilter('elite', this)">🏆 ELITE</button>
   <button class="filter-btn oro" onclick="setFilter('oro', this)">🥇 ORO</button>
   <button class="filter-btn plata" onclick="setFilter('plata', this)">🥈 PLATA</button>
   <button class="filter-btn bronce" onclick="setFilter('bronce', this)">🥉 BRONCE</button>
-  <button class="filter-btn rookie" onclick="setFilter('rookie', this)">⭐ ROOKIE</button>
   <button class="filter-btn" onclick="setFilter('sin', this)">SIN CAT.</button>
 </div>
 
@@ -410,7 +414,7 @@ function setCategory(id, cat) {
   // Update card color
   const card = document.getElementById(`card-${id}`);
   if (card) {
-    card.classList.remove('cat-oro','cat-plata','cat-bronce','cat-rookie');
+    card.classList.remove('cat-elite','cat-oro','cat-plata','cat-bronce');
     if (cat) card.classList.add(`cat-${cat.toLowerCase()}`);
   }
   filterCards();
@@ -487,10 +491,10 @@ function buildGrid() {
       <div class="card-meta">
         <select class="cat-select" onchange="setCategory(${i}, this.value)">
           <option value="">Sin categoría</option>
+          <option value="elite">🏆 Elite</option>
           <option value="oro">🥇 Oro</option>
           <option value="plata">🥈 Plata</option>
           <option value="bronce">🥉 Bronce</option>
-          <option value="rookie">⭐ Rookie</option>
         </select>
       </div>
       <div class="card-body">
