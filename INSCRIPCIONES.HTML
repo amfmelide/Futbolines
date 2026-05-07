@@ -107,10 +107,23 @@
   .btn-pago.si { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
   .notas-input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-size: 0.78rem; padding: 4px 6px; outline: none; width: 120px; }
   .notas-input:focus { border-bottom-color: var(--accent); color: var(--text); }
+  .btn-delete { background: rgba(245,0,87,0.1); border: 1px solid rgba(245,0,87,0.3); color: var(--ocupado); border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+  .btn-delete:hover { background: rgba(245,0,87,0.3); }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   #toast.show { transform: translateX(-50%) translateY(0); }
   @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .form-card { padding: 20px; } }
+
+  /* MODAL EDITAR */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-guardar { flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
+  .btn-cerrar { padding: 12px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+  .btn-edit { background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.3); color: #90caf9; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; margin-right: 4px; }
+  .btn-edit:hover { background: rgba(21,101,192,0.3); }
 </style>
 </head>
 <body>
@@ -261,7 +274,7 @@
               <th>Jugador 1</th><th>📞</th><th>💰 J1</th>
               <th>Jugador 2</th><th>📞</th><th>💰 J2</th>
               <th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th>
-              <th>Fecha</th><th>Notas</th>
+              <th>Fecha</th><th>Notas</th><th>Acc.</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -275,6 +288,73 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- MODAL EDITAR ADMIN -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal-box">
+    <div class="modal-title">✏️ EDITAR INSCRIPCIÓN</div>
+    <div class="form-group">
+      <label>Nombre del equipo</label>
+      <input type="text" id="m-equipo" placeholder="Nombre del equipo">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Jugador 1</label>
+        <input type="text" id="m-jugador1" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tel. Jugador 1</label>
+        <input type="tel" id="m-telefono1" placeholder="6XX XXX XXX">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Jugador 2</label>
+        <input type="text" id="m-jugador2" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tel. Jugador 2</label>
+        <input type="tel" id="m-telefono2" placeholder="6XX XXX XXX">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Zona</label>
+        <input type="text" id="m-zona" placeholder="Zona">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="m-email" placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cat. Movimiento</label>
+        <select id="m-catMov">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Oro">🥇 Oro</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cat. Parado</label>
+        <select id="m-catPar">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Oro">🥇 Oro</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cerrar" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-guardar" onclick="guardarEdicion()">💾 Guardar cambios</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
@@ -510,6 +590,7 @@ function renderTable() {
       <td><span class="badge ${cc(r[12])}">${r[12]||'-'}</span></td>
       <td style="color:var(--text-dim);font-size:0.75rem">${(r[0]||'').toString().substring(0,10)}</td>
       <td><input class="notas-input" value="${r[14]||''}" placeholder="Notas..." onblur="guardarNotas(${realIdx}, this.value)"></td>
+      <td><button class="btn-edit" onclick="abrirModal(${realIdx})">✏️</button><button class="btn-delete" onclick="eliminarInscrito(${realIdx})">🗑️</button></td>
     </tr>`;
   }).join('');
 }
@@ -528,6 +609,78 @@ function guardarNotas(idx, valor) {
   allData[idx][12] = valor;
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'updateNotas', row:idx+2, value:valor }) });
   showToast('📝 Nota guardada');
+}
+
+let editIdx = -1;
+
+function abrirModal(idx) {
+  editIdx = idx;
+  const r = allData[idx];
+  document.getElementById('m-equipo').value = r[1]||'';
+  document.getElementById('m-jugador1').value = r[2]||'';
+  document.getElementById('m-telefono1').value = r[7]||'';
+  document.getElementById('m-jugador2').value = r[4]||'';
+  document.getElementById('m-telefono2').value = r[8]||'';
+  document.getElementById('m-zona').value = r[6]||'';
+  document.getElementById('m-email').value = r[10]||'';
+  document.getElementById('m-catMov').value = r[11]||'';
+  document.getElementById('m-catPar').value = r[12]||'';
+  document.getElementById('modal-editar').classList.add('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-editar').classList.remove('show');
+  editIdx = -1;
+}
+
+function guardarEdicion() {
+  if (editIdx < 0) return;
+  const r = allData[editIdx];
+  const data = {
+    action: 'modificar',
+    codigo: r[13],
+    equipo: document.getElementById('m-equipo').value.trim(),
+    jugador1: document.getElementById('m-jugador1').value.trim(),
+    telefono1: document.getElementById('m-telefono1').value.trim(),
+    jugador2: document.getElementById('m-jugador2').value.trim(),
+    telefono2: document.getElementById('m-telefono2').value.trim(),
+    zona: document.getElementById('m-zona').value.trim(),
+    email: document.getElementById('m-email').value.trim(),
+    telefono: r[9]||'',
+    catMovimiento: document.getElementById('m-catMov').value,
+    catParado: document.getElementById('m-catPar').value
+  };
+  // Update local data
+  allData[editIdx][1] = data.equipo;
+  allData[editIdx][2] = data.jugador1;
+  allData[editIdx][7] = data.telefono1;
+  allData[editIdx][4] = data.jugador2;
+  allData[editIdx][8] = data.telefono2;
+  allData[editIdx][6] = data.zona;
+  allData[editIdx][10] = data.email;
+  allData[editIdx][11] = data.catMovimiento;
+  allData[editIdx][12] = data.catParado;
+
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  cerrarModal();
+  renderStats();
+  renderTable();
+  showToast('✅ Inscripción actualizada');
+}
+
+function eliminarInscrito(idx) {
+  const equipo = allData[idx][1];
+  const jugador1 = allData[idx][2];
+  if (!confirm(`¿Eliminar la inscripción de "${equipo}" (${jugador1})? Esta acción no se puede deshacer.`)) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'cancelar', codigo: allData[idx][13] })
+  });
+  allData.splice(idx, 1);
+  renderStats();
+  renderTable();
+  showToast(`🗑️ ${equipo} eliminado`);
 }
 
 function exportCSV() {
