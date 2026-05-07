@@ -409,7 +409,7 @@ function loadParticipantes() {
     .then(r => r.json())
     .then(data => {
       const rows = data.rows || [];
-      const cats = ['Elite','Plata','Bronce','Rookie'];
+      const cats = ['Elite','Oro','Plata','Bronce'];
       let html = '';
       cats.forEach(cat => {
         const equipos = rows.filter(r => r[11] === cat || r[12] === cat);
@@ -459,7 +459,7 @@ function loadData() {
 }
 
 function renderStats() {
-  const cats = ['Elite','Plata','Bronce','Rookie'];
+  const cats = ['Elite','Oro','Plata','Bronce'];
   const pagadosJ1 = allData.filter(r => r[3] === 'Si').length;
   const pagadosJ2 = allData.filter(r => r[5] === 'Si').length;
   const totalPagados = pagadosJ1 + pagadosJ2;
@@ -500,15 +500,15 @@ function renderTable() {
       <td style="color:var(--text-dim);font-weight:700">${realIdx+1}</td>
       <td style="font-weight:700">${r[1]||''}</td>
       <td>${r[2]||''}</td>
-      <td style="color:${dupTel1?'#f50057':'var(--text-dim)'};" title="${dupTel1?'⚠️ Teléfono repetido':''}">${tel1} ${dupTel1?'⚠️':''}</td>
+      <td style="color:${dupTel1?'#f50057':'var(--text-dim)'};" title="${dupTel1?'⚠️ Tel. repetido':''}">${tel1}${dupTel1?' ⚠️':''}</td>
       <td><button class="btn-pago ${p1?'si':'no'}" onclick="togglePago(${realIdx},1)">${p1?'✅':'❌'}</button></td>
       <td>${r[4]||''}</td>
-      <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};" title="${dupTel2?'⚠️ Teléfono repetido':''}">${tel2} ${dupTel2?'⚠️':''}</td>
+      <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};" title="${dupTel2?'⚠️ Tel. repetido':''}">${tel2}${dupTel2?' ⚠️':''}</td>
       <td><button class="btn-pago ${p2?'si':'no'}" onclick="togglePago(${realIdx},2)">${p2?'✅':'❌'}</button></td>
       <td style="color:var(--text-dim)">${r[6]||''}</td>
       <td><span class="badge ${cc(r[11])}">${r[11]||'-'}</span></td>
       <td><span class="badge ${cc(r[12])}">${r[12]||'-'}</span></td>
-      <td style="color:var(--text-dim);font-size:0.75rem">${r[0]||''}</td>
+      <td style="color:var(--text-dim);font-size:0.75rem">${(r[0]||'').toString().substring(0,10)}</td>
       <td><input class="notas-input" value="${r[14]||''}" placeholder="Notas..." onblur="guardarNotas(${realIdx}, this.value)"></td>
     </tr>`;
   }).join('');
