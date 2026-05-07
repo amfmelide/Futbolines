@@ -412,7 +412,7 @@ function loadParticipantes() {
       const cats = ['Elite','Plata','Bronce','Rookie'];
       let html = '';
       cats.forEach(cat => {
-        const equipos = rows.filter(r => r[9] === cat || r[10] === cat);
+        const equipos = rows.filter(r => r[11] === cat || r[12] === cat);
         if (equipos.length === 0) return;
         html += `<div class="cat-section">
           <div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipos</div>`;
