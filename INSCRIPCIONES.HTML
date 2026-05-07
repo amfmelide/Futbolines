@@ -467,7 +467,7 @@ function renderStats() {
   const recaudacion = totalPagados * PRECIO;
   let html = `<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">${allData.length}</div></div>`;
   cats.forEach(cat => {
-    const n = allData.filter(r => r[9] === cat || r[10] === cat).length;
+    const n = allData.filter(r => r[11] === cat || r[12] === cat).length;
     html += `<div class="stat-card ${cat.toLowerCase()}"><div class="stat-label">${cat}</div><div class="stat-num">${n}</div></div>`;
   });
   html += `<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">${totalPagados}/${totalJugadores}</div></div>`;
@@ -482,7 +482,7 @@ function renderTable() {
   const pagoFilter = document.getElementById('filter-pago').value;
   const filtered = allData.filter(r => {
     const matchSearch = !q || [r[1],r[2],r[4],r[6]].some(v => (v||'').toLowerCase().includes(q));
-    const matchCat = !catFilter || r[9] === catFilter || r[10] === catFilter;
+    const matchCat = !catFilter || r[11] === catFilter || r[12] === catFilter;
     const matchPago = !pagoFilter || r[3] === pagoFilter || r[5] === pagoFilter;
     return matchSearch && matchCat && matchPago;
   });
@@ -506,10 +506,10 @@ function renderTable() {
       <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};" title="${dupTel2?'⚠️ Teléfono repetido':''}">${tel2} ${dupTel2?'⚠️':''}</td>
       <td><button class="btn-pago ${p2?'si':'no'}" onclick="togglePago(${realIdx},2)">${p2?'✅':'❌'}</button></td>
       <td style="color:var(--text-dim)">${r[6]||''}</td>
-      <td><span class="badge ${cc(r[9])}">${r[9]||'-'}</span></td>
-      <td><span class="badge ${cc(r[10])}">${r[10]||'-'}</span></td>
+      <td><span class="badge ${cc(r[11])}">${r[11]||'-'}</span></td>
+      <td><span class="badge ${cc(r[12])}">${r[12]||'-'}</span></td>
       <td style="color:var(--text-dim);font-size:0.75rem">${r[0]||''}</td>
-      <td><input class="notas-input" value="${r[12]||''}" placeholder="Notas..." onblur="guardarNotas(${realIdx}, this.value)"></td>
+      <td><input class="notas-input" value="${r[14]||''}" placeholder="Notas..." onblur="guardarNotas(${realIdx}, this.value)"></td>
     </tr>`;
   }).join('');
 }
