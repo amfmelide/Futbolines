@@ -348,7 +348,7 @@
 <div id="toast"></div>
 
 <script>
-let PIN = '1234';
+let PIN = localStorage.getItem('amf_pin') || '1234';
 let pinBuffer = '';
 
 function pinKey(d) {
@@ -632,6 +632,7 @@ function cambiarPin() {
   const np = document.getElementById('new-pin').value;
   if (!/^\d{4}$/.test(np)) { showToast('⚠️ El PIN debe tener exactamente 4 dígitos'); return; }
   PIN = np;
+  localStorage.setItem('amf_pin', PIN);
   document.getElementById('new-pin').value = '';
   document.getElementById('settings-panel').style.display = 'none';
   showToast('✅ PIN actualizado');
