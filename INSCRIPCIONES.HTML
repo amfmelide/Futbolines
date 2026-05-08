@@ -418,7 +418,7 @@ function showTab(tab, btn) {
 }
 
 function submitForm() {
-  const fields = { equipo:'Nombre del equipo', jugador1:'Jugador 1', telefono1:'Teléfono Jugador 1', jugador2:'Jugador 2', telefono2:'Teléfono Jugador 2', zona:'Zona', telefono:'Teléfono equipo', email:'Email', catMovimiento:'Categoría movimiento', catParado:'Categoría parado' };
+  const fields = { equipo:'Nombre del equipo', jugador1:'Jugador 1', telefono1:'Teléfono Jugador 1', jugador2:'Jugador 2', telefono2:'Teléfono Jugador 2', zona:'Zona', telefono:'Teléfono equipo', email:'Email' };
   for (const [id, label] of Object.entries(fields)) {
     if (!document.getElementById(id).value.trim()) { showToast(`⚠️ Falta: ${label}`); return; }
   }
