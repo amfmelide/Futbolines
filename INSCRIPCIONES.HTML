@@ -187,7 +187,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Categoría movimiento</label>
+          <label>Categoría movimiento <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catMovimiento">
             <option value="">Seleccionar...</option>
             <option value="Elite">🏆 Elite</option>
@@ -197,7 +197,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Categoría parado</label>
+          <label>Categoría parado <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catParado">
             <option value="">Seleccionar...</option>
             <option value="Elite">🏆 Elite</option>
@@ -439,6 +439,13 @@ function submitForm() {
     catMovimiento: document.getElementById('catMovimiento').value,
     catParado: document.getElementById('catParado').value
   };
+  // Al menos una categoría debe estar seleccionada
+  if (!data.catMovimiento && !data.catParado) {
+    showToast('⚠️ Selecciona al menos una categoría (Movimiento o Parado)');
+    btn.disabled = false;
+    btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO';
+    return;
+  }
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
     .then(() => {
       document.getElementById('form-card').style.display = 'none';
