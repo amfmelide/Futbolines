@@ -7,669 +7,229 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   :root {
-    --libre: #00c853;
-    --libre-dark: #009624;
-    --ocupado: #f50057;
-    --ocupado-dark: #bb002f;
-    --bg: #0a0e1a;
-    --surface: #111827;
-    --surface2: #1a2236;
-    --border: #1e2d45;
-    --text: #e8edf5;
-    --text-dim: #7a8fa8;
-    --accent: #1565c0;
-    --gold: #ffc107;
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2236; --border: #1e2d45;
+    --text: #e8edf5; --text-dim: #7a8fa8; --accent: #1565c0; --gold: #ffc107;
+    --libre: #00c853; --ocupado: #f50057;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     font-family: 'Barlow', sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px;
+    position: relative; overflow-x: hidden;
   }
 
-  header { text-align: center; padding: 32px 20px 20px; position: relative; }
+  /* FONDO */
+  .bg-image {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/IMG_5052.png');
+    background-size: cover; background-position: center top;
+    filter: brightness(0.15) blur(2px);
+    transform: scale(1.05);
+  }
+  .bg-overlay {
+    position: fixed; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, rgba(10,14,26,0.7) 0%, rgba(10,14,26,0.85) 50%, rgba(10,14,26,0.95) 100%);
+  }
+
+  /* LOADING */
+  #loading-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 99999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.6s ease;
+  }
+  .loading-logo { font-family: 'Permanent Marker', cursive; font-size: 6rem; color: white; text-shadow: 0 0 40px rgba(21,101,192,0.6); animation: pulse-logo 1.5s ease-in-out infinite; }
+  .loading-bar-wrap { width: 200px; height: 3px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; animation: loading-fill 1.8s ease-out forwards; }
+  .loading-text { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
+  @keyframes pulse-logo { 0%,100%{text-shadow:0 0 40px rgba(21,101,192,0.4);} 50%{text-shadow:0 0 60px rgba(21,101,192,0.8), 0 0 80px rgba(255,193,7,0.2);} }
+  @keyframes loading-fill { 0%{width:0%} 100%{width:100%} }
+
+  /* MAIN */
+  #main { opacity: 0; transition: opacity 0.5s ease; position: relative; z-index: 2; width: 100%; max-width: 960px; }
+  #main.visible { opacity: 1; }
+
+  header { text-align: center; margin-bottom: 40px; }
   header::after {
-    content: '';
-    display: block;
-    height: 2px;
+    content: ''; display: block; height: 2px; margin-top: 20px;
     background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
-    margin-top: 20px;
   }
-  .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2rem, 5vw, 3.6rem);
-    letter-spacing: 0.06em;
-    color: #fff;
-    text-shadow: 0 0 40px rgba(21,101,192,0.5);
-    line-height: 1;
-  }
-  .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+  .logo { font-family: 'Permanent Marker', cursive; font-size: clamp(4rem, 15vw, 8rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 40px rgba(21,101,192,0.5); text-decoration: none; display: block; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.2rem, 3.5vw, 2.2rem); letter-spacing: 0.08em; color: #fff; margin-top: 8px; line-height: 1; }
+  .subtitle { font-size: 0.82rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
 
-  .scoreboard { display: flex; justify-content: center; gap: 16px; padding: 20px 20px 0; flex-wrap: wrap; }
-  .score-card {
-    flex: 1; max-width: 220px; min-width: 140px; border-radius: 14px;
-    padding: 18px 20px 14px; text-align: center; border: 1px solid transparent; transition: transform 0.2s;
+  /* GRID — 2 cols mobile, 3 tablet, all in row desktop */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    width: 100%;
   }
-  .score-card:hover { transform: translateY(-2px); }
-  .score-card.libre { background: linear-gradient(135deg, rgba(0,200,83,0.12), rgba(0,150,36,0.06)); border-color: rgba(0,200,83,0.25); }
-  .score-card.ocupado { background: linear-gradient(135deg, rgba(245,0,87,0.12), rgba(187,0,47,0.06)); border-color: rgba(245,0,87,0.25); }
-  .score-card.total { background: linear-gradient(135deg, rgba(21,101,192,0.15), rgba(13,71,161,0.08)); border-color: rgba(21,101,192,0.3); }
-  .score-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
-  .score-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; }
-  .libre .score-number { color: var(--libre); text-shadow: 0 0 20px rgba(0,200,83,0.4); }
-  .ocupado .score-number { color: var(--ocupado); text-shadow: 0 0 20px rgba(245,0,87,0.4); }
-  .total .score-number { color: #7cb3ff; }
-  .score-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-  .libre .score-dot { background: var(--libre); box-shadow: 0 0 8px var(--libre); }
-  .ocupado .score-dot { background: var(--ocupado); box-shadow: 0 0 8px var(--ocupado); }
+  @media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
 
-  .controls-bar { display: flex; justify-content: center; gap: 10px; padding: 18px 20px 0; flex-wrap: wrap; }
-  .btn-reset {
-    background: linear-gradient(135deg, #1a237e, #283593); border: 1px solid rgba(100,130,255,0.3);
-    color: #90caf9; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem;
-    letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 22px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  .card-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(17,24,39,0.85); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 16px; text-decoration: none; color: var(--text);
+    transition: all 0.25s; cursor: pointer; position: relative; overflow: hidden;
+    min-height: 160px;
   }
-  .btn-reset:hover { background: linear-gradient(135deg, #283593, #3949ab); border-color: rgba(100,130,255,0.6); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(40,53,147,0.4); }
-  .search-box {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    font-family: 'Barlow', sans-serif; font-size: 0.85rem; padding: 10px 16px;
-    border-radius: 8px; outline: none; width: 200px; transition: border-color 0.2s;
+  @media (min-width: 640px) { .card-btn { padding: 34px 20px; min-height: 190px; } }
+  .card-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03));
+    pointer-events: none;
   }
-  .search-box:focus { border-color: var(--accent); }
-  .search-box::placeholder { color: var(--text-dim); }
+  .card-btn:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+  .card-btn.inscripcion { border-color: rgba(21,101,192,0.4); }
+  .card-btn.inscripcion:hover { border-color: var(--accent); box-shadow: 0 16px 40px rgba(21,101,192,0.25); }
+  .card-btn.camisetas { border-color: rgba(255,193,7,0.3); }
+  .card-btn.camisetas:hover { border-color: var(--gold); box-shadow: 0 16px 40px rgba(255,193,7,0.2); }
+  .card-btn.ranking { border-color: rgba(0,200,83,0.3); }
+  .card-btn.ranking:hover { border-color: var(--libre); box-shadow: 0 16px 40px rgba(0,200,83,0.2); }
+  .card-btn.liga { border-color: rgba(156,39,176,0.3); }
+  .card-btn.liga:hover { border-color: #ce93d8; box-shadow: 0 16px 40px rgba(156,39,176,0.2); }
+  .card-btn.bases { border-color: rgba(255,193,7,0.2); }
+  .card-btn.bases:hover { border-color: var(--gold); box-shadow: 0 16px 40px rgba(255,193,7,0.15); }
 
-  .filter-bar { display: flex; justify-content: center; gap: 8px; padding: 14px 20px 0; flex-wrap: wrap; }
-  .filter-btn {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
-    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.75rem;
-    letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px;
-    border-radius: 20px; cursor: pointer; transition: all 0.2s;
-  }
-  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
-  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .filter-btn.elite.active { background: #1a237e; border-color: #7986cb; color: #fff; }
-  .filter-btn.oro.active { background: #b8860b; border-color: #ffc107; color: #fff; }
-  .filter-btn.plata.active { background: #607d8b; border-color: #b0bec5; color: #fff; }
-  .filter-btn.bronce.active { background: #795548; border-color: #cd7f32; color: #fff; }
-  .filter-btn.rookie.active { background: #4a148c; border-color: #9c27b0; color: #fff; }
+  .card-icon { font-size: 2.4rem; margin-bottom: 12px; line-height: 1; }
+  @media (min-width: 640px) { .card-icon { font-size: 3rem; } }
 
-  .grid-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; text-align: center; line-height: 1.2; }
+  @media (min-width: 640px) { .card-title { font-size: 1.2rem; } }
+  .card-btn.inscripcion .card-title { color: #90caf9; }
+  .card-btn.camisetas .card-title { color: var(--gold); }
+  .card-btn.ranking .card-title { color: var(--libre); }
+  .card-btn.liga .card-title { color: #ce93d8; }
+  .card-btn.bases .card-title { color: #ffd54f; }
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    overflow: hidden; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s; position: relative;
-  }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
-  .card.libre { border-color: rgba(0,200,83,0.25); }
-  .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
-  .card.overtime { border-color: #ff6d00 !important; box-shadow: 0 0 24px rgba(255,109,0,0.4) !important; }
-  .card.cat-elite { border-color: rgba(121,134,203,0.6) !important; box-shadow: 0 0 20px rgba(121,134,203,0.2) !important; background: linear-gradient(135deg, #111827, rgba(121,134,203,0.06)) !important; }
-  .card.cat-elite .card-num { color: rgba(121,134,203,0.8); }
-  .card.cat-oro { border-color: rgba(255,193,7,0.6) !important; box-shadow: 0 0 20px rgba(255,193,7,0.2) !important; background: linear-gradient(135deg, #111827, rgba(255,193,7,0.06)) !important; }
-  .card.cat-oro .card-num { color: rgba(255,193,7,0.6); }
-  .card.cat-plata { border-color: rgba(176,190,197,0.6) !important; box-shadow: 0 0 20px rgba(176,190,197,0.15) !important; background: linear-gradient(135deg, #111827, rgba(176,190,197,0.06)) !important; }
-  .card.cat-plata .card-num { color: rgba(176,190,197,0.6); }
-  .card.cat-bronce { border-color: rgba(205,127,50,0.6) !important; box-shadow: 0 0 20px rgba(205,127,50,0.15) !important; background: linear-gradient(135deg, #111827, rgba(205,127,50,0.06)) !important; }
-  .card.cat-bronce .card-num { color: rgba(205,127,50,0.6); }
-  .card.cat-rookie { border-color: rgba(156,39,176,0.6) !important; box-shadow: 0 0 20px rgba(156,39,176,0.15) !important; background: linear-gradient(135deg, #111827, rgba(156,39,176,0.06)) !important; }
-  .card.cat-rookie .card-num { color: rgba(156,39,176,0.6); }
+  .card-desc { font-size: 0.75rem; color: var(--text-dim); text-align: center; line-height: 1.4; margin-top: 6px; display: none; }
+  @media (min-width: 640px) { .card-desc { display: block; } }
 
-  .card-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; }
-  .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text-dim); min-width: 36px; line-height: 1; }
-  .card-name-input {
-    background: transparent; border: none; outline: none; color: var(--text);
-    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text;
-  }
-  .card-name-input::placeholder { color: var(--text-dim); }
-  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
-  .libre .status-badge { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
-  .ocupado .status-badge { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
-
-  .card-meta { padding: 0 16px 10px; }
-  .cat-select {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
-    font-family: 'Barlow', sans-serif; font-size: 0.75rem; font-weight: 600;
-    padding: 5px 10px; border-radius: 8px; cursor: pointer; outline: none;
-    transition: border-color 0.2s; width: 100%;
-  }
-  .cat-select:focus { border-color: var(--accent); }
-  .cat-select.elite { border-color: #7986cb; color: #7986cb; }
-  .cat-select.oro { border-color: #ffc107; color: #ffc107; }
-  .cat-select.plata { border-color: #b0bec5; color: #b0bec5; }
-  .cat-select.bronce { border-color: #cd7f32; color: #cd7f32; }
-  .cat-select.rookie { border-color: #9c27b0; color: #ce93d8; }
-
-  .card-body { padding: 0 16px 10px; }
-  .toggle-btn {
-    width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'Barlow', sans-serif;
-    font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
-    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
-  }
-  .toggle-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
-  .libre .toggle-btn { background: linear-gradient(135deg, var(--libre), var(--libre-dark)); color: #fff; box-shadow: 0 4px 16px rgba(0,200,83,0.3); }
-  .libre .toggle-btn:hover { background: linear-gradient(135deg, #00e676, var(--libre)); box-shadow: 0 6px 24px rgba(0,200,83,0.5); transform: translateY(-1px); }
-  .ocupado .toggle-btn { background: linear-gradient(135deg, var(--ocupado), var(--ocupado-dark)); color: #fff; box-shadow: 0 4px 16px rgba(245,0,87,0.3); }
-  .ocupado .toggle-btn:hover { background: linear-gradient(135deg, #ff4081, var(--ocupado)); box-shadow: 0 6px 24px rgba(245,0,87,0.5); transform: translateY(-1px); }
-  .toggle-btn.confirming { opacity: 0.85; animation: pulse-btn 0.5s ease-in-out infinite alternate; }
-  @keyframes pulse-btn { from { transform: scale(1); } to { transform: scale(1.02); } }
-  .toggle-btn:active { transform: scale(0.97) !important; }
-
-  /* TIMER */
-  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 16px 14px; min-height: 36px; }
-  .time-info { display: flex; flex-direction: column; gap: 2px; }
-  .time-label { font-size: 0.68rem; color: var(--text-dim); }
-  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; color: var(--ocupado); letter-spacing: 0.08em; }
-  .timer-display {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.3rem;
-    letter-spacing: 0.1em;
-    color: var(--libre);
-    text-align: right;
-    transition: color 0.3s;
-  }
-  .timer-display.warning { color: #ff6d00; }
-  .timer-display.overtime-text { color: #ff1744; animation: blink 1s step-start infinite; }
-  @keyframes blink { 50% { opacity: 0.3; } }
-
-  @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245,0,87,0.2); }
-    50% { box-shadow: 0 0 0 6px rgba(245,0,87,0); }
-  }
-  .card.ocupado:not(.overtime) { animation: pulse-border 2.5s ease-in-out infinite; }
-  .card.ocupado .card-num { color: rgba(245,0,87,0.5); }
-  .card.overtime .card-num { color: rgba(255,109,0,0.7); }
-
-  /* NOTIF BANNER */
-  #notif-banner {
-    display: none;
-    text-align: center;
-    padding: 10px 20px;
-    background: rgba(255,109,0,0.15);
-    border-bottom: 1px solid rgba(255,109,0,0.3);
-    color: #ff6d00;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    cursor: pointer;
+  /* ZICO X */
+  .zico-x {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #e53935;
+    font-style: italic; text-shadow: 1px 1px 0 #b71c1c, 0 0 12px rgba(229,57,53,0.5);
+    transform: rotate(-8deg) skewX(-5deg); display: inline-block; margin: 0 1px;
   }
 
-  footer { text-align: center; padding: 30px 20px; color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; }
-  #toast {
+  /* FOOSBALL SVG */
+  .foosball-icon { margin-bottom: 12px; }
+
+  .badge-nuevo {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--ocupado); color: white; font-size: 0.6rem; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 20px;
+  }
+
+  footer { margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 0.72rem; letter-spacing: 0.08em; position: relative; z-index: 2; }
+
+  /* TOAST */
+  #toast-main {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
     padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600;
     transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
     white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
-  #toast.show { transform: translateX(-50%) translateY(0); }
-
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid-container { padding: 12px; }
-    .card-top { padding: 10px 12px 6px; gap: 6px; }
-    .card-meta { padding: 0 12px 8px; }
-    .card-body { padding: 0 12px 8px; }
-    .card-footer { padding: 4px 12px 10px; }
-    .card-name-input { font-size: 0.85rem; }
-    .toggle-btn { font-size: 0.75rem; padding: 10px; }
-    .timer-display { font-size: 1.1rem; }
-  }
-
-  /* PIN SCREEN */
-  #lock-screen {
-    position: fixed; inset: 0; background: var(--bg); z-index: 99999;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
-    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%);
-  }
-  .pin-logo { font-family: 'Permanent Marker', cursive; font-size: 4rem; color: white; text-shadow: 0 0 30px rgba(21,101,192,0.4); }
-  .pin-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.15em; color: var(--text-dim); }
-  .pin-dots { display: flex; gap: 16px; margin: 8px 0; }
-  .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-dim); transition: all 0.15s; }
-  .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(21,101,192,0.6); }
-  .pin-grid { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
-  .pin-btn {
-    width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text); font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem; cursor: pointer; transition: all 0.15s;
-  }
-  .pin-btn:hover { background: var(--surface2); border-color: var(--accent); }
-  .pin-btn:active { transform: scale(0.93); background: var(--accent); }
-  .pin-btn.del { font-size: 1.2rem; color: var(--text-dim); }
-  .pin-error { color: var(--ocupado); font-size: 0.85rem; font-weight: 700; min-height: 20px; letter-spacing: 0.05em; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+  #toast-main.show { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- PIN SCREEN -->
-<div id="lock-screen">
-  <div class="pin-logo">amf</div>
-  <div class="pin-title">INTRODUCE TU PIN</div>
-  <div class="pin-dots">
-    <div class="pin-dot" id="dot-0"></div>
-    <div class="pin-dot" id="dot-1"></div>
-    <div class="pin-dot" id="dot-2"></div>
-    <div class="pin-dot" id="dot-3"></div>
-  </div>
-  <div class="pin-error" id="pin-error"></div>
-  <div class="pin-grid">
-    <button class="pin-btn" onclick="pinKey('1')">1</button>
-    <button class="pin-btn" onclick="pinKey('2')">2</button>
-    <button class="pin-btn" onclick="pinKey('3')">3</button>
-    <button class="pin-btn" onclick="pinKey('4')">4</button>
-    <button class="pin-btn" onclick="pinKey('5')">5</button>
-    <button class="pin-btn" onclick="pinKey('6')">6</button>
-    <button class="pin-btn" onclick="pinKey('7')">7</button>
-    <button class="pin-btn" onclick="pinKey('8')">8</button>
-    <button class="pin-btn" onclick="pinKey('9')">9</button>
-    <div></div>
-    <button class="pin-btn" onclick="pinKey('0')">0</button>
-    <button class="pin-btn del" onclick="pinDel()">⌫</button>
-  </div>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="loading-logo">amf</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-text">Asociación Melide Futbolín</div>
 </div>
 
-<div id="app" style="display:none">
+<!-- MAIN -->
+<div id="main">
+  <header>
+    <a href="index.html" class="logo">amf</a>
+    <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
+    <p class="subtitle">IV Máster de Melide · 18-19-20 Septiembre 2026</p>
+  </header>
 
-<div id="notif-banner" onclick="requestNotifPermission()">
-  🔔 Activa las notificaciones para recibir avisos a los 25 min — toca aquí
-</div>
+  <div class="grid">
 
-<header>
-  <div class="header-icon">
-    <a href="index.html" style="font-family: 'Permanent Marker', cursive; font-size: clamp(3.5rem, 12vw, 6rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4); text-decoration: none;">amf</a>
-  </div>
-  <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
-  <p class="subtitle">Panel de gestión · Evento en vivo</p>
-</header>
+    <a class="card-btn inscripcion" href="INSCRIPCIONES.HTML">
+      <div class="card-icon">📝</div>
+      <div class="card-title">Inscripción<br>IV Máster</div>
+      <div class="card-desc">Apúntate al torneo y gestiona tu inscripción</div>
+    </a>
 
-<div class="scoreboard">
-  <div class="score-card libre">
-    <div class="score-label"><span class="score-dot"></span>Libres</div>
-    <div class="score-number" id="count-libre">30</div>
-  </div>
-  <div class="score-card ocupado">
-    <div class="score-label"><span class="score-dot"></span>Ocupados</div>
-    <div class="score-number" id="count-ocupado">0</div>
-  </div>
-  <div class="score-card total">
-    <div class="score-label">Total mesas</div>
-    <div class="score-number" id="count-total">30</div>
-  </div>
-</div>
+    <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html" target="_blank">
+      <div class="badge-nuevo">Nuevo</div>
+      <div class="card-icon">👕</div>
+      <div class="card-title">Camiseta<br>Zico <span class="zico-x">✕</span> AMF</div>
+      <div class="card-desc">Reserva tu camiseta oficial. Edición limitada</div>
+    </a>
 
-<div style="text-align:center;padding:12px 20px 0;">
-  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;">← Volver al inicio</a>
-</div>
+    <a class="card-btn ranking" href="#" onclick="showToast('🏆 Ranking próximamente');return false;">
+      <div class="card-icon">🏆</div>
+      <div class="card-title">Ranking<br>Jugadores</div>
+      <div class="card-desc">Clasificación oficial por categoría</div>
+    </a>
 
-<div class="controls-bar">
-  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar futbolín..." oninput="filterCards()">
-  <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
-  <button class="btn-reset" onclick="toggleSettings()" style="background:linear-gradient(135deg,#1a2236,#1e2d45);border-color:rgba(100,130,255,0.2);">⚙️ Ajustes</button>
-</div>
-
-<div id="settings-panel" style="display:none;max-width:400px;margin:16px auto 0;padding:0 20px;">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:18px;">⚙️ AJUSTES</div>
-    <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Número de futbolines</label>
-    <div style="display:flex;gap:10px;align-items:center;">
-      <input type="number" id="total-input" min="1" max="200" value="30"
-        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1.1rem;padding:10px 14px;border-radius:8px;outline:none;width:100px;">
-      <button onclick="applyTotal()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;cursor:pointer;">Aplicar</button>
-    </div>
-    <div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;">⚠️ Cambiar el número reiniciará todos los estados</div>
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
-      <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Cambiar PIN</label>
-      <div style="display:flex;gap:10px;align-items:center;">
-        <input type="password" id="new-pin" maxlength="4" placeholder="Nuevo PIN (4 dígitos)"
-          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1rem;padding:10px 14px;border-radius:8px;outline:none;width:180px;">
-        <button onclick="cambiarPin()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 16px;border-radius:8px;cursor:pointer;">Cambiar</button>
+    <a class="card-btn liga" href="#" onclick="showToast('⚽ Liga Melide próximamente');return false;">
+      <div class="foosball-icon">
+        <svg width="50" height="50" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <rect x="28" y="0" width="4" height="60" rx="2" fill="#4a6080"/>
+          <circle cx="30" cy="14" r="6" fill="#ce93d8"/>
+          <rect x="22" y="20" width="16" height="13" rx="4" fill="#ce93d8"/>
+          <rect x="4" y="26" width="52" height="4" rx="2" fill="#7a8fa8" opacity="0.7"/>
+          <rect x="23" y="33" width="4.5" height="12" rx="2" fill="#ce93d8" transform="rotate(-5 23 33)"/>
+          <rect x="33" y="33" width="4.5" height="12" rx="2" fill="#ce93d8" transform="rotate(5 36 33)"/>
+        </svg>
       </div>
-    </div>
+      <div class="card-title">Liga Melide<br>2026</div>
+      <div class="card-desc">Resultados y clasificaciones de la liga</div>
+    </a>
+
+    <a class="card-btn bases" href="bases_ranking.html">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Bases del<br>Ranking</div>
+      <div class="card-desc">Reglamento y estatutos oficiales</div>
+    </a>
+
   </div>
+
+  <footer>
+    Asociación Melide Futbolín · 633 92 82 55 (Ivan) · 606 74 52 40 (Javi)
+  </footer>
 </div>
 
-<div class="filter-bar">
-  <button class="filter-btn active" onclick="setFilter('todas', this)">TODAS</button>
-  <button class="filter-btn elite" onclick="setFilter('elite', this)">🏆 ELITE</button>
-  <button class="filter-btn oro" onclick="setFilter('oro', this)">🥇 ORO</button>
-  <button class="filter-btn plata" onclick="setFilter('plata', this)">🥈 PLATA</button>
-  <button class="filter-btn bronce" onclick="setFilter('bronce', this)">🥉 BRONCE</button>
-  <button class="filter-btn" onclick="setFilter('sin', this)">SIN CAT.</button>
-</div>
-
-<div class="grid-container">
-  <div class="grid" id="grid"></div>
-</div>
-
-<footer>Primera pulsación pide confirmación · Segunda pulsación en 3s confirma el cambio</footer>
-<div id="toast"></div>
+<div id="toast-main"></div>
 
 <script>
-let PIN = localStorage.getItem('amf_pin') || '1234';
-let pinBuffer = '';
-
-function pinKey(d) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += d;
-  document.getElementById(`dot-${pinBuffer.length-1}`).classList.add('filled');
-  if (pinBuffer.length === 4) setTimeout(checkPin, 180);
-}
-function pinDel() {
-  if (!pinBuffer.length) return;
-  document.getElementById(`dot-${pinBuffer.length-1}`).classList.remove('filled');
-  pinBuffer = pinBuffer.slice(0,-1);
-  document.getElementById('pin-error').textContent = '';
-}
-function checkPin() {
-  if (pinBuffer === PIN) {
-    document.getElementById('lock-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    pinBuffer = '';
-  } else {
-    const el = document.getElementById('pin-error');
-    el.style.animation = 'none';
-    el.textContent = '❌ PIN incorrecto. Inténtalo de nuevo.';
-    void el.offsetWidth;
-    el.style.animation = 'shake .3s ease';
-    pinBuffer = '';
-    for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
-  }
-}
-document.addEventListener('keydown', e => {
-  if (document.getElementById('lock-screen').style.display === 'none') return;
-  if (e.key>='0' && e.key<='9') pinKey(e.key);
-  if (e.key === 'Backspace') pinDel();
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const screen = document.getElementById('loading-screen');
+    const main = document.getElementById('main');
+    screen.style.opacity = '0';
+    main.classList.add('visible');
+    setTimeout(() => screen.style.display = 'none', 600);
+  }, 1900);
 });
-
-let TOTAL = 30;
-const LIMIT_MS = 25 * 60 * 1000; // 25 minutos
-
-const state = [];
-for (let i = 1; i <= TOTAL; i++) {
-  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
-}
-
-const pendingConfirm = {};
-let currentFilter = 'todas';
-let tickInterval = null;
-
-// NOTIFICACIONES
-function requestNotifPermission() {
-  if (!('Notification' in window)) return;
-  Notification.requestPermission().then(p => {
-    if (p === 'granted') {
-      document.getElementById('notif-banner').style.display = 'none';
-      showToast('🔔 Notificaciones activadas');
-    }
-  });
-}
-
-function checkNotifPermission() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    document.getElementById('notif-banner').style.display = 'block';
-  }
-}
-
-function sendNotif(name) {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  new Notification('⏰ Tiempo agotado', {
-    body: `${name} lleva más de 25 minutos ocupado`,
-    icon: 'https://projectamf.netlify.app/favicon.ico'
-  });
-}
-
-// UTILS
-function pad(n) { return String(n).padStart(2, '0'); }
-function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
-function elapsedStr(ms) {
-  const totalSec = Math.floor(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${pad(m)}:${pad(s)}`;
-}
-
-function updateCounters() {
-  const libres = state.filter(s => s.libre).length;
-  document.getElementById('count-libre').textContent = libres;
-  document.getElementById('count-ocupado').textContent = TOTAL - libres;
-}
-
-// TICK — actualiza contadores de tiempo cada segundo
-function startTick() {
-  if (tickInterval) return;
-  tickInterval = setInterval(() => {
-    const now = Date.now();
-    for (let i = 1; i <= TOTAL; i++) {
-      const s = state[i - 1];
-      if (s.libre || !s.time) continue;
-      const elapsed = now - s.time.getTime();
-      const timerEl = document.querySelector(`#card-${i} .timer-display`);
-      const card = document.getElementById(`card-${i}`);
-      if (!timerEl || !card) continue;
-
-      timerEl.textContent = elapsedStr(elapsed);
-
-      if (elapsed >= LIMIT_MS) {
-        timerEl.className = 'timer-display overtime-text';
-        card.classList.add('overtime');
-        if (!s.notified) {
-          s.notified = true;
-          sendNotif(s.name);
-          showToast(`⏰ ${s.name} lleva más de 25 min`);
-        }
-      } else if (elapsed >= LIMIT_MS - 5 * 60 * 1000) {
-        // Últimos 5 minutos — aviso naranja
-        timerEl.className = 'timer-display warning';
-        card.classList.remove('overtime');
-      } else {
-        timerEl.className = 'timer-display';
-        card.classList.remove('overtime');
-      }
-    }
-  }, 1000);
-}
-
-// TOGGLE con doble confirmación
-function toggle(id) {
-  const s = state[id - 1];
-  const btn = document.querySelector(`#card-${id} .toggle-btn`);
-
-  if (pendingConfirm[id]) {
-    clearTimeout(pendingConfirm[id].timer);
-    delete pendingConfirm[id];
-    s.libre = !s.libre;
-    s.time = s.libre ? null : new Date();
-    s.notified = false;
-    renderCard(id);
-    updateCounters();
-    showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
-    return;
-  }
-
-  const emoji = s.libre ? '🔴' : '✅';
-  const action = s.libre ? 'OCUPADO' : 'LIBRE';
-  btn.textContent = `${emoji} ¿Confirmar ${action}? (3s)`;
-  btn.classList.add('confirming');
-
-  pendingConfirm[id] = {
-    timer: setTimeout(() => {
-      delete pendingConfirm[id];
-      renderCard(id);
-    }, 3000)
-  };
-}
-
-function setCategory(id, cat) {
-  state[id - 1].cat = cat;
-  const sel = document.querySelector(`#card-${id} .cat-select`);
-  if (sel) sel.className = `cat-select ${cat}`;
-  // Update card color
-  const card = document.getElementById(`card-${id}`);
-  if (card) {
-    card.classList.remove('cat-elite','cat-oro','cat-plata','cat-bronce');
-    if (cat) card.classList.add(`cat-${cat.toLowerCase()}`);
-  }
-  filterCards();
-}
-
-function setFilter(f, btn) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filterCards();
-}
-
-function filterCards() {
-  const q = document.getElementById('search').value.toLowerCase();
-  for (let i = 1; i <= TOTAL; i++) {
-    const s = state[i - 1];
-    const card = document.getElementById(`card-${i}`);
-    const matchSearch = s.name.toLowerCase().includes(q) || String(i).includes(q);
-    const matchFilter =
-      currentFilter === 'todas' ||
-      (currentFilter === 'sin' && s.cat === '') ||
-      s.cat === currentFilter;
-    card.style.display = (matchSearch && matchFilter) ? '' : 'none';
-  }
-}
-
-function renderCard(id) {
-  const s = state[id - 1];
-  const card = document.getElementById(`card-${id}`);
-  if (!card) return;
-  card.className = `card ${s.libre ? 'libre' : 'ocupado'}`;
-  card.querySelector('.status-badge').textContent = s.libre ? '● Libre' : '● Ocupado';
-  const btn = card.querySelector('.toggle-btn');
-  btn.textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
-  btn.classList.remove('confirming');
-
-  const timeLabel = card.querySelector('.time-label');
-  const timeVal = card.querySelector('.time-value');
-  const timerEl = card.querySelector('.timer-display');
-
-  if (!s.libre && s.time) {
-    timeLabel.textContent = 'Inicio:';
-    timeVal.textContent = timeStr(s.time);
-    timerEl.textContent = '00:00';
-    timerEl.className = 'timer-display';
-  } else {
-    timeLabel.textContent = '';
-    timeVal.textContent = '';
-    timerEl.textContent = '';
-    timerEl.className = 'timer-display';
-    card.classList.remove('overtime');
-  }
-}
-
-function buildGrid() {
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  for (let i = 1; i <= TOTAL; i++) {
-    const s = state[i - 1];
-    const card = document.createElement('div');
-    card.className = 'card libre';
-    card.id = `card-${i}`;
-    card.innerHTML = `
-      <div class="card-top">
-        <div class="card-num">${String(i).padStart(2,'0')}</div>
-        <div style="flex:1">
-          <input class="card-name-input" value="${s.name}"
-            onclick="event.stopPropagation()"
-            onchange="state[${i-1}].name=this.value"
-            title="Haz clic para editar el nombre">
-        </div>
-        <div class="status-badge">● Libre</div>
-      </div>
-      <div class="card-meta">
-        <select class="cat-select" onchange="setCategory(${i}, this.value)">
-          <option value="">Sin categoría</option>
-          <option value="elite">🏆 Elite</option>
-          <option value="oro">🥇 Oro</option>
-          <option value="plata">🥈 Plata</option>
-          <option value="bronce">🥉 Bronce</option>
-        </select>
-      </div>
-      <div class="card-body">
-        <button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button>
-      </div>
-      <div class="card-footer">
-        <div class="time-info">
-          <span class="time-label"></span>
-          <span class="time-value"></span>
-        </div>
-        <div class="timer-display"></div>
-      </div>`;
-    grid.appendChild(card);
-  }
-}
-
-function resetAll() {
-  if (!confirm('¿Poner todos los futbolines en LIBRE?')) return;
-  state.forEach(s => { s.libre = true; s.time = null; s.notified = false; });
-  Object.keys(pendingConfirm).forEach(id => {
-    clearTimeout(pendingConfirm[id].timer);
-    delete pendingConfirm[id];
-  });
-  for (let i = 1; i <= TOTAL; i++) renderCard(i);
-  updateCounters();
-  showToast('✅ Todos los futbolines liberados');
-}
 
 let toastTimer;
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  const t = document.getElementById('toast-main');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-function cambiarPin() {
-  const np = document.getElementById('new-pin').value;
-  if (!/^\d{4}$/.test(np)) { showToast('⚠️ El PIN debe tener exactamente 4 dígitos'); return; }
-  PIN = np;
-  localStorage.setItem('amf_pin', PIN);
-  document.getElementById('new-pin').value = '';
-  document.getElementById('settings-panel').style.display = 'none';
-  showToast('✅ PIN actualizado');
-}
-
-function toggleSettings() {
-  const p = document.getElementById('settings-panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-  document.getElementById('total-input').value = TOTAL;
-}
-
-function applyTotal() {
-  const n = parseInt(document.getElementById('total-input').value);
-  if (!n || n < 1 || n > 200) { showToast('⚠️ Número no válido (1-200)'); return; }
-  if (!confirm(`¿Cambiar a ${n} futbolines? Se reiniciarán todos los estados.`)) return;
-  TOTAL = n;
-  Object.keys(pendingConfirm).forEach(id => { clearTimeout(pendingConfirm[id].timer); delete pendingConfirm[id]; });
-  state.length = 0;
-  for (let i = 1; i <= TOTAL; i++) {
-    state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
-  }
-  buildGrid();
-  updateCounters();
-  document.getElementById('count-total').textContent = TOTAL;
-  document.getElementById('settings-panel').style.display = 'none';
-  showToast(`✅ Ahora hay ${TOTAL} futbolines`);
-}
-
-buildGrid();
-updateCounters();
-startTick();
-checkNotifPermission();
 </script>
-</div><!-- end app -->
 </body>
 </html>
