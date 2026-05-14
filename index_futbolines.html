@@ -2,861 +2,674 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Control de Futbolines</title>
-
-<!-- PWA: instalable como app -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Futbolines">
-<meta name="theme-color" content="#0a0e1a">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0e1a'/><text y='.9em' font-size='80' x='10'>⚽</text></svg>">
-
-<!-- Fuentes integradas offline (Bebas Neue + Barlow via base64 subset) -->
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap');
-</style>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asociación Melide Futbolín</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   :root {
-    --libre:#00c853; --libre-dark:#009624;
-    --ocupado:#f50057; --ocupado-dark:#bb002f;
-    --warning:#ff6d00; --warning-dark:#e65100;
-    --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236;
-    --border:#1e2d45; --text:#e8edf5; --text-dim:#7a8fa8;
-    --accent:#1565c0; --gold:#ffc107;
-    --cat-oro:#ffd700; --cat-oro-bg:rgba(255,215,0,.10);
-    --cat-plata:#c0c0c0; --cat-plata-bg:rgba(192,192,192,.10);
-    --cat-bronce:#cd7f32; --cat-bronce-bg:rgba(205,127,50,.10);
-    --cat-rookie:#7c4dff; --cat-rookie-bg:rgba(124,77,255,.10);
+    --libre: #00c853;
+    --libre-dark: #009624;
+    --ocupado: #f50057;
+    --ocupado-dark: #bb002f;
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1e2d45;
+    --text: #e8edf5;
+    --text-dim: #7a8fa8;
+    --accent: #1565c0;
+    --gold: #ffc107;
   }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Barlow',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
-    background-image:radial-gradient(ellipse 80% 40% at 50% -10%,rgba(21,101,192,.18) 0%,transparent 70%),
-    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(30,45,69,.3) 39px,rgba(30,45,69,.3) 40px),
-    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(30,45,69,.3) 39px,rgba(30,45,69,.3) 40px);}
-
-  /* ── PIN ── */
-  #lock-screen{position:fixed;inset:0;z-index:1000;background:#070b14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;}
-  #lock-screen .lock-icon{font-size:3rem;}
-  #lock-screen h2{font-family:'Bebas Neue',system-ui,sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#fff;}
-  #lock-screen p{color:var(--text-dim);font-size:.9rem;}
-  .pin-dots{display:flex;gap:14px;margin:4px 0;}
-  .pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--accent);background:transparent;transition:background .15s,transform .15s;}
-  .pin-dot.filled{background:var(--accent);transform:scale(1.15);}
-  .pin-keypad{display:grid;grid-template-columns:repeat(3,72px);gap:10px;}
-  .pin-key{height:72px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.8rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
-  .pin-key:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.05);}
-  .pin-key:active{transform:scale(.95);}
-  .pin-key.del{font-size:1.2rem;color:var(--text-dim);}
-  .pin-key.zero{grid-column:2;}
-  .pin-error{color:var(--ocupado);font-size:.85rem;font-weight:700;min-height:20px;letter-spacing:.05em;}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-  .pin-hint{color:var(--text-dim);font-size:.75rem;margin-top:-8px;}
-
-  /* ── HEADER ── */
-  header{text-align:center;padding:20px 20px 12px;position:relative;}
-  header::after{content:'';display:block;height:2px;margin-top:12px;background:linear-gradient(90deg,transparent,var(--accent),var(--gold),var(--accent),transparent);}
-  .header-top{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
-  .header-icon{font-size:1.8rem;}
-  h1{font-family:'Bebas Neue',system-ui,sans-serif;font-size:clamp(1.6rem,5vw,3rem);letter-spacing:.06em;color:#fff;text-shadow:0 0 40px rgba(21,101,192,.5);line-height:1;}
-  .subtitle{font-size:.75rem;color:var(--text-dim);letter-spacing:.15em;text-transform:uppercase;margin-top:2px;}
-  .btn-hdr{background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:.75rem;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:.05em;transition:all .2s;white-space:nowrap;}
-  .btn-hdr:hover{border-color:var(--accent);color:var(--text);}
-  .btn-hdr.active{border-color:var(--accent);color:var(--accent);background:rgba(21,101,192,.1);}
-
-  /* ── SCOREBOARD ── */
-  .scoreboard{display:flex;justify-content:center;gap:8px;padding:14px 20px 0;flex-wrap:wrap;}
-  .score-card{flex:1;max-width:160px;min-width:100px;border-radius:12px;padding:10px 12px 8px;text-align:center;border:1px solid transparent;transition:transform .2s;cursor:default;}
-  .score-card:hover{transform:translateY(-2px);}
-  .score-card.libre  {background:linear-gradient(135deg,rgba(0,200,83,.12),rgba(0,150,36,.06));   border-color:rgba(0,200,83,.25);}
-  .score-card.ocupado{background:linear-gradient(135deg,rgba(245,0,87,.12),rgba(187,0,47,.06));   border-color:rgba(245,0,87,.25);}
-  .score-card.alerta {background:linear-gradient(135deg,rgba(255,109,0,.12),rgba(230,81,0,.06));  border-color:rgba(255,109,0,.35);}
-  .score-card.total  {background:linear-gradient(135deg,rgba(21,101,192,.15),rgba(13,71,161,.08));border-color:rgba(21,101,192,.3);}
-  .score-card.partidas{background:linear-gradient(135deg,rgba(255,193,7,.10),rgba(255,143,0,.06));border-color:rgba(255,193,7,.3);}
-  .score-label{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:2px;font-weight:600;}
-  .score-number{font-family:'Bebas Neue',system-ui,sans-serif;font-size:2.2rem;line-height:1;}
-  .libre   .score-number{color:var(--libre);  text-shadow:0 0 16px rgba(0,200,83,.4);}
-  .ocupado .score-number{color:var(--ocupado);text-shadow:0 0 16px rgba(245,0,87,.4);}
-  .alerta  .score-number{color:var(--warning);text-shadow:0 0 16px rgba(255,109,0,.5);}
-  .total   .score-number{color:#7cb3ff;}
-  .partidas .score-number{color:var(--gold);text-shadow:0 0 16px rgba(255,193,7,.4);}
-  .score-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
-  .libre .score-dot  {background:var(--libre);  box-shadow:0 0 5px var(--libre);}
-  .ocupado .score-dot{background:var(--ocupado);box-shadow:0 0 5px var(--ocupado);}
-  .alerta .score-dot {background:var(--warning);box-shadow:0 0 5px var(--warning);}
-
-  /* ── STATS BAR (tiempo medio, mesa top) ── */
-  .stats-bar{display:flex;justify-content:center;gap:10px;padding:10px 20px 0;flex-wrap:wrap;}
-  .stat-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:.72rem;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
-  .stat-pill strong{color:var(--text);font-weight:700;}
-
-  /* ── CONTROLS ── */
-  .controls-bar{display:flex;justify-content:center;gap:8px;padding:12px 20px 0;flex-wrap:wrap;align-items:center;}
-  .btn-reset{background:linear-gradient(135deg,#1a237e,#283593);border:1px solid rgba(100,130,255,.3);color:#90caf9;font-family:'Barlow',sans-serif;font-weight:700;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;}
-  .btn-reset:hover{background:linear-gradient(135deg,#283593,#3949ab);color:#fff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(40,53,147,.4);}
-  .btn-stats{background:linear-gradient(135deg,#1b5e20,#2e7d32);border:1px solid rgba(0,200,83,.3);color:#a5d6a7;font-family:'Barlow',sans-serif;font-weight:700;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;}
-  .btn-stats:hover{background:linear-gradient(135deg,#2e7d32,#388e3c);color:#fff;transform:translateY(-1px);}
-  .search-box{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:.82rem;padding:8px 12px;border-radius:8px;outline:none;width:165px;transition:border-color .2s;}
-  .search-box:focus{border-color:var(--accent);}
-  .search-box::placeholder{color:var(--text-dim);}
-  .time-control{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);padding:5px 10px;border-radius:8px;}
-  .time-control label{font-size:.7rem;color:var(--text-dim);font-weight:600;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
-  .time-control input[type=number]{background:transparent;border:none;outline:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.3rem;width:40px;text-align:center;}
-  .time-control span{color:var(--text-dim);font-size:.7rem;}
-
-  /* Cat filter */
-  .cat-filter{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center;padding:8px 20px 0;}
-  .cat-filter-label{font-size:.68rem;color:var(--text-dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-right:2px;}
-  .cat-btn{padding:4px 12px;border-radius:20px;border:1px solid transparent;font-family:'Barlow',sans-serif;font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .18s;background:var(--surface2);color:var(--text-dim);border-color:var(--border);}
-  .cat-btn:hover{transform:translateY(-1px);}
-  .cat-btn.active-all   {background:var(--accent);        color:#fff;             border-color:var(--accent);}
-  .cat-btn.active-oro   {background:var(--cat-oro-bg);    color:var(--cat-oro);   border-color:var(--cat-oro);}
-  .cat-btn.active-plata {background:var(--cat-plata-bg);  color:var(--cat-plata); border-color:var(--cat-plata);}
-  .cat-btn.active-bronce{background:var(--cat-bronce-bg); color:var(--cat-bronce);border-color:var(--cat-bronce);}
-  .cat-btn.active-rookie{background:var(--cat-rookie-bg); color:var(--cat-rookie);border-color:var(--cat-rookie);}
-
-  /* ── GRID ── */
-  .grid-container{padding:12px 16px 20px;max-width:1400px;margin:0 auto;}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:9px;}
-
-  /* ── CARD ── */
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .18s,box-shadow .18s,border-color .3s;position:relative;}
-  .card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.3);}
-  .card.libre  {border-color:rgba(0,200,83,.2);}
-  .card.ocupado{border-color:rgba(245,0,87,.3);}
-  .card.alerta {border-color:rgba(255,109,0,.6) !important;}
-  @keyframes pulse-red {0%,100%{box-shadow:0 0 0 0 rgba(245,0,87,.13)} 50%{box-shadow:0 0 0 6px rgba(245,0,87,0)}}
-  @keyframes pulse-warn{0%,100%{box-shadow:0 0 0 0 rgba(255,109,0,.28)} 50%{box-shadow:0 0 0 8px rgba(255,109,0,0)}}
-  .card.ocupado{animation:pulse-red 2.5s ease-in-out infinite;}
-  .card.alerta {animation:pulse-warn 1.2s ease-in-out infinite;}
-
-  .cat-stripe{height:4px;width:100%;transition:background .3s;}
-  .cat-stripe.oro   {background:linear-gradient(90deg,var(--cat-oro),#ffe066,var(--cat-oro));}
-  .cat-stripe.plata {background:linear-gradient(90deg,var(--cat-plata),#e8e8e8,var(--cat-plata));}
-  .cat-stripe.bronce{background:linear-gradient(90deg,var(--cat-bronce),#e09050,var(--cat-bronce));}
-  .cat-stripe.rookie{background:linear-gradient(90deg,var(--cat-rookie),#b47aff,var(--cat-rookie));}
-  .cat-stripe.none  {background:var(--border);}
-
-  .card-top{display:flex;align-items:center;gap:9px;padding:10px 13px 6px;}
-  .card-num{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.6rem;color:var(--text-dim);min-width:30px;line-height:1;transition:color .3s;}
-  .ocupado .card-num{color:rgba(245,0,87,.4);}
-  .alerta  .card-num{color:rgba(255,109,0,.55);}
-  .libre   .card-num{color:rgba(0,200,83,.35);}
-
-  .card-name-input{background:transparent;border:none;outline:none;color:var(--text);font-family:'Barlow',sans-serif;font-weight:700;font-size:.9rem;width:100%;cursor:text;}
-  .card-name-input::placeholder{color:var(--text-dim);}
-
-  /* Contador de partidas en badge */
-  .card-badges{display:flex;align-items:center;gap:5px;}
-  .status-badge{padding:3px 8px;border-radius:20px;font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;transition:all .25s;}
-  .libre   .status-badge{background:rgba(0,200,83,.12);  color:var(--libre);  border:1px solid rgba(0,200,83,.25);}
-  .ocupado .status-badge{background:rgba(245,0,87,.12);  color:var(--ocupado);border:1px solid rgba(245,0,87,.25);}
-  .alerta  .status-badge{background:rgba(255,109,0,.14); color:var(--warning);border:1px solid rgba(255,109,0,.4);}
-  .count-badge{background:rgba(255,193,7,.1);color:var(--gold);border:1px solid rgba(255,193,7,.3);padding:3px 7px;border-radius:20px;font-size:.6rem;font-weight:800;white-space:nowrap;}
-
-  .card-meta{display:flex;align-items:center;gap:7px;padding:0 13px 7px;}
-  .cat-select{appearance:none;-webkit-appearance:none;border:none;outline:none;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:700;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;padding:3px 20px 3px 8px;border-radius:20px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237a8fa8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;transition:all .2s;flex-shrink:0;}
-  .cat-select.oro   {background-color:var(--cat-oro-bg);   color:var(--cat-oro);   border:1px solid rgba(255,215,0,.35);}
-  .cat-select.plata {background-color:var(--cat-plata-bg); color:var(--cat-plata); border:1px solid rgba(192,192,192,.35);}
-  .cat-select.bronce{background-color:var(--cat-bronce-bg);color:var(--cat-bronce);border:1px solid rgba(205,127,50,.35);}
-  .cat-select.rookie{background-color:var(--cat-rookie-bg);color:var(--cat-rookie);border:1px solid rgba(124,77,255,.35);}
-  .cat-select.none  {background-color:var(--surface2);color:var(--text-dim);border:1px solid var(--border);}
-  .cat-select option{background:var(--surface);color:var(--text);}
-
-  .note-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);outline:none;color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.73rem;padding:2px 4px;transition:border-color .2s,color .2s;min-width:0;}
-  .note-input:focus{border-color:var(--accent);color:var(--text);}
-  .note-input::placeholder{color:rgba(122,143,168,.45);font-style:italic;}
-
-  .timer-bar-wrap{padding:0 13px 4px;display:none;}
-  .card.ocupado .timer-bar-wrap,.card.alerta .timer-bar-wrap{display:block;}
-  .timer-bar-bg{height:3px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden;}
-  .timer-bar-fill{height:100%;border-radius:2px;transition:width 1s linear,background .5s;background:var(--libre);}
-
-  .card-body{padding:0 13px 10px;}
-  .toggle-btn{width:100%;padding:10px;border:none;border-radius:10px;font-family:'Barlow',sans-serif;font-weight:800;font-size:.82rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
-  .toggle-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.08) 0%,transparent 100%);pointer-events:none;}
-  .libre   .toggle-btn{background:linear-gradient(135deg,var(--libre),var(--libre-dark));    color:#fff;box-shadow:0 4px 12px rgba(0,200,83,.22);}
-  .libre   .toggle-btn:hover{box-shadow:0 6px 20px rgba(0,200,83,.42);transform:translateY(-1px);}
-  .ocupado .toggle-btn{background:linear-gradient(135deg,var(--ocupado),var(--ocupado-dark));color:#fff;box-shadow:0 4px 12px rgba(245,0,87,.22);}
-  .ocupado .toggle-btn:hover{box-shadow:0 6px 20px rgba(245,0,87,.42);transform:translateY(-1px);}
-  .alerta  .toggle-btn{background:linear-gradient(135deg,var(--warning),var(--warning-dark));color:#fff;box-shadow:0 4px 12px rgba(255,109,0,.3);}
-  .alerta  .toggle-btn:hover{box-shadow:0 6px 20px rgba(255,109,0,.5);transform:translateY(-1px);}
-  .toggle-btn:active{transform:scale(.97) !important;}
-  .toggle-btn.confirm-pending{background:linear-gradient(135deg,#e65100,#bf360c) !important;box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4) !important;animation:confirm-pulse .6s ease-in-out infinite !important;font-size:.76rem;}
-  @keyframes confirm-pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,109,0,.5),0 4px 14px rgba(230,81,0,.4);}50%{box-shadow:0 0 0 8px rgba(255,109,0,.1),0 6px 20px rgba(230,81,0,.6);}}
-
-  .card-footer{display:flex;align-items:center;justify-content:space-between;padding:4px 13px 10px;min-height:30px;}
-  .timer-display{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.3rem;letter-spacing:.06em;line-height:1;transition:color .3s;}
-  .libre   .timer-display{color:transparent;}
-  .ocupado .timer-display{color:#fff;}
-  .alerta  .timer-display{color:var(--warning);}
-  .alerta-tag{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warning);display:none;}
-  .alerta .alerta-tag{display:block;}
-
-  /* ── PANEL STATS ── */
-  #stats-panel{display:none;max-width:1400px;margin:0 auto;padding:0 16px 20px;}
-  #stats-panel.open{display:block;}
-
-  .stats-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:12px;}
-  .stats-section h3{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-
-  /* Ranking de mesas */
-  .ranking-table{width:100%;border-collapse:collapse;}
-  .ranking-table th{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);font-weight:700;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);}
-  .ranking-table td{padding:8px 10px;font-size:.82rem;border-bottom:1px solid rgba(30,45,69,.5);}
-  .ranking-table tr:last-child td{border-bottom:none;}
-  .ranking-table tr:hover td{background:rgba(255,255,255,.02);}
-  .rank-num{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.1rem;color:var(--text-dim);}
-  .rank-medal{font-size:1rem;}
-  .rank-bar-wrap{width:100%;background:rgba(255,255,255,.05);border-radius:4px;height:6px;overflow:hidden;}
-  .rank-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--libre));transition:width .5s;}
-
-  /* Historial */
-  .history-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
-  .history-list::-webkit-scrollbar{width:4px;}
-  .history-list::-webkit-scrollbar-track{background:var(--surface2);}
-  .history-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-  .hist-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);font-size:.78rem;}
-  .hist-time{font-family:'Bebas Neue',system-ui,sans-serif;font-size:.9rem;color:var(--text-dim);min-width:54px;}
-  .hist-name{flex:1;font-weight:600;}
-  .hist-action{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:10px;}
-  .hist-action.ocupado{background:rgba(245,0,87,.15);color:var(--ocupado);}
-  .hist-action.libre  {background:rgba(0,200,83,.15); color:var(--libre);}
-  .hist-duration{font-size:.72rem;color:var(--text-dim);min-width:60px;text-align:right;}
-  .hist-cat{font-size:.65rem;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,.05);color:var(--text-dim);}
-
-  /* Mini stats cards */
-  .mini-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:0;}
-  .mini-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;}
-  .mini-stat-label{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;font-weight:600;}
-  .mini-stat-value{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.8rem;color:var(--gold);line-height:1;}
-  .mini-stat-sub{font-size:.68rem;color:var(--text-dim);margin-top:2px;}
-
-  /* ── MODAL ── */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:center;justify-content:center;}
-  .modal-overlay.open{display:flex;}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px;width:340px;max-width:90vw;}
-  .modal h3{font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.4rem;letter-spacing:.1em;margin-bottom:14px;}
-  .modal-row{margin-bottom:11px;}
-  .modal-row label{display:block;font-size:.7rem;color:var(--text-dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
-  .modal-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1rem;padding:9px 12px;border-radius:8px;outline:none;}
-  .modal-input:focus{border-color:var(--accent);}
-  .modal-actions{display:flex;gap:8px;margin-top:16px;}
-  .btn-primary{flex:1;background:var(--accent);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:700;font-size:.86rem;padding:10px;border-radius:8px;cursor:pointer;transition:all .2s;}
-  .btn-primary:hover{background:#1976d2;transform:translateY(-1px);}
-  .btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:600;font-size:.86rem;padding:10px 14px;border-radius:8px;cursor:pointer;transition:all .2s;}
-  .btn-secondary:hover{border-color:var(--text-dim);color:var(--text);}
-
-  /* ── TOAST ── */
-  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 20px;border-radius:40px;font-size:.8rem;font-weight:600;transition:transform .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,.4);}
-  #toast.show{transform:translateX(-50%) translateY(0);}
-  #toast.warn{border-color:rgba(255,109,0,.5);color:var(--warning);}
-
-  footer{text-align:center;padding:16px 20px;color:var(--text-dim);font-size:.68rem;letter-spacing:.08em;line-height:1.6;}
-
-  /* ── PWA install banner ── */
-  #install-banner{display:none;position:fixed;bottom:20px;right:16px;background:var(--surface);border:1px solid var(--accent);border-radius:14px;padding:12px 16px;z-index:800;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:260px;}
-  #install-banner p{font-size:.78rem;color:var(--text);margin-bottom:8px;line-height:1.4;}
-  #install-banner .banner-btns{display:flex;gap:8px;}
-  #install-banner .btn-install{flex:1;background:var(--accent);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:700;font-size:.75rem;padding:7px;border-radius:8px;cursor:pointer;}
-  #install-banner .btn-dismiss{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.75rem;padding:7px 10px;border-radius:8px;cursor:pointer;}
-
-  @media(max-width:600px){
-    .grid{grid-template-columns:1fr 1fr;gap:7px;}
-    .grid-container{padding:10px 10px 14px;}
-    .card-top{padding:8px 10px 5px;gap:6px;}
-    .card-meta{padding:0 10px 5px;}
-    .card-body{padding:0 10px 8px;}
-    .card-footer{padding:3px 10px 8px;}
-    .toggle-btn{font-size:.72rem;padding:8px;}
-    .timer-display{font-size:1.1rem;}
-    .stats-section{padding:14px;}
-    .mini-stats{grid-template-columns:1fr 1fr;}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px);
   }
+
+  header { text-align: center; padding: 32px 20px 20px; position: relative; }
+  header::after {
+    content: '';
+    display: block;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
+    margin-top: 20px;
+  }
+  .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    letter-spacing: 0.06em;
+    color: #fff;
+    text-shadow: 0 0 40px rgba(21,101,192,0.5);
+    line-height: 1;
+  }
+  .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+
+  .scoreboard { display: flex; justify-content: center; gap: 16px; padding: 20px 20px 0; flex-wrap: wrap; }
+  .score-card {
+    flex: 1; max-width: 220px; min-width: 140px; border-radius: 14px;
+    padding: 18px 20px 14px; text-align: center; border: 1px solid transparent; transition: transform 0.2s;
+  }
+  .score-card:hover { transform: translateY(-2px); }
+  .score-card.libre { background: linear-gradient(135deg, rgba(0,200,83,0.12), rgba(0,150,36,0.06)); border-color: rgba(0,200,83,0.25); }
+  .score-card.ocupado { background: linear-gradient(135deg, rgba(245,0,87,0.12), rgba(187,0,47,0.06)); border-color: rgba(245,0,87,0.25); }
+  .score-card.total { background: linear-gradient(135deg, rgba(21,101,192,0.15), rgba(13,71,161,0.08)); border-color: rgba(21,101,192,0.3); }
+  .score-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; font-weight: 600; }
+  .score-number { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1; }
+  .libre .score-number { color: var(--libre); text-shadow: 0 0 20px rgba(0,200,83,0.4); }
+  .ocupado .score-number { color: var(--ocupado); text-shadow: 0 0 20px rgba(245,0,87,0.4); }
+  .total .score-number { color: #7cb3ff; }
+  .score-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .libre .score-dot { background: var(--libre); box-shadow: 0 0 8px var(--libre); }
+  .ocupado .score-dot { background: var(--ocupado); box-shadow: 0 0 8px var(--ocupado); }
+
+  .controls-bar { display: flex; justify-content: center; gap: 10px; padding: 18px 20px 0; flex-wrap: wrap; }
+  .btn-reset {
+    background: linear-gradient(135deg, #1a237e, #283593); border: 1px solid rgba(100,130,255,0.3);
+    color: #90caf9; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 22px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-reset:hover { background: linear-gradient(135deg, #283593, #3949ab); border-color: rgba(100,130,255,0.6); color: #fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(40,53,147,0.4); }
+  .search-box {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Barlow', sans-serif; font-size: 0.85rem; padding: 10px 16px;
+    border-radius: 8px; outline: none; width: 200px; transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--text-dim); }
+
+  .filter-bar { display: flex; justify-content: center; gap: 8px; padding: 14px 20px 0; flex-wrap: wrap; }
+  .filter-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.75rem;
+    letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 16px;
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn.elite.active { background: #1a237e; border-color: #7986cb; color: #fff; }
+  .filter-btn.oro.active { background: #b8860b; border-color: #ffc107; color: #fff; }
+  .filter-btn.plata.active { background: #607d8b; border-color: #b0bec5; color: #fff; }
+  .filter-btn.bronce.active { background: #795548; border-color: #cd7f32; color: #fff; }
+  .filter-btn.rookie.active { background: #4a148c; border-color: #9c27b0; color: #fff; }
+
+  .grid-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden; transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s; position: relative;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .card.libre { border-color: rgba(0,200,83,0.25); }
+  .card.ocupado { border-color: rgba(245,0,87,0.3); box-shadow: 0 0 20px rgba(245,0,87,0.08); }
+  .card.overtime { border-color: #ff6d00 !important; box-shadow: 0 0 24px rgba(255,109,0,0.4) !important; }
+  .card.cat-elite { border-color: rgba(121,134,203,0.6) !important; box-shadow: 0 0 20px rgba(121,134,203,0.2) !important; background: linear-gradient(135deg, #111827, rgba(121,134,203,0.06)) !important; }
+  .card.cat-elite .card-num { color: rgba(121,134,203,0.8); }
+  .card.cat-oro { border-color: rgba(255,193,7,0.6) !important; box-shadow: 0 0 20px rgba(255,193,7,0.2) !important; background: linear-gradient(135deg, #111827, rgba(255,193,7,0.06)) !important; }
+  .card.cat-oro .card-num { color: rgba(255,193,7,0.6); }
+  .card.cat-plata { border-color: rgba(176,190,197,0.6) !important; box-shadow: 0 0 20px rgba(176,190,197,0.15) !important; background: linear-gradient(135deg, #111827, rgba(176,190,197,0.06)) !important; }
+  .card.cat-plata .card-num { color: rgba(176,190,197,0.6); }
+  .card.cat-bronce { border-color: rgba(205,127,50,0.6) !important; box-shadow: 0 0 20px rgba(205,127,50,0.15) !important; background: linear-gradient(135deg, #111827, rgba(205,127,50,0.06)) !important; }
+  .card.cat-bronce .card-num { color: rgba(205,127,50,0.6); }
+  .card.cat-rookie { border-color: rgba(156,39,176,0.6) !important; box-shadow: 0 0 20px rgba(156,39,176,0.15) !important; background: linear-gradient(135deg, #111827, rgba(156,39,176,0.06)) !important; }
+  .card.cat-rookie .card-num { color: rgba(156,39,176,0.6); }
+
+  .card-top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; }
+  .card-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--text-dim); min-width: 36px; line-height: 1; }
+  .card-name-input {
+    background: transparent; border: none; outline: none; color: var(--text);
+    font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 1rem; width: 100%; cursor: text;
+  }
+  .card-name-input::placeholder { color: var(--text-dim); }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+  .libre .status-badge { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
+  .ocupado .status-badge { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
+
+  .card-meta { padding: 0 16px 10px; }
+  .cat-select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-family: 'Barlow', sans-serif; font-size: 0.75rem; font-weight: 600;
+    padding: 5px 10px; border-radius: 8px; cursor: pointer; outline: none;
+    transition: border-color 0.2s; width: 100%;
+  }
+  .cat-select:focus { border-color: var(--accent); }
+  .cat-select.elite { border-color: #7986cb; color: #7986cb; }
+  .cat-select.oro { border-color: #ffc107; color: #ffc107; }
+  .cat-select.plata { border-color: #b0bec5; color: #b0bec5; }
+  .cat-select.bronce { border-color: #cd7f32; color: #cd7f32; }
+  .cat-select.rookie { border-color: #9c27b0; color: #ce93d8; }
+
+  .card-body { padding: 0 16px 10px; }
+  .toggle-btn {
+    width: 100%; padding: 12px; border: none; border-radius: 10px; font-family: 'Barlow', sans-serif;
+    font-weight: 800; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .toggle-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; }
+  .libre .toggle-btn { background: linear-gradient(135deg, var(--libre), var(--libre-dark)); color: #fff; box-shadow: 0 4px 16px rgba(0,200,83,0.3); }
+  .libre .toggle-btn:hover { background: linear-gradient(135deg, #00e676, var(--libre)); box-shadow: 0 6px 24px rgba(0,200,83,0.5); transform: translateY(-1px); }
+  .ocupado .toggle-btn { background: linear-gradient(135deg, var(--ocupado), var(--ocupado-dark)); color: #fff; box-shadow: 0 4px 16px rgba(245,0,87,0.3); }
+  .ocupado .toggle-btn:hover { background: linear-gradient(135deg, #ff4081, var(--ocupado)); box-shadow: 0 6px 24px rgba(245,0,87,0.5); transform: translateY(-1px); }
+  .toggle-btn.confirming { opacity: 0.85; animation: pulse-btn 0.5s ease-in-out infinite alternate; }
+  @keyframes pulse-btn { from { transform: scale(1); } to { transform: scale(1.02); } }
+  .toggle-btn:active { transform: scale(0.97) !important; }
+
+  /* TIMER */
+  .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 16px 14px; min-height: 36px; }
+  .time-info { display: flex; flex-direction: column; gap: 2px; }
+  .time-label { font-size: 0.68rem; color: var(--text-dim); }
+  .time-value { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; color: var(--ocupado); letter-spacing: 0.08em; }
+  .timer-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    color: var(--libre);
+    text-align: right;
+    transition: color 0.3s;
+  }
+  .timer-display.warning { color: #ff6d00; }
+  .timer-display.overtime-text { color: #ff1744; animation: blink 1s step-start infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,0,87,0.2); }
+    50% { box-shadow: 0 0 0 6px rgba(245,0,87,0); }
+  }
+  .card.ocupado:not(.overtime) { animation: pulse-border 2.5s ease-in-out infinite; }
+  .card.ocupado .card-num { color: rgba(245,0,87,0.5); }
+  .card.overtime .card-num { color: rgba(255,109,0,0.7); }
+
+  /* NOTIF BANNER */
+  #notif-banner {
+    display: none;
+    text-align: center;
+    padding: 10px 20px;
+    background: rgba(255,109,0,0.15);
+    border-bottom: 1px solid rgba(255,109,0,0.3);
+    color: #ff6d00;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  footer { text-align: center; padding: 30px 20px; color: var(--text-dim); font-size: 0.75rem; letter-spacing: 0.1em; }
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+    white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-container { padding: 12px; }
+    .card-top { padding: 10px 12px 6px; gap: 6px; }
+    .card-meta { padding: 0 12px 8px; }
+    .card-body { padding: 0 12px 8px; }
+    .card-footer { padding: 4px 12px 10px; }
+    .card-name-input { font-size: 0.85rem; }
+    .toggle-btn { font-size: 0.75rem; padding: 10px; }
+    .timer-display { font-size: 1.1rem; }
+  }
+
+  /* PIN SCREEN */
+  #lock-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 99999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%);
+  }
+  .pin-logo { font-family: 'Permanent Marker', cursive; font-size: 4rem; color: white; text-shadow: 0 0 30px rgba(21,101,192,0.4); }
+  .pin-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.15em; color: var(--text-dim); }
+  .pin-dots { display: flex; gap: 16px; margin: 8px 0; }
+  .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--text-dim); transition: all 0.15s; }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(21,101,192,0.6); }
+  .pin-grid { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+  .pin-btn {
+    width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; cursor: pointer; transition: all 0.15s;
+  }
+  .pin-btn:hover { background: var(--surface2); border-color: var(--accent); }
+  .pin-btn:active { transform: scale(0.93); background: var(--accent); }
+  .pin-btn.del { font-size: 1.2rem; color: var(--text-dim); }
+  .pin-error { color: var(--ocupado); font-size: 0.85rem; font-weight: 700; min-height: 20px; letter-spacing: 0.05em; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
 </style>
 </head>
 <body>
 
-<!-- ── PIN ── -->
+<!-- PIN SCREEN -->
 <div id="lock-screen">
-  <div class="lock-icon">🔒</div>
-  <h2>ACCESO RESTRINGIDO</h2>
-  <p>Introduce el PIN de 4 dígitos</p>
+  <div class="pin-logo">amf</div>
+  <div class="pin-title">INTRODUCE TU PIN</div>
   <div class="pin-dots">
-    <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
-    <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
   </div>
   <div class="pin-error" id="pin-error"></div>
-  <div class="pin-keypad">
-    <button class="pin-key" onclick="pinKey('1')">1</button>
-    <button class="pin-key" onclick="pinKey('2')">2</button>
-    <button class="pin-key" onclick="pinKey('3')">3</button>
-    <button class="pin-key" onclick="pinKey('4')">4</button>
-    <button class="pin-key" onclick="pinKey('5')">5</button>
-    <button class="pin-key" onclick="pinKey('6')">6</button>
-    <button class="pin-key" onclick="pinKey('7')">7</button>
-    <button class="pin-key" onclick="pinKey('8')">8</button>
-    <button class="pin-key" onclick="pinKey('9')">9</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
-    <button class="pin-key zero" onclick="pinKey('0')">0</button>
+  <div class="pin-grid">
+    <button class="pin-btn" onclick="pinKey('1')">1</button>
+    <button class="pin-btn" onclick="pinKey('2')">2</button>
+    <button class="pin-btn" onclick="pinKey('3')">3</button>
+    <button class="pin-btn" onclick="pinKey('4')">4</button>
+    <button class="pin-btn" onclick="pinKey('5')">5</button>
+    <button class="pin-btn" onclick="pinKey('6')">6</button>
+    <button class="pin-btn" onclick="pinKey('7')">7</button>
+    <button class="pin-btn" onclick="pinKey('8')">8</button>
+    <button class="pin-btn" onclick="pinKey('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="pinKey('0')">0</button>
+    <button class="pin-btn del" onclick="pinDel()">⌫</button>
   </div>
-  <p class="pin-hint">PIN por defecto: <strong style="color:var(--gold)">1234</strong></p>
 </div>
 
-<!-- ── APP ── -->
 <div id="app" style="display:none">
 
+<div id="notif-banner" onclick="requestNotifPermission()">
+  🔔 Activa las notificaciones para recibir avisos a los 25 min — toca aquí
+</div>
+
 <header>
-  <div class="header-top">
-    <div class="header-icon">⚽</div>
-    <div><h1>Control de Futbolines</h1><p class="subtitle">Panel de gestión · Evento en vivo</p></div>
-    <button class="btn-hdr" id="btn-toggle-stats" onclick="toggleStats()">📊 Estadísticas</button>
-    <button class="btn-hdr" onclick="openSettings()">⚙ Ajustes</button>
-    <button class="btn-hdr" onclick="lockApp()">🔒 Bloquear</button>
+  <div class="header-icon">
+    <a href="index.html" style="font-family: 'Permanent Marker', cursive; font-size: clamp(3.5rem, 12vw, 6rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4); text-decoration: none;">amf</a>
   </div>
+  <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
+  <p class="subtitle">Panel de gestión · Evento en vivo</p>
 </header>
 
-<!-- Scoreboard -->
 <div class="scoreboard">
-  <div class="score-card libre">  <div class="score-label"><span class="score-dot"></span>Libres</div>   <div class="score-number" id="count-libre">30</div></div>
-  <div class="score-card ocupado"><div class="score-label"><span class="score-dot"></span>Ocupados</div><div class="score-number" id="count-ocupado">0</div></div>
-  <div class="score-card alerta"> <div class="score-label"><span class="score-dot"></span>⚠ Tiempo</div><div class="score-number" id="count-alerta">0</div></div>
-  <div class="score-card total">  <div class="score-label">Total mesas</div><div class="score-number">30</div></div>
-  <div class="score-card partidas"><div class="score-label">⚽ Partidas</div><div class="score-number" id="count-partidas">0</div></div>
+  <div class="score-card libre">
+    <div class="score-label"><span class="score-dot"></span>Libres</div>
+    <div class="score-number" id="count-libre">30</div>
+  </div>
+  <div class="score-card ocupado">
+    <div class="score-label"><span class="score-dot"></span>Ocupados</div>
+    <div class="score-number" id="count-ocupado">0</div>
+  </div>
+  <div class="score-card total">
+    <div class="score-label">Total mesas</div>
+    <div class="score-number" id="count-total">30</div>
+  </div>
 </div>
 
-<!-- Stats pills -->
-<div class="stats-bar">
-  <div class="stat-pill">⏱ Tiempo medio: <strong id="stat-avg">—</strong></div>
-  <div class="stat-pill">🏆 Mesa top: <strong id="stat-top">—</strong></div>
-  <div class="stat-pill">🕐 Evento: <strong id="stat-uptime">00:00</strong></div>
+<div style="text-align:center;padding:12px 20px 0;">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;">← Volver al inicio</a>
 </div>
 
-<!-- Controls -->
 <div class="controls-bar">
-  <input class="search-box" type="text" id="search" placeholder="🔍 Buscar mesa..." oninput="applyFilters()">
-  <div class="time-control">
-    <label>⏱ Límite</label>
-    <input type="number" id="time-limit" value="10" min="1" max="99" onchange="timeLimitMin=parseInt(this.value)||10">
-    <span>min</span>
-  </div>
-  <button class="btn-stats" onclick="clearHistory()">🗑 Limpiar historial</button>
+  <input class="search-box" type="text" id="search" placeholder="🔍  Buscar futbolín..." oninput="filterCards()">
   <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
+  <button class="btn-reset" onclick="toggleSettings()" style="background:linear-gradient(135deg,#1a2236,#1e2d45);border-color:rgba(100,130,255,0.2);">⚙️ Ajustes</button>
 </div>
 
-<!-- Cat filters -->
-<div class="cat-filter">
-  <span class="cat-filter-label">Ver:</span>
-  <button class="cat-btn active-all" id="filter-all"    onclick="setFilter('all')">Todas</button>
-  <button class="cat-btn"            id="filter-oro"    onclick="setFilter('oro')">🥇 Oro</button>
-  <button class="cat-btn"            id="filter-plata"  onclick="setFilter('plata')">🥈 Plata</button>
-  <button class="cat-btn"            id="filter-bronce" onclick="setFilter('bronce')">🥉 Bronce</button>
-  <button class="cat-btn"            id="filter-rookie" onclick="setFilter('rookie')">⭐ Rookie</button>
-  <button class="cat-btn"            id="filter-none"   onclick="setFilter('none')">Sin cat.</button>
-</div>
-
-<!-- ── STATS PANEL ── -->
-<div id="stats-panel">
-  <!-- Mini stats -->
-  <div class="stats-section" style="margin-top:12px;">
-    <h3>📈 Resumen del evento</h3>
-    <div class="mini-stats">
-      <div class="mini-stat"><div class="mini-stat-label">Total partidas</div><div class="mini-stat-value" id="ms-total">0</div></div>
-      <div class="mini-stat"><div class="mini-stat-label">Tiempo medio</div><div class="mini-stat-value" id="ms-avg">—</div><div class="mini-stat-sub">por partida</div></div>
-      <div class="mini-stat"><div class="mini-stat-label">Partida más larga</div><div class="mini-stat-value" id="ms-max">—</div></div>
-      <div class="mini-stat"><div class="mini-stat-label">Partida más corta</div><div class="mini-stat-value" id="ms-min">—</div></div>
-      <div class="mini-stat"><div class="mini-stat-label">Mesas activas</div><div class="mini-stat-value" id="ms-active">0</div><div class="mini-stat-sub">ahora mismo</div></div>
-      <div class="mini-stat"><div class="mini-stat-label">Tiempo evento</div><div class="mini-stat-value" id="ms-uptime">—</div></div>
+<div id="settings-panel" style="display:none;max-width:400px;margin:16px auto 0;padding:0 20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:18px;">⚙️ AJUSTES</div>
+    <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Número de futbolines</label>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="number" id="total-input" min="1" max="200" value="30"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1.1rem;padding:10px 14px;border-radius:8px;outline:none;width:100px;">
+      <button onclick="applyTotal()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 20px;border-radius:8px;cursor:pointer;">Aplicar</button>
     </div>
-  </div>
-
-  <!-- Ranking mesas -->
-  <div class="stats-section">
-    <h3>🏆 Ranking de mesas</h3>
-    <table class="ranking-table">
-      <thead>
-        <tr>
-          <th>#</th><th>Mesa</th><th>Cat.</th><th>Partidas</th><th>Uso</th>
-        </tr>
-      </thead>
-      <tbody id="ranking-body"></tbody>
-    </table>
-  </div>
-
-  <!-- Historial -->
-  <div class="stats-section">
-    <h3>📋 Historial de partidas</h3>
-    <div class="history-list" id="history-list">
-      <div style="text-align:center;color:var(--text-dim);padding:20px;font-size:.82rem;">Aún no hay partidas registradas</div>
+    <div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px;">⚠️ Cambiar el número reiniciará todos los estados</div>
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+      <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Cambiar PIN</label>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <input type="password" id="new-pin" maxlength="4" placeholder="Nuevo PIN (4 dígitos)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:1rem;padding:10px 14px;border-radius:8px;outline:none;width:180px;">
+        <button onclick="cambiarPin()" style="background:linear-gradient(135deg,var(--accent),#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;padding:10px 16px;border-radius:8px;cursor:pointer;">Cambiar</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ── GRID ── -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setFilter('todas', this)">TODAS</button>
+  <button class="filter-btn elite" onclick="setFilter('elite', this)">🏆 ELITE</button>
+  <button class="filter-btn oro" onclick="setFilter('oro', this)">🥇 ORO</button>
+  <button class="filter-btn plata" onclick="setFilter('plata', this)">🥈 PLATA</button>
+  <button class="filter-btn bronce" onclick="setFilter('bronce', this)">🥉 BRONCE</button>
+  <button class="filter-btn" onclick="setFilter('sin', this)">SIN CAT.</button>
+</div>
+
 <div class="grid-container">
   <div class="grid" id="grid"></div>
 </div>
 
-<footer>Haz clic en el botón para cambiar estado · Doble confirmación para liberar · Nombres y notas editables</footer>
-</div><!-- /app -->
-
-<!-- Settings modal -->
-<div class="modal-overlay" id="settings-modal">
-  <div class="modal">
-    <h3>⚙ Ajustes</h3>
-    <div class="modal-row"><label>PIN actual</label><input class="modal-input" type="password" id="set-current-pin" placeholder="PIN actual" maxlength="4"></div>
-    <div class="modal-row"><label>Nuevo PIN (4 dígitos)</label><input class="modal-input" type="password" id="set-new-pin" placeholder="Nuevo PIN" maxlength="4"></div>
-    <div class="modal-row"><label>Confirmar nuevo PIN</label><input class="modal-input" type="password" id="set-confirm-pin" placeholder="Repetir PIN" maxlength="4"></div>
-    <div id="settings-error" style="color:var(--ocupado);font-size:.8rem;min-height:16px;margin-top:2px;"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" onclick="closeSettings()">Cancelar</button>
-      <button class="btn-primary"   onclick="savePin()">Guardar PIN</button>
-    </div>
-  </div>
-</div>
-
-<!-- PWA install banner -->
-<div id="install-banner">
-  <p>📱 <strong>Instala la app</strong> para usarla sin internet y desde la pantalla de inicio</p>
-  <div class="banner-btns">
-    <button class="btn-install" onclick="installPWA()">Instalar</button>
-    <button class="btn-dismiss" onclick="dismissInstall()">Ahora no</button>
-  </div>
-</div>
-
+<footer>Primera pulsación pide confirmación · Segunda pulsación en 3s confirma el cambio</footer>
 <div id="toast"></div>
 
 <script>
-// ── CONFIG ──
-const TOTAL = 30;
-let PIN = '1234';
+let PIN = localStorage.getItem('amf_pin') || '1234';
 let pinBuffer = '';
-let timeLimitMin = 10;
-let activeFilter = 'all';
-let statsOpen = false;
-const pendingRelease = {};
-const eventStart = new Date();
 
-const CATS = {
-  none:  {label:'Sin categoría',emoji:''},
-  oro:   {label:'Oro',   emoji:'🥇'},
-  plata: {label:'Plata', emoji:'🥈'},
-  bronce:{label:'Bronce',emoji:'🥉'},
-  rookie:{label:'Rookie',emoji:'⭐'},
-};
-
-// ── STATE ──
-const state = [];
-for (let i=1;i<=TOTAL;i++) {
-  state.push({id:i, name:`Futbolín ${String(i).padStart(2,'0')}`, libre:true, time:null, alerted:false, cat:'none', note:'', partidas:0});
-}
-
-// ── HISTORY ──
-const history = []; // {mesa, name, cat, action:'ocupado'|'libre', timestamp, duration}
-
-// ── PIN ──
 function pinKey(d) {
-  if (pinBuffer.length>=4) return;
-  pinBuffer+=d;
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
   document.getElementById(`dot-${pinBuffer.length-1}`).classList.add('filled');
-  if (pinBuffer.length===4) setTimeout(checkPin,180);
+  if (pinBuffer.length === 4) setTimeout(checkPin, 180);
 }
 function pinDel() {
   if (!pinBuffer.length) return;
   document.getElementById(`dot-${pinBuffer.length-1}`).classList.remove('filled');
-  pinBuffer=pinBuffer.slice(0,-1);
-  document.getElementById('pin-error').textContent='';
+  pinBuffer = pinBuffer.slice(0,-1);
+  document.getElementById('pin-error').textContent = '';
 }
 function checkPin() {
-  if (pinBuffer===PIN) {
-    document.getElementById('lock-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    pinBuffer='';
+  if (pinBuffer === PIN) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    pinBuffer = '';
   } else {
-    const el=document.getElementById('pin-error');
-    el.style.animation='none'; el.textContent='❌ PIN incorrecto.';
-    void el.offsetWidth; el.style.animation='shake .3s ease';
-    pinBuffer='';
+    const el = document.getElementById('pin-error');
+    el.style.animation = 'none';
+    el.textContent = '❌ PIN incorrecto. Inténtalo de nuevo.';
+    void el.offsetWidth;
+    el.style.animation = 'shake .3s ease';
+    pinBuffer = '';
     for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
   }
 }
-function lockApp() {
-  document.getElementById('app').style.display='none';
-  document.getElementById('lock-screen').style.display='flex';
-  document.getElementById('pin-error').textContent='';
-  pinBuffer='';
-  for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
-}
-document.addEventListener('keydown',e=>{
-  if (document.getElementById('lock-screen').style.display==='none') return;
-  if (e.key>='0'&&e.key<='9') pinKey(e.key);
-  if (e.key==='Backspace') pinDel();
+document.addEventListener('keydown', e => {
+  if (document.getElementById('lock-screen').style.display === 'none') return;
+  if (e.key>='0' && e.key<='9') pinKey(e.key);
+  if (e.key === 'Backspace') pinDel();
 });
 
-// ── SETTINGS ──
-function openSettings() {
-  ['set-current-pin','set-new-pin','set-confirm-pin'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('settings-error').textContent='';
-  document.getElementById('settings-modal').classList.add('open');
-}
-function closeSettings(){document.getElementById('settings-modal').classList.remove('open');}
-function savePin() {
-  const cur=document.getElementById('set-current-pin').value;
-  const nw=document.getElementById('set-new-pin').value;
-  const cnf=document.getElementById('set-confirm-pin').value;
-  const err=document.getElementById('settings-error');
-  if (cur!==PIN)            {err.textContent='❌ PIN actual incorrecto.';return;}
-  if (!/^\d{4}$/.test(nw)) {err.textContent='❌ El PIN debe tener 4 dígitos.';return;}
-  if (nw!==cnf)             {err.textContent='❌ Los PINs no coinciden.';return;}
-  PIN=nw; err.style.color='var(--libre)'; err.textContent='✅ PIN actualizado.';
-  setTimeout(closeSettings,1200); showToast('✅ PIN actualizado');
+let TOTAL = 30;
+const LIMIT_MS = 25 * 60 * 1000; // 25 minutos
+
+const state = [];
+for (let i = 1; i <= TOTAL; i++) {
+  state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
 }
 
-// ── HELPERS ──
-function pad(n){return String(n).padStart(2,'0');}
-function fmtTime(sec){return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`;}
-function fmtTimeShort(sec){
-  if (sec<60) return `${sec}s`;
-  if (sec<3600) return `${Math.floor(sec/60)}m ${sec%60}s`;
-  return `${Math.floor(sec/3600)}h ${Math.floor((sec%3600)/60)}m`;
-}
-function elapsedSec(d){return Math.floor((Date.now()-d.getTime())/1000);}
-function getCardClass(s){
-  if (s.libre) return 'libre';
-  if (elapsedSec(s.time)>=timeLimitMin*60) return 'alerta';
-  return 'ocupado';
-}
-function nowStr(){
-  const n=new Date();
-  return `${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
-}
+const pendingConfirm = {};
+let currentFilter = 'todas';
+let tickInterval = null;
 
-// ── TOGGLE con doble confirmación ──
-function toggle(id) {
-  const s=state[id-1];
-
-  if (s.libre) {
-    // Ocupar: directo
-    s.libre=false; s.time=new Date(); s.alerted=false;
-    // Historial
-    history.unshift({mesa:id,name:s.name,cat:s.cat,action:'ocupado',timestamp:new Date(),duration:null});
-    renderCard(id); updateCounters(); updateStats();
-    const catTag=s.cat!=='none'?` [${CATS[s.cat].emoji} ${CATS[s.cat].label}]`:'';
-    showToast(`🔴 ${s.name} OCUPADO${catTag}`);
-    return;
-  }
-
-  if (pendingRelease[id]) {
-    // Segunda pulsación: liberar
-    clearInterval(pendingRelease[id].timer);
-    delete pendingRelease[id];
-    const duration=elapsedSec(s.time);
-    s.partidas++;
-    // Actualizar historial
-    const hIdx=history.findIndex(h=>h.mesa===id&&h.action==='ocupado'&&h.duration===null);
-    if (hIdx>=0) {history[hIdx].duration=duration;}
-    history.unshift({mesa:id,name:s.name,cat:s.cat,action:'libre',timestamp:new Date(),duration});
-    s.libre=true; s.time=null; s.alerted=false;
-    renderCard(id); updateCounters(); updateStats();
-    showToast(`✅ ${s.name} LIBRE — partida ${fmtTimeShort(duration)}`);
-    return;
-  }
-
-  // Primera pulsación: cuenta atrás
-  let secs=3;
-  const btn=document.querySelector(`#card-${id} .toggle-btn`);
-  btn.textContent=`⚠ ¿Confirmar? (${secs}s)`;
-  btn.classList.add('confirm-pending');
-  const timer=setInterval(()=>{
-    secs--;
-    if (secs>0) {
-      const b=document.querySelector(`#card-${id} .toggle-btn`);
-      if (b) b.textContent=`⚠ ¿Confirmar? (${secs}s)`;
-    } else {
-      clearInterval(pendingRelease[id]?.timer);
-      delete pendingRelease[id];
-      const b=document.querySelector(`#card-${id} .toggle-btn`);
-      if (b){b.textContent='✓ Liberar mesa';b.classList.remove('confirm-pending');}
-      showToast(`↩ ${s.name} — cancelado`);
+// NOTIFICACIONES
+function requestNotifPermission() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') {
+      document.getElementById('notif-banner').style.display = 'none';
+      showToast('🔔 Notificaciones activadas');
     }
-  },1000);
-  pendingRelease[id]={timer};
-}
-
-// ── CATEGORY & NOTE ──
-function changeCategory(id,val){
-  state[id-1].cat=val;
-  const card=document.getElementById(`card-${id}`);
-  card.querySelector('.cat-stripe').className=`cat-stripe ${val}`;
-  card.querySelector('.cat-select').className=`cat-select ${val}`;
-  applyFilters();
-}
-function changeNote(id,val){state[id-1].note=val;}
-
-// ── RENDER CARD ──
-function renderCard(id){
-  const s=state[id-1];
-  const card=document.getElementById(`card-${id}`);
-  if (!card) return;
-  const cls=getCardClass(s);
-  card.className=`card ${cls}`;
-
-  card.querySelector('.status-badge').textContent=
-    cls==='libre'?'● Libre':cls==='alerta'?'⚠ Tiempo':'● Ocupado';
-
-  // Contador de partidas en badge
-  card.querySelector('.count-badge').textContent=`⚽ ${s.partidas}`;
-
-  if (!pendingRelease[id]) {
-    card.querySelector('.toggle-btn').textContent=
-      cls==='libre'?'⚡ Marcar como OCUPADO':'✓ Liberar mesa';
-  }
-
-  const timerEl=card.querySelector('.timer-display');
-  const barFill=card.querySelector('.timer-bar-fill');
-  if (!s.libre&&s.time){
-    const elapsed=elapsedSec(s.time);
-    const limitSec=timeLimitMin*60;
-    const pct=Math.min((elapsed/limitSec)*100,100);
-    timerEl.textContent=fmtTime(elapsed);
-    barFill.style.background=pct<60?'var(--libre)':pct<90?'var(--gold)':'var(--warning)';
-    barFill.style.width=pct+'%';
-    if (elapsed>=limitSec&&!s.alerted){s.alerted=true;showToast(`⚠ ${s.name} — ¡Tiempo superado!`,true);}
-  } else {
-    timerEl.textContent='';
-    barFill.style.width='0%';
-  }
-}
-
-// ── COUNTERS ──
-function updateCounters(){
-  let libres=0,ocupados=0,alertas=0,partidas=0;
-  state.forEach(s=>{
-    partidas+=s.partidas;
-    if (s.libre){libres++;return;}
-    getCardClass(s)==='alerta'?alertas++:ocupados++;
   });
-  document.getElementById('count-libre').textContent=libres;
-  document.getElementById('count-ocupado').textContent=ocupados;
-  document.getElementById('count-alerta').textContent=alertas;
-  document.getElementById('count-partidas').textContent=partidas;
 }
 
-// ── STATS ──
-function toggleStats(){
-  statsOpen=!statsOpen;
-  document.getElementById('stats-panel').classList.toggle('open',statsOpen);
-  document.getElementById('btn-toggle-stats').classList.toggle('active',statsOpen);
-  if (statsOpen) updateStats();
+function checkNotifPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    document.getElementById('notif-banner').style.display = 'block';
+  }
 }
 
-function updateStats(){
-  // Partidas completadas (con duración)
-  const completed=history.filter(h=>h.action==='libre'&&h.duration!==null);
-  const totalPartidas=state.reduce((a,s)=>a+s.partidas,0);
+function sendNotif(name) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification('⏰ Tiempo agotado', {
+    body: `${name} lleva más de 25 minutos ocupado`,
+    icon: 'https://projectamf.netlify.app/favicon.ico'
+  });
+}
 
-  // Tiempo medio
-  let avgStr='—';
-  if (completed.length>0){
-    const avg=Math.round(completed.reduce((a,h)=>a+h.duration,0)/completed.length);
-    avgStr=fmtTimeShort(avg);
-  }
-  document.getElementById('stat-avg').textContent=avgStr;
-  document.getElementById('ms-avg').textContent=avgStr;
-  document.getElementById('ms-total').textContent=totalPartidas;
+// UTILS
+function pad(n) { return String(n).padStart(2, '0'); }
+function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function elapsedStr(ms) {
+  const totalSec = Math.floor(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${pad(m)}:${pad(s)}`;
+}
 
-  // Mesa top
-  const top=state.reduce((a,b)=>b.partidas>a.partidas?b:a,state[0]);
-  const topStr=top.partidas>0?`${top.name} (${top.partidas})`:'—';
-  document.getElementById('stat-top').textContent=top.partidas>0?top.name:'—';
+function updateCounters() {
+  const libres = state.filter(s => s.libre).length;
+  document.getElementById('count-libre').textContent = libres;
+  document.getElementById('count-ocupado').textContent = TOTAL - libres;
+}
 
-  // Máx y mín
-  if (completed.length>0){
-    const durations=completed.map(h=>h.duration);
-    document.getElementById('ms-max').textContent=fmtTimeShort(Math.max(...durations));
-    document.getElementById('ms-min').textContent=fmtTimeShort(Math.min(...durations));
-  } else {
-    document.getElementById('ms-max').textContent='—';
-    document.getElementById('ms-min').textContent='—';
-  }
+// TICK — actualiza contadores de tiempo cada segundo
+function startTick() {
+  if (tickInterval) return;
+  tickInterval = setInterval(() => {
+    const now = Date.now();
+    for (let i = 1; i <= TOTAL; i++) {
+      const s = state[i - 1];
+      if (s.libre || !s.time) continue;
+      const elapsed = now - s.time.getTime();
+      const timerEl = document.querySelector(`#card-${i} .timer-display`);
+      const card = document.getElementById(`card-${i}`);
+      if (!timerEl || !card) continue;
 
-  // Mesas activas
-  document.getElementById('ms-active').textContent=state.filter(s=>!s.libre).length;
+      timerEl.textContent = elapsedStr(elapsed);
 
-  // Uptime evento
-  const upSec=elapsedSec(eventStart);
-  const uptimeStr=fmtTimeShort(upSec);
-  document.getElementById('stat-uptime').textContent=uptimeStr;
-  document.getElementById('ms-uptime').textContent=uptimeStr;
+      if (elapsed >= LIMIT_MS) {
+        timerEl.className = 'timer-display overtime-text';
+        card.classList.add('overtime');
+        if (!s.notified) {
+          s.notified = true;
+          sendNotif(s.name);
+          showToast(`⏰ ${s.name} lleva más de 25 min`);
+        }
+      } else if (elapsed >= LIMIT_MS - 5 * 60 * 1000) {
+        // Últimos 5 minutos — aviso naranja
+        timerEl.className = 'timer-display warning';
+        card.classList.remove('overtime');
+      } else {
+        timerEl.className = 'timer-display';
+        card.classList.remove('overtime');
+      }
+    }
+  }, 1000);
+}
 
-  // Ranking
-  const sorted=[...state].sort((a,b)=>b.partidas-a.partidas);
-  const maxP=sorted[0].partidas||1;
-  const medals=['🥇','🥈','🥉'];
-  document.getElementById('ranking-body').innerHTML=sorted.map((s,i)=>`
-    <tr>
-      <td class="rank-num">${i+1}</td>
-      <td><span style="margin-right:4px">${medals[i]||''}</span>${s.name}</td>
-      <td>${s.cat!=='none'?CATS[s.cat].emoji+' '+CATS[s.cat].label:'—'}</td>
-      <td><strong style="color:var(--gold)">${s.partidas}</strong></td>
-      <td style="width:80px"><div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round((s.partidas/maxP)*100)}%"></div></div></td>
-    </tr>`).join('');
+// TOGGLE con doble confirmación
+function toggle(id) {
+  const s = state[id - 1];
+  const btn = document.querySelector(`#card-${id} .toggle-btn`);
 
-  // Historial
-  const hl=document.getElementById('history-list');
-  if (history.length===0){
-    hl.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:20px;font-size:.82rem;">Aún no hay partidas registradas</div>';
+  if (pendingConfirm[id]) {
+    clearTimeout(pendingConfirm[id].timer);
+    delete pendingConfirm[id];
+    s.libre = !s.libre;
+    s.time = s.libre ? null : new Date();
+    s.notified = false;
+    renderCard(id);
+    updateCounters();
+    showToast(s.libre ? `✅ ${s.name} ahora está LIBRE` : `🔴 ${s.name} OCUPADO — ${timeStr(s.time)}`);
     return;
   }
-  hl.innerHTML=history.slice(0,80).map(h=>{
-    const catTag=h.cat!=='none'?`<span class="hist-cat">${CATS[h.cat].emoji} ${CATS[h.cat].label}</span>`:'';
-    const durTag=h.duration!=null?`<span class="hist-duration">${fmtTimeShort(h.duration)}</span>`:'<span class="hist-duration"></span>';
-    const t=h.timestamp;
-    const timeStr=`${pad(t.getHours())}:${pad(t.getMinutes())}`;
-    return `<div class="hist-item">
-      <span class="hist-time">${timeStr}</span>
-      <span class="hist-name">${h.name}</span>
-      ${catTag}
-      <span class="hist-action ${h.action}">${h.action==='ocupado'?'OCUPADO':'LIBRE'}</span>
-      ${durTag}
-    </div>`;
-  }).join('');
+
+  const emoji = s.libre ? '🔴' : '✅';
+  const action = s.libre ? 'OCUPADO' : 'LIBRE';
+  btn.textContent = `${emoji} ¿Confirmar ${action}? (3s)`;
+  btn.classList.add('confirming');
+
+  pendingConfirm[id] = {
+    timer: setTimeout(() => {
+      delete pendingConfirm[id];
+      renderCard(id);
+    }, 3000)
+  };
 }
 
-function clearHistory(){
-  if (!confirm('¿Borrar el historial de partidas y contadores?')) return;
-  history.length=0;
-  state.forEach(s=>{s.partidas=0;});
-  for (let i=1;i<=TOTAL;i++) renderCard(i);
-  updateCounters(); updateStats();
-  showToast('🗑 Historial limpiado');
+function setCategory(id, cat) {
+  state[id - 1].cat = cat;
+  const sel = document.querySelector(`#card-${id} .cat-select`);
+  if (sel) sel.className = `cat-select ${cat}`;
+  // Update card color
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.classList.remove('cat-elite','cat-oro','cat-plata','cat-bronce');
+    if (cat) card.classList.add(`cat-${cat.toLowerCase()}`);
+  }
+  filterCards();
 }
 
-// ── FILTERS ──
-function setFilter(f){
-  activeFilter=f;
-  document.querySelectorAll('.cat-btn').forEach(b=>{
-    b.className='cat-btn';
-    if (b.id===`filter-${f}`) b.classList.add(`active-${f}`);
-  });
-  applyFilters();
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterCards();
 }
-function applyFilters(){
-  const q=document.getElementById('search').value.toLowerCase();
-  for (let i=1;i<=TOTAL;i++){
-    const s=state[i-1];
-    const card=document.getElementById(`card-${i}`);
-    const mS=s.name.toLowerCase().includes(q)||String(i).includes(q);
-    const mC=activeFilter==='all'||s.cat===activeFilter;
-    card.style.display=(mS&&mC)?'':'none';
+
+function filterCards() {
+  const q = document.getElementById('search').value.toLowerCase();
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = state[i - 1];
+    const card = document.getElementById(`card-${i}`);
+    const matchSearch = s.name.toLowerCase().includes(q) || String(i).includes(q);
+    const matchFilter =
+      currentFilter === 'todas' ||
+      (currentFilter === 'sin' && s.cat === '') ||
+      s.cat === currentFilter;
+    card.style.display = (matchSearch && matchFilter) ? '' : 'none';
   }
 }
 
-// ── BUILD GRID ──
-function buildGrid(){
-  const grid=document.getElementById('grid');
-  grid.innerHTML='';
-  for (let i=1;i<=TOTAL;i++){
-    const s=state[i-1];
-    const card=document.createElement('div');
-    card.className='card libre'; card.id=`card-${i}`;
-    const catOpts=Object.entries(CATS).map(([val,{label,emoji}])=>
-      `<option value="${val}" ${val===s.cat?'selected':''}>${emoji?emoji+' ':''}${label}</option>`).join('');
-    card.innerHTML=`
-      <div class="cat-stripe none"></div>
+function renderCard(id) {
+  const s = state[id - 1];
+  const card = document.getElementById(`card-${id}`);
+  if (!card) return;
+  card.className = `card ${s.libre ? 'libre' : 'ocupado'}`;
+  card.querySelector('.status-badge').textContent = s.libre ? '● Libre' : '● Ocupado';
+  const btn = card.querySelector('.toggle-btn');
+  btn.textContent = s.libre ? '⚡ Marcar como OCUPADO' : '✓ Marcar como LIBRE';
+  btn.classList.remove('confirming');
+
+  const timeLabel = card.querySelector('.time-label');
+  const timeVal = card.querySelector('.time-value');
+  const timerEl = card.querySelector('.timer-display');
+
+  if (!s.libre && s.time) {
+    timeLabel.textContent = 'Inicio:';
+    timeVal.textContent = timeStr(s.time);
+    timerEl.textContent = '00:00';
+    timerEl.className = 'timer-display';
+  } else {
+    timeLabel.textContent = '';
+    timeVal.textContent = '';
+    timerEl.textContent = '';
+    timerEl.className = 'timer-display';
+    card.classList.remove('overtime');
+  }
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const s = state[i - 1];
+    const card = document.createElement('div');
+    card.className = 'card libre';
+    card.id = `card-${i}`;
+    card.innerHTML = `
       <div class="card-top">
         <div class="card-num">${String(i).padStart(2,'0')}</div>
-        <div style="flex:1"><input class="card-name-input" value="${s.name}"
-          onclick="event.stopPropagation()" onchange="state[${i-1}].name=this.value"
-          placeholder="Nombre de la mesa"></div>
-        <div class="card-badges">
-          <div class="count-badge">⚽ 0</div>
-          <div class="status-badge">● Libre</div>
+        <div style="flex:1">
+          <input class="card-name-input" value="${s.name}"
+            onclick="event.stopPropagation()"
+            onchange="state[${i-1}].name=this.value"
+            title="Haz clic para editar el nombre">
         </div>
+        <div class="status-badge">● Libre</div>
       </div>
       <div class="card-meta">
-        <select class="cat-select none" onclick="event.stopPropagation()" onchange="changeCategory(${i},this.value)">${catOpts}</select>
-        <input class="note-input" type="text" placeholder="📝 Nota..." value="${s.note}"
-          onclick="event.stopPropagation()" oninput="changeNote(${i},this.value)" maxlength="60">
+        <select class="cat-select" onchange="setCategory(${i}, this.value)">
+          <option value="">Sin categoría</option>
+          <option value="elite">🏆 Elite</option>
+          <option value="oro">🥇 Oro</option>
+          <option value="plata">🥈 Plata</option>
+          <option value="bronce">🥉 Bronce</option>
+        </select>
       </div>
-      <div class="timer-bar-wrap"><div class="timer-bar-bg"><div class="timer-bar-fill" style="width:0%"></div></div></div>
-      <div class="card-body"><button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button></div>
-      <div class="card-footer"><div class="timer-display"></div><div class="alerta-tag">⚠ TIEMPO LÍMITE</div></div>`;
+      <div class="card-body">
+        <button class="toggle-btn" onclick="toggle(${i})">⚡ Marcar como OCUPADO</button>
+      </div>
+      <div class="card-footer">
+        <div class="time-info">
+          <span class="time-label"></span>
+          <span class="time-value"></span>
+        </div>
+        <div class="timer-display"></div>
+      </div>`;
     grid.appendChild(card);
   }
 }
 
-// ── RESET ──
-function resetAll(){
+function resetAll() {
   if (!confirm('¿Poner todos los futbolines en LIBRE?')) return;
-  Object.keys(pendingRelease).forEach(id=>{clearInterval(pendingRelease[id].timer);delete pendingRelease[id];});
-  state.forEach(s=>{s.libre=true;s.time=null;s.alerted=false;});
-  for (let i=1;i<=TOTAL;i++) renderCard(i);
-  updateCounters(); updateStats();
+  state.forEach(s => { s.libre = true; s.time = null; s.notified = false; });
+  Object.keys(pendingConfirm).forEach(id => {
+    clearTimeout(pendingConfirm[id].timer);
+    delete pendingConfirm[id];
+  });
+  for (let i = 1; i <= TOTAL; i++) renderCard(i);
+  updateCounters();
   showToast('✅ Todos los futbolines liberados');
 }
 
-// ── LIVE TICK ──
-setInterval(()=>{
-  let need=false;
-  for (let i=1;i<=TOTAL;i++){if (!state[i-1].libre&&state[i-1].time){renderCard(i);need=true;}}
-  if (need) updateCounters();
-  // Uptime pill
-  document.getElementById('stat-uptime').textContent=fmtTimeShort(elapsedSec(eventStart));
-  if (statsOpen) {
-    document.getElementById('ms-uptime').textContent=fmtTimeShort(elapsedSec(eventStart));
-    document.getElementById('ms-active').textContent=state.filter(s=>!s.libre).length;
-  }
-},1000);
-
-// ── TOAST ──
 let toastTimer;
-function showToast(msg,warn=false){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className=warn?'warn show':'show';
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className='',3200);
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ── PWA / INSTALABLE ──
-let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();
-  deferredPrompt=e;
-  // Mostrar banner solo si no está bloqueado
-  if (!sessionStorage.getItem('installDismissed')){
-    setTimeout(()=>document.getElementById('install-banner').style.display='block',3000);
+function cambiarPin() {
+  const np = document.getElementById('new-pin').value;
+  if (!/^\d{4}$/.test(np)) { showToast('⚠️ El PIN debe tener exactamente 4 dígitos'); return; }
+  PIN = np;
+  localStorage.setItem('amf_pin', PIN);
+  document.getElementById('new-pin').value = '';
+  document.getElementById('settings-panel').style.display = 'none';
+  showToast('✅ PIN actualizado');
+}
+
+function toggleSettings() {
+  const p = document.getElementById('settings-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('total-input').value = TOTAL;
+}
+
+function applyTotal() {
+  const n = parseInt(document.getElementById('total-input').value);
+  if (!n || n < 1 || n > 200) { showToast('⚠️ Número no válido (1-200)'); return; }
+  if (!confirm(`¿Cambiar a ${n} futbolines? Se reiniciarán todos los estados.`)) return;
+  TOTAL = n;
+  Object.keys(pendingConfirm).forEach(id => { clearTimeout(pendingConfirm[id].timer); delete pendingConfirm[id]; });
+  state.length = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    state.push({ id: i, name: `Futbolín ${String(i).padStart(2,'0')}`, libre: true, time: null, cat: '', notified: false });
   }
-});
-function installPWA(){
-  document.getElementById('install-banner').style.display='none';
-  if (deferredPrompt){deferredPrompt.prompt();deferredPrompt=null;}
-}
-function dismissInstall(){
-  document.getElementById('install-banner').style.display='none';
-  sessionStorage.setItem('installDismissed','1');
-}
-window.addEventListener('appinstalled',()=>{
-  document.getElementById('install-banner').style.display='none';
-  showToast('✅ App instalada correctamente');
-});
-
-// ── SERVICE WORKER (offline) ──
-if ('serviceWorker' in navigator) {
-  const swCode = `
-const CACHE='futbolines-v4';
-const ASSETS=['./'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
-self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match('./')))));
-`;
-  const blob=new Blob([swCode],{type:'application/javascript'});
-  const swUrl=URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(()=>{});
+  buildGrid();
+  updateCounters();
+  document.getElementById('count-total').textContent = TOTAL;
+  document.getElementById('settings-panel').style.display = 'none';
+  showToast(`✅ Ahora hay ${TOTAL} futbolines`);
 }
 
 buildGrid();
 updateCounters();
-updateStats();
+startTick();
+checkNotifPermission();
 </script>
+</div><!-- end app -->
 </body>
 </html>
