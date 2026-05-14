@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bases del Ranking — AMF</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1a2236; --border: #1e2d45;
+    --text: #e8edf5; --text-dim: #7a8fa8; --accent: #1565c0; --gold: #ffc107;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text);
+    min-height: 100vh; padding-bottom: 60px;
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px);
+  }
+  header { text-align: center; padding: 32px 20px 20px; }
+  header::after { content: ''; display: block; height: 2px; margin-top: 20px; background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent); }
+  .logo { font-family: 'Permanent Marker', cursive; font-size: clamp(3rem, 10vw, 5rem); color: white; text-shadow: 0 0 30px rgba(21,101,192,0.4); text-decoration: none; display: block; margin-bottom: 8px; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: 0.08em; color: #fff; line-height: 1; }
+  .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
+
+  .back-btn { text-align: center; padding: 16px 20px 0; }
+  .back-btn a { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 18px; border-radius: 8px; text-decoration: none; transition: all 0.2s; }
+  .back-btn a:hover { border-color: var(--accent); color: var(--text); }
+
+  .content-wrap { max-width: 800px; margin: 30px auto 0; padding: 0 20px; }
+
+  .upload-area {
+    background: var(--surface); border: 2px dashed var(--border); border-radius: 16px;
+    padding: 60px 40px; text-align: center; margin-bottom: 24px; transition: all 0.2s;
+  }
+  .upload-area:hover { border-color: var(--accent); }
+  .upload-icon { font-size: 3rem; margin-bottom: 16px; }
+  .upload-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 8px; }
+  .upload-desc { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 20px; }
+  .upload-btn { background: linear-gradient(135deg, var(--accent), #0d47a1); border: none; color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 12px 28px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .upload-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(21,101,192,0.4); }
+
+  .doc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 12px; transition: all 0.2s; }
+  .doc-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .doc-icon { font-size: 2.5rem; }
+  .doc-info { flex: 1; }
+  .doc-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .doc-meta { font-size: 0.78rem; color: var(--text-dim); }
+  .doc-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+  .doc-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  .empty-state { text-align: center; padding: 40px; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">amf</a>
+  <h1>BASES DEL RANKING</h1>
+  <p class="subtitle">Asociación Melide Futbolín</p>
+</header>
+
+<div class="back-btn">
+  <a href="index.html">← Volver al inicio</a>
+</div>
+
+<div class="content-wrap">
+
+  <div class="upload-area" id="upload-area">
+    <div class="upload-icon">📄</div>
+    <div class="upload-title">DOCUMENTO DE BASES</div>
+    <div class="upload-desc">Aquí aparecerá el reglamento y bases del ranking oficial de la Asociación Melide Futbolín</div>
+    <div class="empty-state">📋 Documento pendiente de publicación</div>
+  </div>
+
+</div>
+
+</body>
+</html>
