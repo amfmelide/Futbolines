@@ -12,10 +12,10 @@
     --libre: #00c853; --ocupado: #f50057;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px;
-    background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(21,101,192,0.18) 0%, transparent 70%),
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,69,0.3) 39px, rgba(30,45,69,0.3) 40px); }
+  .bg-image { position: fixed; inset: 0; z-index: 0; background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/photofut.PNG'); background-size: cover; background-position: center; filter: brightness(0.1) blur(3px); transform: scale(1.05); }
+  .bg-overlay { position: fixed; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,14,26,0.7) 0%, rgba(10,14,26,0.88) 60%, rgba(10,14,26,0.97) 100%); }
+  header, .tabs, #tab-inscripcion, #tab-participantes, #tab-admin, #notif-banner, .modal-overlay, .confirm-overlay, #toast { position: relative; z-index: 2; }
+  body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; position: relative; }
   header { text-align: center; padding: 32px 20px 20px; }
   header::after { content: ''; display: block; height: 2px; margin-top: 20px; background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent); }
   .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
