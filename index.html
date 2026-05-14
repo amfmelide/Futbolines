@@ -145,20 +145,20 @@
       <div class="card-desc">Apúntate al torneo, consulta los participantes y gestiona tu inscripción</div>
     </a>
 
-    <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html">
+    <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html" target="_blank">
       <div class="badge-nuevo">Nuevo</div>
       <div class="card-icon">👕</div>
       <div class="card-title">Reserva Camiseta<br>Zico <span class="zico-x">✕</span> AMF</div>
       <div class="card-desc">Reserva tu camiseta oficial del IV Máster de Melide. Edición limitada a 330 unidades</div>
     </a>
 
-    <a class="card-btn ranking" href="ranking.html">
+    <a class="card-btn ranking" href="#" onclick="showToast('🏆 Ranking próximamente');return false;">
       <div class="card-icon">🏆</div>
       <div class="card-title">Ranking<br>de jugadores</div>
       <div class="card-desc">Clasificación oficial de jugadores por categoría y modalidad</div>
     </a>
 
-    <a class="card-btn liga" href="liga.html">
+    <a class="card-btn liga" href="#" onclick="showToast('⚽ Liga Melide próximamente');return false;">
       <div class="foosball-icon">
         <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
           <rect x="28" y="0" width="4" height="60" rx="2" fill="#4a6080"/>
@@ -190,6 +190,20 @@ window.addEventListener('load', () => {
     setTimeout(() => screen.style.display = 'none', 600);
   }, 1900);
 });
+
+function showToast(msg) {
+  let t = document.getElementById('toast-main');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast-main';
+    t.style = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a2236;border:1px solid #1e2d45;color:#e8edf5;padding:12px 24px;border-radius:40px;font-size:0.85rem;font-weight:600;transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.style.transform = 'translateX(-50%) translateY(80px)', 3000);
+}
 </script>
 </body>
 </html>
