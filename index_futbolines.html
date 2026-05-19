@@ -551,13 +551,21 @@ function toggle(id) {
     // Segunda pulsación: liberar
     clearInterval(pendingRelease[id].timer);
     delete pendingRelease[id];
-    const duration=elapsedSec(s.time);
+    const duration = s.time ? elapsedSec(s.time) : 0;
     s.partidas++;
-    // Actualizar historial
     const hIdx=history.findIndex(h=>h.mesa===id&&h.action==='ocupado'&&h.duration===null);
     if (hIdx>=0) {history[hIdx].duration=duration;}
     history.unshift({mesa:id,name:s.name,cat:s.cat,action:'libre',timestamp:new Date(),duration});
+    // Reset estado
     s.libre=true; s.time=null; s.alerted=false;
+    // Forzar verde directamente en DOM
+    const cardEl=document.getElementById(`card-${id}`);
+    if (cardEl) {
+      cardEl.style.animation='none';
+      cardEl.style.boxShadow='none';
+      void cardEl.offsetWidth;
+      cardEl.className='card libre';
+    }
     renderCard(id); updateCounters(); updateStats();
     showToast(`✅ ${s.name} LIBRE — partida ${fmtTimeShort(duration)}`);
     return;
