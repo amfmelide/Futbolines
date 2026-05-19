@@ -524,7 +524,7 @@ function fmtTimeShort(sec){
 function elapsedSec(d){return Math.floor((Date.now()-d.getTime())/1000);}
 function getCardClass(s){
   if (s.libre) return 'libre';
-  if (elapsedSec(s.time)>=timeLimitMin*60) return 'alerta';
+  if (s.time && elapsedSec(s.time)>=timeLimitMin*60) return 'alerta';
   return 'ocupado';
 }
 function nowStr(){
