@@ -150,6 +150,24 @@
   .social-btn.wa:hover { border-color: #25d366; color: #25d366; box-shadow: 0 4px 16px rgba(37,211,102,0.2); }
 
   /* TOAST */
+  /* ADMIN PIN MODAL */
+  .admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center; }
+  .admin-overlay.show { display:flex; }
+  .admin-box { background:#0a0e1a; border:1px solid rgba(255,193,7,0.3); border-radius:20px; padding:40px; text-align:center; width:320px; }
+  .admin-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.1em; color:#ffc107; margin-bottom:24px; }
+  .pin-dots { display:flex; gap:14px; justify-content:center; margin-bottom:16px; }
+  .pin-dot { width:16px; height:16px; border-radius:50%; border:2px solid #7a8fa8; transition:all 0.15s; }
+  .pin-dot.filled { background:#ffc107; border-color:#ffc107; box-shadow:0 0 10px rgba(255,193,7,0.5); }
+  .pin-err { color:#f50057; font-size:0.8rem; min-height:20px; margin-bottom:12px; font-weight:700; }
+  .pin-grid { display:grid; grid-template-columns:repeat(3,68px); gap:10px; justify-content:center; }
+  .pin-btn { width:68px; height:68px; border-radius:50%; border:1px solid #1e2d45; background:#111827; color:#e8edf5; font-family:'Bebas Neue',sans-serif; font-size:1.6rem; cursor:pointer; transition:all 0.15s; }
+  .pin-btn:hover { background:#1a2236; border-color:#ffc107; }
+  .pin-btn:active { transform:scale(0.92); background:#ffc107; color:#0a0e1a; }
+  .pin-close { margin-top:20px; background:none; border:none; color:#7a8fa8; font-size:0.8rem; cursor:pointer; font-family:'Barlow',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; }
+  /* ADMIN FOOTER BTN */
+  .admin-footer-btn { background:none; border:none; color:rgba(255,255,255,0.08); font-size:0.6rem; cursor:pointer; font-family:'Barlow',sans-serif; letter-spacing:0.1em; margin-top:8px; padding:4px 8px; transition:color 0.3s; }
+  .admin-footer-btn:hover { color:rgba(255,193,7,0.3); }
+
   #toast-main {
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
@@ -175,7 +193,7 @@
 <!-- MAIN -->
 <div id="main">
   <header>
-    <a href="index.html" class="logo">amf</a>
+    <a href="index.html" class="logo" id="logo-amf" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">amf</a>
     <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
     <p class="subtitle">IV Máster de Melide · 18-19-20 Septiembre 2026</p>
   </header>
@@ -258,11 +276,41 @@
   </div>
 
   <footer>
-    Asociación Melide Futbolín · 633 92 82 55 (Ivan) · 606 74 52 40 (Javi)
+    Asociación Melide Futbolín · 633 92 82 55 (Ivan) · 606 74 52 40 (Javi)<br>
+    <button class="admin-footer-btn" onclick="abrirAdmin()">⚙</button>
   </footer>
 </div>
 
 <div id="toast-main"></div>
+
+<!-- ADMIN PIN MODAL -->
+<div class="admin-overlay" id="admin-overlay">
+  <div class="admin-box">
+    <div class="admin-title">🔒 ACCESO ADMIN</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="adot-0"></div>
+      <div class="pin-dot" id="adot-1"></div>
+      <div class="pin-dot" id="adot-2"></div>
+      <div class="pin-dot" id="adot-3"></div>
+    </div>
+    <div class="pin-err" id="admin-err"></div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="adminKey('1')">1</button>
+      <button class="pin-btn" onclick="adminKey('2')">2</button>
+      <button class="pin-btn" onclick="adminKey('3')">3</button>
+      <button class="pin-btn" onclick="adminKey('4')">4</button>
+      <button class="pin-btn" onclick="adminKey('5')">5</button>
+      <button class="pin-btn" onclick="adminKey('6')">6</button>
+      <button class="pin-btn" onclick="adminKey('7')">7</button>
+      <button class="pin-btn" onclick="adminKey('8')">8</button>
+      <button class="pin-btn" onclick="adminKey('9')">9</button>
+      <div></div>
+      <button class="pin-btn" onclick="adminKey('0')">0</button>
+      <button class="pin-btn" onclick="adminDel()">⌫</button>
+    </div>
+    <button class="pin-close" onclick="cerrarAdmin()">Cancelar</button>
+  </div>
+</div>
 
 <script>
 window.addEventListener('load', () => {
@@ -283,6 +331,57 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
+
+// ADMIN PIN
+const ADMIN_PIN = '1234';
+let adminBuffer = '';
+let logoPressTimer = null;
+
+function startLogoPress() {
+  logoPressTimer = setTimeout(() => { abrirAdmin(); }, 2000);
+}
+function cancelLogoPress() {
+  if (logoPressTimer) { clearTimeout(logoPressTimer); logoPressTimer = null; }
+}
+
+function abrirAdmin() {
+  adminBuffer = '';
+  for(let i=0;i<4;i++) document.getElementById('adot-'+i).classList.remove('filled');
+  document.getElementById('admin-err').textContent = '';
+  document.getElementById('admin-overlay').classList.add('show');
+}
+function cerrarAdmin() {
+  document.getElementById('admin-overlay').classList.remove('show');
+  adminBuffer = '';
+}
+function adminKey(d) {
+  if (adminBuffer.length >= 4) return;
+  adminBuffer += d;
+  document.getElementById('adot-'+(adminBuffer.length-1)).classList.add('filled');
+  if (adminBuffer.length === 4) setTimeout(checkAdminPin, 180);
+}
+function adminDel() {
+  if (!adminBuffer.length) return;
+  document.getElementById('adot-'+(adminBuffer.length-1)).classList.remove('filled');
+  adminBuffer = adminBuffer.slice(0,-1);
+  document.getElementById('admin-err').textContent = '';
+}
+function checkAdminPin() {
+  if (adminBuffer === ADMIN_PIN) {
+    cerrarAdmin();
+    window.open('index_futbolines.html', '_blank');
+  } else {
+    document.getElementById('admin-err').textContent = '❌ PIN incorrecto';
+    adminBuffer = '';
+    for(let i=0;i<4;i++) document.getElementById('adot-'+i).classList.remove('filled');
+  }
+}
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('admin-overlay').classList.contains('show')) return;
+  if (e.key>='0' && e.key<='9') adminKey(e.key);
+  if (e.key==='Backspace') adminDel();
+  if (e.key==='Escape') cerrarAdmin();
+});
 
 // CONTADOR INSCRITOS
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
