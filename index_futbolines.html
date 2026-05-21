@@ -608,11 +608,19 @@ function renderCard(id){
   const card=document.getElementById(`card-${id}`);
   if (!card) return;
   const cls=getCardClass(s);
-  // Forzar reset de animación antes de cambiar clase
+  // Forzar reset completo antes de cambiar clase
   card.style.animation='none';
   card.style.boxShadow='none';
+  card.style.borderColor='';
   void card.offsetWidth; // reflow forzado
   card.className=`card ${cls}`;
+  // Resetear estilos inline del botón para que tome el color correcto de CSS
+  const btn=card.querySelector('.toggle-btn');
+  if (btn) {
+    btn.style.background='';
+    btn.style.boxShadow='';
+    btn.classList.remove('confirm-pending');
+  }
   // Restaurar animación solo si ocupado/alerta
   if (cls==='ocupado') card.style.animation='pulse-red 2.5s ease-in-out infinite';
   else if (cls==='alerta') card.style.animation='pulse-warn 1.2s ease-in-out infinite';
