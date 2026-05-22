@@ -132,6 +132,17 @@
 </style>
 </head>
 <body>
+<script>
+// Ejecutar ANTES de que se renderice nada
+if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('tab-inscripcion').style.display = 'none';
+    document.getElementById('tab-participantes').style.display = 'none';
+    document.getElementById('tab-admin').style.display = '';
+    document.getElementById('tabs').style.display = 'none';
+  });
+}
+</script>
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
 
@@ -266,7 +277,7 @@
 </div>
 
 <!-- ADMIN — oculto de las tabs, accesible solo via URL ?tab=admin -->
-<div id="tab-admin" style="display:none">
+<div id="tab-admin" style="display:none;position:relative;z-index:2;">
   <div class="admin-wrap">
     <div class="admin-login" id="admin-login">
       <h2>🔐 ACCESO ADMIN</h2>
@@ -385,7 +396,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Acceso admin por URL oculta: ?tab=admin
   if (tab === 'admin') {
-    showTab('admin', null);
+    ['inscripcion','participantes'].forEach(t => document.getElementById('tab-'+t).style.display='none');
+    document.getElementById('tab-admin').style.display = '';
+    document.getElementById('tabs').style.display = 'none';
     return;
   }
 
