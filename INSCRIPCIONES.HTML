@@ -46,6 +46,8 @@
   .success-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--libre); margin-bottom: 8px; }
   .cancel-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--ocupado); margin-bottom: 8px; }
   .success-msg p, .cancel-msg p { color: var(--text-dim); font-size: 0.9rem; }
+
+  /* PARTICIPANTES */
   .participantes-wrap { max-width: 900px; margin: 30px auto 0; padding: 0 20px; }
   .cat-section { margin-bottom: 30px; }
   .cat-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid; }
@@ -59,6 +61,8 @@
   .equipo-nombre { font-weight: 700; font-size: 0.95rem; }
   .equipo-jugadores { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
   .equipo-zona { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* ADMIN */
   .admin-wrap { max-width: 1400px; margin: 30px auto 0; padding: 0 20px; }
   .admin-login { max-width: 360px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
   .admin-login h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 20px; }
@@ -105,12 +109,12 @@
   .notas-input:focus { border-bottom-color: var(--accent); color: var(--text); }
   .btn-delete { background: rgba(245,0,87,0.1); border: 1px solid rgba(245,0,87,0.3); color: var(--ocupado); border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
   .btn-delete:hover { background: rgba(245,0,87,0.3); }
-  .btn-edit { background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.3); color: #90caf9; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; margin-right: 4px; }
-  .btn-edit:hover { background: rgba(21,101,192,0.3); }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   #toast.show { transform: translateX(-50%) translateY(0); }
   @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .form-card { padding: 20px; } }
+
+  /* CONFIRMATION MODAL */
   .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 10001; justify-content: center; align-items: center; padding: 20px; }
   .confirm-overlay.show { display: flex; }
   .confirm-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -122,6 +126,8 @@
   .confirm-btn-ok { flex: 1; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
   .confirm-btn-back { padding: 14px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
   input.error { border-color: var(--ocupado) !important; }
+
+  /* MODAL EDITAR */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
   .modal-overlay.show { display: flex; }
   .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
@@ -129,26 +135,17 @@
   .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
   .btn-guardar { flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
   .btn-cerrar { padding: 12px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+  .btn-edit { background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.3); color: #90caf9; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; margin-right: 4px; }
+  .btn-edit:hover { background: rgba(21,101,192,0.3); }
 </style>
 </head>
 <body>
-<script>
-// Ejecutar ANTES de que se renderice nada
-if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
-  document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('tab-inscripcion').style.display = 'none';
-    document.getElementById('tab-participantes').style.display = 'none';
-    document.getElementById('tab-admin').style.display = '';
-    document.getElementById('tabs').style.display = 'none';
-  });
-}
-</script>
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
 
 <header>
   <div class="header-icon">
-    <a href="index.html" style="font-family:'Permanent Marker',cursive;font-size:clamp(3rem,10vw,5rem);color:white;letter-spacing:0.05em;line-height:1;text-shadow:0 0 30px rgba(21,101,192,0.4);text-decoration:none;">amf</a>
+    <a href="index.html" style="font-family: 'Permanent Marker', cursive; font-size: clamp(3rem, 10vw, 5rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4); text-decoration: none;">amf</a>
   </div>
   <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
   <p class="subtitle">18-19-20 SEPTIEMBRE · IV MÁSTER DE MELIDE</p>
@@ -158,10 +155,10 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
   <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Volver al inicio</a>
 </div>
 
-<!-- TABS: solo Inscribirse y Participantes, Admin eliminado de la vista pública -->
 <div class="tabs" id="tabs">
   <button class="tab-btn active" onclick="showTab('inscripcion', this)">📝 Inscribirse</button>
   <button class="tab-btn" onclick="showTab('participantes', this)">🏆 Participantes</button>
+  <button class="tab-btn" onclick="showTab('admin', this)">🔐 Admin</button>
 </div>
 
 <!-- FORMULARIO -->
@@ -198,7 +195,52 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
           <label>Zona del equipo</label>
           <select id="zona">
             <option value="">Seleccionar zona...</option>
-            <option value="A Coruña">A Coruña</option><option value="Albacete">Albacete</option><option value="Alicante">Alicante</option><option value="Almería">Almería</option><option value="Arzúa">Arzúa</option><option value="As Cruces">As Cruces</option><option value="Badajoz">Badajoz</option><option value="Barcelona">Barcelona</option><option value="Bilbao">Bilbao</option><option value="Burgos">Burgos</option><option value="Carballo">Carballo</option><option value="Cáceres">Cáceres</option><option value="Córdoba">Córdoba</option><option value="Ferrol">Ferrol</option><option value="Granada">Granada</option><option value="Huelva">Huelva</option><option value="Jaén">Jaén</option><option value="Jerez">Jerez</option><option value="Lalín">Lalín</option><option value="León">León</option><option value="Logroño">Logroño</option><option value="Lugo">Lugo</option><option value="Madrid">Madrid</option><option value="Melide">Melide</option><option value="Murcia">Murcia</option><option value="Málaga">Málaga</option><option value="Ourense">Ourense</option><option value="Outes">Outes</option><option value="Oviedo">Oviedo</option><option value="Palencia">Palencia</option><option value="Pamplona">Pamplona</option><option value="Ponferrada">Ponferrada</option><option value="Pontevedra">Pontevedra</option><option value="Salamanca">Salamanca</option><option value="San Sebastián">San Sebastián</option><option value="Santander">Santander</option><option value="Santiago de Compostela">Santiago de Compostela</option><option value="Sarria">Sarria</option><option value="Sevilla">Sevilla</option><option value="Toledo">Toledo</option><option value="Valencia">Valencia</option><option value="Valladolid">Valladolid</option><option value="Vigo">Vigo</option><option value="Vitoria">Vitoria</option><option value="Zamora">Zamora</option><option value="Zaragoza">Zaragoza</option>
+              <option value="A Coruña">A Coruña</option>
+              <option value="Albacete">Albacete</option>
+              <option value="Alicante">Alicante</option>
+              <option value="Almería">Almería</option>
+              <option value="Arzúa">Arzúa</option>
+              <option value="As Cruces">As Cruces</option>
+              <option value="Badajoz">Badajoz</option>
+              <option value="Barcelona">Barcelona</option>
+              <option value="Bilbao">Bilbao</option>
+              <option value="Burgos">Burgos</option>
+              <option value="Carballo">Carballo</option>
+              <option value="Cáceres">Cáceres</option>
+              <option value="Córdoba">Córdoba</option>
+              <option value="Ferrol">Ferrol</option>
+              <option value="Granada">Granada</option>
+              <option value="Huelva">Huelva</option>
+              <option value="Jaén">Jaén</option>
+              <option value="Jerez">Jerez</option>
+              <option value="Lalín">Lalín</option>
+              <option value="León">León</option>
+              <option value="Logroño">Logroño</option>
+              <option value="Lugo">Lugo</option>
+              <option value="Madrid">Madrid</option>
+              <option value="Melide">Melide</option>
+              <option value="Murcia">Murcia</option>
+              <option value="Málaga">Málaga</option>
+              <option value="Ourense">Ourense</option>
+              <option value="Outes">Outes</option>
+              <option value="Oviedo">Oviedo</option>
+              <option value="Palencia">Palencia</option>
+              <option value="Pamplona">Pamplona</option>
+              <option value="Ponferrada">Ponferrada</option>
+              <option value="Pontevedra">Pontevedra</option>
+              <option value="Salamanca">Salamanca</option>
+              <option value="San Sebastián">San Sebastián</option>
+              <option value="Santander">Santander</option>
+              <option value="Santiago de Compostela">Santiago de Compostela</option>
+              <option value="Sarria">Sarria</option>
+              <option value="Sevilla">Sevilla</option>
+              <option value="Toledo">Toledo</option>
+              <option value="Valencia">Valencia</option>
+              <option value="Valladolid">Valladolid</option>
+              <option value="Vigo">Vigo</option>
+              <option value="Vitoria">Vitoria</option>
+              <option value="Zamora">Zamora</option>
+              <option value="Zaragoza">Zaragoza</option>
           </select>
         </div>
         <div class="form-group">
@@ -219,14 +261,20 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
           <label>Categoría movimiento <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catMovimiento">
             <option value="">Seleccionar...</option>
-            <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+            <option value="Elite">🏆 Elite</option>
+            <option value="Plata">🥈 Plata</option>
+            <option value="Bronce">🥉 Bronce</option>
+            <option value="Rookie">⭐ Rookie</option>
           </select>
         </div>
         <div class="form-group">
           <label>Categoría parado <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catParado">
             <option value="">Seleccionar...</option>
-            <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+            <option value="Elite">🏆 Elite</option>
+            <option value="Plata">🥈 Plata</option>
+            <option value="Bronce">🥉 Bronce</option>
+            <option value="Rookie">⭐ Rookie</option>
           </select>
         </div>
       </div>
@@ -251,6 +299,8 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
 <!-- PARTICIPANTES -->
 <div id="tab-participantes" style="display:none">
   <div class="participantes-wrap">
+
+    <!-- GLOBE -->
     <div style="margin-bottom:30px;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:14px;text-align:center;">🌍 MAPA DE PARTICIPANTES</div>
       <div style="position:relative;">
@@ -261,23 +311,37 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
         <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(10,14,26,0.7);border-radius:20px;padding:4px 12px;font-size:0.72rem;color:var(--text-dim);">Arrastra para rotar · Pellizca para zoom</div>
       </div>
     </div>
+
+    <!-- STATS -->
     <div id="part-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;"></div>
+
+    <!-- CONTROLES -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
+
       <select id="filter-part-cat" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="">Todas las categorías</option>
-        <option value="Elite">🏆 Elite</option><option value="Oro">🥇 Oro</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option>
+        <option value="Elite">🏆 Elite</option>
+        <option value="Rookie">⭐ Rookie</option>
+        <option value="Plata">🥈 Plata</option>
+        <option value="Bronce">🥉 Bronce</option>
       </select>
       <select id="sort-part" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
-        <option value="cat">Ordenar por categoría</option><option value="fecha">Ordenar por fecha</option><option value="alfa">Ordenar alfabético</option>
+        <option value="cat">Ordenar por categoría</option>
+        <option value="fecha">Ordenar por fecha</option>
+        <option value="alfa">Ordenar alfabético</option>
       </select>
       <button onclick="compartir()" style="background:linear-gradient(135deg,#1b5e20,#2e7d32);border:none;color:#a5d6a7;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;cursor:pointer;">📤 Compartir</button>
     </div>
-    <div id="participantes-content"><div class="empty-state"><p>Cargando participantes...</p></div></div>
+
+    <div id="participantes-content">
+      <div class="empty-state"><p>Cargando participantes...</p></div>
+    </div>
+  </div>
   </div>
 </div>
 
-<!-- ADMIN — oculto de las tabs, accesible solo via URL ?tab=admin -->
-<div id="tab-admin" style="display:none;position:relative;z-index:2;">
+<!-- ADMIN -->
+<div id="tab-admin" style="display:none">
   <div class="admin-wrap">
     <div class="admin-login" id="admin-login">
       <h2>🔐 ACCESO ADMIN</h2>
@@ -293,10 +357,14 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
           <button class="btn-refresh" onclick="toggleHistorial()" id="btn-historial">📋 Historial</button>
         </div>
       </div>
+
+      <!-- DUPLICADOS BANNER -->
       <div id="duplicados-banner" style="display:none;background:rgba(245,0,87,0.1);border:1px solid rgba(245,0,87,0.3);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
         <div style="font-weight:700;color:var(--ocupado);margin-bottom:8px;">⚠️ TELÉFONOS REPETIDOS DETECTADOS</div>
         <div id="duplicados-lista" style="font-size:0.82rem;color:var(--text-dim);"></div>
       </div>
+
+      <!-- HISTORIAL -->
       <div id="historial-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:14px;">📋 HISTORIAL DE CAMBIOS</div>
         <div id="historial-lista" style="font-size:0.82rem;color:var(--text-dim);">Cargando...</div>
@@ -306,21 +374,33 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
         <input class="search-input" type="text" id="search-admin" placeholder="🔍 Buscar jugador o equipo..." oninput="renderTable()">
         <select class="filter-select" id="filter-cat" onchange="renderTable()">
           <option value="">Todas las categorías</option>
-          <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+          <option value="Rookie">⭐ Rookie</option>
         </select>
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
-          <option value="Si">✅ Pagados</option><option value="No">❌ Pendientes</option>
+          <option value="Si">✅ Pagados</option>
+          <option value="No">❌ Pendientes</option>
         </select>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>Equipo</th><th>Jugador 1</th><th>📞</th><th>💰 J1</th><th>Jugador 2</th><th>📞</th><th>💰 J2</th><th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th><th>Fecha</th><th>Notas</th><th>Acc.</th></tr>
+            <tr>
+              <th>#</th><th>Equipo</th>
+              <th>Jugador 1</th><th>📞</th><th>💰 J1</th>
+              <th>Jugador 2</th><th>📞</th><th>💰 J2</th>
+              <th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th>
+              <th>Fecha</th><th>Notas</th><th>Acc.</th>
+            </tr>
           </thead>
           <tbody id="table-body"></tbody>
         </table>
-        <div class="empty-state" id="empty-state" style="display:none"><p>No hay inscripciones todavía</p></div>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <p>No hay inscripciones todavía</p>
+        </div>
       </div>
     </div>
   </div>
@@ -328,6 +408,7 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
 
 <div id="toast"></div>
 
+<!-- CONFIRMACION INSCRIPCION -->
 <div class="confirm-overlay" id="confirm-modal">
   <div class="confirm-box">
     <div class="confirm-title">✅ CONFIRMA TU INSCRIPCIÓN</div>
@@ -349,28 +430,64 @@ if (new URLSearchParams(window.location.search).get('tab') === 'admin') {
   </div>
 </div>
 
+<!-- MODAL EDITAR ADMIN -->
 <div class="modal-overlay" id="modal-editar">
   <div class="modal-box">
     <div class="modal-title">✏️ EDITAR INSCRIPCIÓN</div>
-    <div class="form-group"><label>Nombre del equipo</label><input type="text" id="m-equipo" placeholder="Nombre del equipo"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Jugador 1</label><input type="text" id="m-jugador1" placeholder="Nombre completo"></div>
-      <div class="form-group"><label>Tel. Jugador 1</label><input type="tel" id="m-telefono1" placeholder="6XX XXX XXX"></div>
+    <div class="form-group">
+      <label>Nombre del equipo</label>
+      <input type="text" id="m-equipo" placeholder="Nombre del equipo">
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Jugador 2</label><input type="text" id="m-jugador2" placeholder="Nombre completo"></div>
-      <div class="form-group"><label>Tel. Jugador 2</label><input type="tel" id="m-telefono2" placeholder="6XX XXX XXX"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Zona</label><input type="text" id="m-zona" placeholder="Zona"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="m-email" placeholder="correo@ejemplo.com"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Cat. Movimiento</label>
-        <select id="m-catMov"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Oro">🥇 Oro</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option></select>
+      <div class="form-group">
+        <label>Jugador 1</label>
+        <input type="text" id="m-jugador1" placeholder="Nombre completo">
       </div>
-      <div class="form-group"><label>Cat. Parado</label>
-        <select id="m-catPar"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Oro">🥇 Oro</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option></select>
+      <div class="form-group">
+        <label>Tel. Jugador 1</label>
+        <input type="tel" id="m-telefono1" placeholder="6XX XXX XXX">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Jugador 2</label>
+        <input type="text" id="m-jugador2" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tel. Jugador 2</label>
+        <input type="tel" id="m-telefono2" placeholder="6XX XXX XXX">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Zona</label>
+        <input type="text" id="m-zona" placeholder="Zona">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="m-email" placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cat. Movimiento</label>
+        <select id="m-catMov">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Rookie">⭐ Rookie</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cat. Parado</label>
+        <select id="m-catPar">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Rookie">⭐ Rookie</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
       </div>
     </div>
     <div class="modal-actions">
@@ -392,16 +509,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const accion = params.get('accion');
   const codigo = params.get('codigo');
-  const tab = params.get('tab');
-
-  // Acceso admin por URL oculta: ?tab=admin
-  if (tab === 'admin') {
-    ['inscripcion','participantes'].forEach(t => document.getElementById('tab-'+t).style.display='none');
-    document.getElementById('tab-admin').style.display = '';
-    document.getElementById('tabs').style.display = 'none';
-    return;
-  }
-
   if (accion === 'cancelar' && codigo) {
     modoActual = 'cancelar'; codigoActual = codigo;
     mostrarFormularioCancelar(codigo);
@@ -447,34 +554,46 @@ function showTab(tab, btn) {
     document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  btn.classList.add('active');
   if (tab === 'participantes') loadParticipantes();
-  if (tab === 'admin') {
-    // Ocultar tabs públicas cuando se entra al admin
-    document.getElementById('tabs').style.display = 'none';
-  }
 }
 
-function validarTelefono(tel) { return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,'')); }
+function validarTelefono(tel) {
+  return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,''));
+}
 
 function submitForm() {
+  // Clear previous errors
   document.querySelectorAll('input.error').forEach(el => el.classList.remove('error'));
+
   const fields = { equipo:'Nombre del equipo', jugador1:'Jugador 1', telefono1:'Teléfono Jugador 1', jugador2:'Jugador 2', telefono2:'Teléfono Jugador 2', zona:'Zona', telefono:'Teléfono equipo', email:'Email' };
   for (const [id, label] of Object.entries(fields)) {
     const el = document.getElementById(id);
-    if (!el.value.trim()) { el.classList.add('error'); showToast(`⚠️ Falta: ${label}`); el.focus(); return; }
+    if (!el.value.trim()) {
+      el.classList.add('error');
+      showToast(`⚠️ Falta: ${label}`);
+      el.focus();
+      return;
+    }
   }
+
+  // Validate phones
   const tel1 = document.getElementById('telefono1').value.trim();
   const tel2 = document.getElementById('telefono2').value.trim();
   const telEq = document.getElementById('telefono').value.trim();
   if (!validarTelefono(tel1)) { document.getElementById('telefono1').classList.add('error'); showToast('⚠️ Teléfono Jugador 1 no válido'); return; }
   if (!validarTelefono(tel2)) { document.getElementById('telefono2').classList.add('error'); showToast('⚠️ Teléfono Jugador 2 no válido'); return; }
   if (!validarTelefono(telEq)) { document.getElementById('telefono').classList.add('error'); showToast('⚠️ Teléfono del equipo no válido'); return; }
+
+  // Validate email
   const email = document.getElementById('email').value.trim();
   if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { document.getElementById('email').classList.add('error'); showToast('⚠️ Email no válido'); return; }
+
   const catMov = document.getElementById('catMovimiento').value;
   const catPar = document.getElementById('catParado').value;
   if (!catMov && !catPar) { showToast('⚠️ Selecciona al menos una categoría'); return; }
+
+  // Show confirmation modal
   document.getElementById('c-equipo').textContent = document.getElementById('equipo').value.trim();
   document.getElementById('c-jugador1').textContent = document.getElementById('jugador1').value.trim();
   document.getElementById('c-tel1').textContent = tel1;
@@ -485,12 +604,18 @@ function submitForm() {
   document.getElementById('c-catmov').textContent = catMov || '—';
   document.getElementById('c-catpar').textContent = catPar || '—';
   const coment = document.getElementById('comentarios').value.trim();
-  if (coment) { document.getElementById('c-comentarios').textContent = coment; document.getElementById('c-coment-row').style.display = 'flex'; }
-  else { document.getElementById('c-coment-row').style.display = 'none'; }
+  if (coment) {
+    document.getElementById('c-comentarios').textContent = coment;
+    document.getElementById('c-coment-row').style.display = 'flex';
+  } else {
+    document.getElementById('c-coment-row').style.display = 'none';
+  }
   document.getElementById('confirm-modal').classList.add('show');
 }
 
-function cerrarConfirm() { document.getElementById('confirm-modal').classList.remove('show'); }
+function cerrarConfirm() {
+  document.getElementById('confirm-modal').classList.remove('show');
+}
 
 function enviarFormulario() {
   cerrarConfirm();
@@ -515,9 +640,16 @@ function enviarFormulario() {
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
     .then(() => {
       document.getElementById('form-card').style.display = 'none';
-      if (modoActual === 'modificar') { document.getElementById('success-title').textContent = '¡Inscripción modificada!'; document.getElementById('success-text').textContent = 'Tus datos han sido actualizados correctamente.'; }
+      if (modoActual === 'modificar') {
+        document.getElementById('success-title').textContent = '¡Inscripción modificada!';
+        document.getElementById('success-text').textContent = 'Tus datos han sido actualizados correctamente.';
+      }
       document.getElementById('success-msg').style.display = 'block';
-    }).catch(() => { showToast('❌ Error al enviar'); btn.disabled = false; btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO'; });
+    }).catch(() => {
+      showToast('❌ Error al enviar');
+      btn.disabled = false;
+      btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO';
+    });
 }
 
 function cancelarInscripcion() {
@@ -525,8 +657,10 @@ function cancelarInscripcion() {
   const btn = document.getElementById('btn-cancelar');
   btn.disabled = true; btn.textContent = 'Cancelando...';
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'cancelar', codigo:codigoActual }) })
-    .then(() => { document.getElementById('form-card').style.display = 'none'; document.getElementById('cancel-msg').style.display = 'block'; })
-    .catch(() => { showToast('❌ Error al cancelar'); btn.disabled = false; btn.textContent = '❌ CANCELAR INSCRIPCIÓN'; });
+    .then(() => {
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('cancel-msg').style.display = 'block';
+    }).catch(() => { showToast('❌ Error al cancelar'); btn.disabled = false; btn.textContent = '❌ CANCELAR INSCRIPCIÓN'; });
 }
 
 function resetForm() {
@@ -546,37 +680,75 @@ function resetForm() {
   window.history.replaceState({}, '', window.location.pathname);
 }
 
+// PARTICIPANTES PUBLICOS
 function loadParticipantes() {
   document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
   fetch(SCRIPT_URL + '?action=get')
     .then(r => r.json())
     .then(data => {
       const rows = data.rows || [];
-      window._partRows = rows;
-      renderPartStats(rows);
-      renderParticipantes(rows);
+      const cats = ['Elite','Plata','Bronce','Rookie'];
+      let html = '';
+      cats.forEach(cat => {
+        const equipos = rows.filter(r => r[11] === cat || r[12] === cat);
+        if (equipos.length === 0) return;
+        html += `<div class="cat-section">
+          <div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipos</div>`;
+        equipos.forEach((r, i) => {
+          html += `<div class="equipo-card">
+            <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+            <div class="equipo-info">
+              <div class="equipo-nombre">${r[1]}</div>
+              <div class="equipo-jugadores">${r[2]} · ${r[4]}</div>
+              <div class="equipo-zona">📍 ${r[6]}</div>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      });
+      document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
       initGlobe(rows);
-    }).catch(() => { document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes</p></div>'; });
+    }).catch(() => {
+      document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes</p></div>';
+    });
 }
 
 function renderPartStats(rows) {
   const zonas = [...new Set(rows.map(r => r[6]).filter(Boolean))];
+  const cats = ['Elite','Plata','Bronce','Rookie'];
   const galicia = rows.filter(r => ['Melide','Arzúa','As Cruces','Lalín','Sarria','Santiago de Compostela','Vigo','A Coruña','Lugo','Ourense','Pontevedra','Ponferrada'].includes(r[6])).length;
   const fuera = rows.length - galicia;
+  // Farthest team
   const MELIDE = [42.9144, -8.0125];
   let maxDist = 0, farZona = '';
   rows.forEach(r => {
-    const zona = r[6]; if (!zona || !COORDS[zona]) return;
+    const zona = r[6];
+    if (!zona || !COORDS[zona]) return;
     const c = COORDS[zona];
     const d = Math.sqrt(Math.pow(c[0]-MELIDE[0],2) + Math.pow(c[1]-MELIDE[1],2));
     if (d > maxDist) { maxDist = d; farZona = zona; }
   });
   document.getElementById('part-stats').innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Total equipos</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#7cb3ff;">${rows.length}</div></div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Zonas distintas</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#ffc107;">${zonas.length}</div></div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De Galicia</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#00c853;">${galicia}</div></div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De fuera</div><div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#f50057;">${fuera}</div></div>
-    ${farZona?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;"><div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Más lejano</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#ce93d8;">📍 ${farZona}</div></div>`:''}
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Total equipos</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#7cb3ff;">${rows.length}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Zonas distintas</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#ffc107;">${zonas.length}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De Galicia</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#00c853;">${galicia}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De fuera</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#f50057;">${fuera}</div>
+    </div>
+    ${farZona ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;grid-column:span 1;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Más lejano</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#ce93d8;">📍 ${farZona}</div>
+    </div>` : ''}
   `;
 }
 
@@ -584,35 +756,64 @@ function renderParticipantes(rows) {
   if (!rows) return;
   const catFilter = (document.getElementById('filter-part-cat')||{}).value || '';
   const sort = (document.getElementById('sort-part')||{}).value || 'cat';
-  const cats = ['Elite','Oro','Plata','Bronce'];
+  const cats = ['Elite','Plata','Bronce','Rookie'];
+
   let filtered = rows.filter(r => !catFilter || r[11] === catFilter || r[12] === catFilter);
+
   if (sort === 'alfa') filtered.sort((a,b) => (a[1]||'').localeCompare(b[1]||''));
   else if (sort === 'fecha') filtered.sort((a,b) => (a[0]||'').localeCompare(b[0]||''));
+
   if (sort === 'cat' || !catFilter) {
     let html = '';
     cats.forEach(cat => {
       const equipos = filtered.filter(r => r[11] === cat || r[12] === cat);
       if (equipos.length === 0) return;
-      html += `<div class="cat-section"><div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipo${equipos.length>1?'s':''}</div>`;
-      equipos.forEach((r, i) => { html += `<div class="equipo-card"><div class="equipo-num">${String(i+1).padStart(2,'0')}</div><div class="equipo-info"><div class="equipo-nombre">${r[1]||''}</div><div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div><div class="equipo-zona">📍 ${r[6]||''}</div></div></div>`; });
+      html += `<div class="cat-section">
+        <div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipo${equipos.length>1?'s':''}</div>`;
+      equipos.forEach((r, i) => {
+        html += `<div class="equipo-card">
+          <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="equipo-info">
+            <div class="equipo-nombre">${r[1]||''}</div>
+            <div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div>
+            <div class="equipo-zona">📍 ${r[6]||''}</div>
+          </div>
+        </div>`;
+      });
       html += '</div>';
     });
     document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
   } else {
     let html = '';
-    filtered.forEach((r, i) => { html += `<div class="equipo-card"><div class="equipo-num">${String(i+1).padStart(2,'0')}</div><div class="equipo-info"><div class="equipo-nombre">${r[1]||''}</div><div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div><div class="equipo-zona">📍 ${r[6]||''}</div></div></div>`; });
+    filtered.forEach((r, i) => {
+      html += `<div class="equipo-card">
+        <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="equipo-info">
+          <div class="equipo-nombre">${r[1]||''}</div>
+          <div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div>
+          <div class="equipo-zona">📍 ${r[6]||''}</div>
+        </div>
+      </div>`;
+    });
     document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes</p></div>';
   }
 }
 
 function compartir() {
   const url = window.location.href.split('?')[0];
-  if (navigator.share) { navigator.share({ title:'IV Máster de Melide — Participantes', text:'¡Mira quién se ha apuntado!', url }); }
-  else { navigator.clipboard.writeText(url); showToast('📋 Enlace copiado'); }
+  if (navigator.share) {
+    navigator.share({ title: 'IV Máster de Melide — Participantes', text: '¡Mira quién se ha apuntado al IV Máster de Melide!', url: url });
+  } else {
+    navigator.clipboard.writeText(url);
+    showToast('📋 Enlace copiado al portapapeles');
+  }
 }
 
-function getCatEmoji(cat) { return { Elite:'🏆', Plata:'🥈', Bronce:'🥉', Rookie:'⭐' }[cat] || ''; }
+function getCatEmoji(cat) {
+  return { Elite:'🏆', Plata:'🥈', Bronce:'🥉', Rookie:'⭐' }[cat] || '';
+}
 
+// ADMIN
 function checkPass() {
   if (document.getElementById('admin-pass').value === ADMIN_PASS) {
     document.getElementById('admin-login').style.display = 'none';
@@ -625,19 +826,25 @@ function loadData() {
   showToast('🔄 Cargando...');
   fetch(SCRIPT_URL + '?action=get')
     .then(r => r.json())
-    .then(data => { allData = data.rows || []; renderStats(); renderTable(); showToast(`✅ ${allData.length} inscripciones`); })
-    .catch(() => showToast('❌ Error cargando datos'));
+    .then(data => {
+      allData = data.rows || [];
+      renderStats(); renderTable();
+      showToast(`✅ ${allData.length} inscripciones`);
+    }).catch(() => showToast('❌ Error cargando datos'));
 }
 
 function renderStats() {
-  const cats = ['Elite','Oro','Plata','Bronce'];
+  const cats = ['Elite','Plata','Bronce','Rookie'];
   const pagadosJ1 = allData.filter(r => r[3] === 'Si').length;
   const pagadosJ2 = allData.filter(r => r[5] === 'Si').length;
   const totalPagados = pagadosJ1 + pagadosJ2;
   const totalJugadores = allData.length * 2;
   const recaudacion = totalPagados * PRECIO;
   let html = `<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">${allData.length}</div></div>`;
-  cats.forEach(cat => { const n = allData.filter(r => r[11] === cat || r[12] === cat).length; html += `<div class="stat-card ${cat.toLowerCase()}"><div class="stat-label">${cat}</div><div class="stat-num">${n}</div></div>`; });
+  cats.forEach(cat => {
+    const n = allData.filter(r => r[11] === cat || r[12] === cat).length;
+    html += `<div class="stat-card ${cat.toLowerCase()}"><div class="stat-label">${cat}</div><div class="stat-num">${n}</div></div>`;
+  });
   html += `<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">${totalPagados}/${totalJugadores}</div></div>`;
   html += `<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">${recaudacion}€</div></div>`;
   html += `<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">${(totalJugadores-totalPagados)*PRECIO}€</div></div>`;
@@ -668,10 +875,10 @@ function renderTable() {
       <td style="color:var(--text-dim);font-weight:700">${realIdx+1}</td>
       <td style="font-weight:700">${r[1]||''}</td>
       <td>${r[2]||''}</td>
-      <td style="color:${dupTel1?'#f50057':'var(--text-dim)'};">${tel1}${dupTel1?' ⚠️':''}</td>
+      <td style="color:${dupTel1?'#f50057':'var(--text-dim)'};" title="${dupTel1?'⚠️ Tel. repetido':''}">${tel1}${dupTel1?' ⚠️':''}</td>
       <td><button class="btn-pago ${p1?'si':'no'}" onclick="togglePago(${realIdx},1)">${p1?'✅':'❌'}</button></td>
       <td>${r[4]||''}</td>
-      <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};">${tel2}${dupTel2?' ⚠️':''}</td>
+      <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};" title="${dupTel2?'⚠️ Tel. repetido':''}">${tel2}${dupTel2?' ⚠️':''}</td>
       <td><button class="btn-pago ${p2?'si':'no'}" onclick="togglePago(${realIdx},2)">${p2?'✅':'❌'}</button></td>
       <td style="color:var(--text-dim)">${r[6]||''}</td>
       <td><span class="badge ${cc(r[11])}">${r[11]||'-'}</span></td>
@@ -689,7 +896,8 @@ function togglePago(idx, jugador) {
   allData[idx][col] = newVal;
   renderStats(); renderTable();
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'updatePago', row:idx+2, col:col+1, value:newVal }) });
-  showToast(newVal === 'Si' ? `✅ Pagado` : `❌ Pendiente`);
+  const nombre = allData[idx][jugador === 1 ? 2 : 4];
+  showToast(newVal === 'Si' ? `✅ ${nombre} pagado` : `❌ ${nombre} pendiente`);
 }
 
 function guardarNotas(idx, valor) {
@@ -699,40 +907,82 @@ function guardarNotas(idx, valor) {
 }
 
 let editIdx = -1;
+
 function abrirModal(idx) {
-  editIdx = idx; const r = allData[idx];
-  document.getElementById('m-equipo').value = r[1]||''; document.getElementById('m-jugador1').value = r[2]||'';
-  document.getElementById('m-telefono1').value = r[7]||''; document.getElementById('m-jugador2').value = r[4]||'';
-  document.getElementById('m-telefono2').value = r[8]||''; document.getElementById('m-zona').value = r[6]||'';
-  document.getElementById('m-email').value = r[10]||''; document.getElementById('m-catMov').value = r[11]||'';
+  editIdx = idx;
+  const r = allData[idx];
+  document.getElementById('m-equipo').value = r[1]||'';
+  document.getElementById('m-jugador1').value = r[2]||'';
+  document.getElementById('m-telefono1').value = r[7]||'';
+  document.getElementById('m-jugador2').value = r[4]||'';
+  document.getElementById('m-telefono2').value = r[8]||'';
+  document.getElementById('m-zona').value = r[6]||'';
+  document.getElementById('m-email').value = r[10]||'';
+  document.getElementById('m-catMov').value = r[11]||'';
   document.getElementById('m-catPar').value = r[12]||'';
   document.getElementById('modal-editar').classList.add('show');
 }
-function cerrarModal() { document.getElementById('modal-editar').classList.remove('show'); editIdx = -1; }
+
+function cerrarModal() {
+  document.getElementById('modal-editar').classList.remove('show');
+  editIdx = -1;
+}
+
 function guardarEdicion() {
   if (editIdx < 0) return;
   const r = allData[editIdx];
-  const data = { action:'modificar', codigo:r[13], equipo:document.getElementById('m-equipo').value.trim(), jugador1:document.getElementById('m-jugador1').value.trim(), telefono1:document.getElementById('m-telefono1').value.trim(), jugador2:document.getElementById('m-jugador2').value.trim(), telefono2:document.getElementById('m-telefono2').value.trim(), zona:document.getElementById('m-zona').value.trim(), email:document.getElementById('m-email').value.trim(), telefono:r[9]||'', catMovimiento:document.getElementById('m-catMov').value, catParado:document.getElementById('m-catPar').value };
-  allData[editIdx][1]=data.equipo; allData[editIdx][2]=data.jugador1; allData[editIdx][7]=data.telefono1;
-  allData[editIdx][4]=data.jugador2; allData[editIdx][8]=data.telefono2; allData[editIdx][6]=data.zona;
-  allData[editIdx][10]=data.email; allData[editIdx][11]=data.catMovimiento; allData[editIdx][12]=data.catParado;
+  const data = {
+    action: 'modificar',
+    codigo: r[13],
+    equipo: document.getElementById('m-equipo').value.trim(),
+    jugador1: document.getElementById('m-jugador1').value.trim(),
+    telefono1: document.getElementById('m-telefono1').value.trim(),
+    jugador2: document.getElementById('m-jugador2').value.trim(),
+    telefono2: document.getElementById('m-telefono2').value.trim(),
+    zona: document.getElementById('m-zona').value.trim(),
+    email: document.getElementById('m-email').value.trim(),
+    telefono: r[9]||'',
+    catMovimiento: document.getElementById('m-catMov').value,
+    catParado: document.getElementById('m-catPar').value
+  };
+  // Update local data
+  allData[editIdx][1] = data.equipo;
+  allData[editIdx][2] = data.jugador1;
+  allData[editIdx][7] = data.telefono1;
+  allData[editIdx][4] = data.jugador2;
+  allData[editIdx][8] = data.telefono2;
+  allData[editIdx][6] = data.zona;
+  allData[editIdx][10] = data.email;
+  allData[editIdx][11] = data.catMovimiento;
+  allData[editIdx][12] = data.catParado;
+
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
-  cerrarModal(); renderStats(); renderTable();
+  cerrarModal();
+  renderStats();
+  renderTable();
   showToast('✅ Inscripción actualizada');
 }
 
 function eliminarInscrito(idx) {
   const equipo = allData[idx][1];
-  if (!confirm(`¿Eliminar la inscripción de "${equipo}"? Esta acción no se puede deshacer.`)) return;
-  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'cancelar', codigo:allData[idx][13] }) });
-  allData.splice(idx, 1); renderStats(); renderTable();
+  const jugador1 = allData[idx][2];
+  if (!confirm(`¿Eliminar la inscripción de "${equipo}" (${jugador1})? Esta acción no se puede deshacer.`)) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'cancelar', codigo: allData[idx][13] })
+  });
+  allData.splice(idx, 1);
+  renderStats();
+  renderTable();
   showToast(`🗑️ ${equipo} eliminado`);
 }
 
 function toggleHistorial() {
   const panel = document.getElementById('historial-panel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  if (panel.style.display === 'block') loadHistorial();
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) loadHistorial();
 }
 
 function loadHistorial() {
@@ -740,13 +990,41 @@ function loadHistorial() {
     .then(r => r.json())
     .then(data => {
       const rows = data.rows || [];
-      if (rows.length === 0) { document.getElementById('historial-lista').innerHTML = '<p>No hay cambios registrados.</p>'; return; }
+      if (rows.length === 0) {
+        document.getElementById('historial-lista').innerHTML = '<p>No hay cambios registrados todavía.</p>';
+        return;
+      }
       document.getElementById('historial-lista').innerHTML = rows.reverse().map(r => `
         <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;">
           <div style="min-width:100px;color:var(--text-dim);font-size:0.75rem;">${(r[0]||'').toString().substring(0,16)}</div>
-          <div><span style="font-weight:700;color:${r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)'};">${r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅'} ${r[1]||''}</span> <span style="margin-left:8px;">${r[2]||''}</span></div>
-        </div>`).join('');
-    }).catch(() => { document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
+          <div>
+            <span style="font-weight:700;color:${r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)'};">${r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅'} ${r[1]||''}</span>
+            <span style="margin-left:8px;">${r[2]||''}</span>
+          </div>
+        </div>
+      `).join('');
+    }).catch(() => {
+      document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>';
+    });
+}
+
+function checkDuplicados() {
+  const tels = [];
+  const dups = {};
+  allData.forEach((r, idx) => {
+    [r[7], r[8]].forEach(tel => {
+      if (!tel) return;
+      if (!tels[tel]) tels[tel] = [];
+      tels[tel].push({ equipo: r[1], jugador: tel === r[7] ? r[2] : r[4], idx });
+    });
+  });
+  const dupList = Object.entries(tels).filter(([tel, list]) => list.length > 1);
+  const banner = document.getElementById('duplicados-banner');
+  if (dupList.length === 0) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  document.getElementById('duplicados-lista').innerHTML = dupList.map(([tel, list]) =>
+    `📞 <strong>${tel}</strong>: ${list.map(x => x.jugador + ' (' + x.equipo + ')').join(' · ')}`
+  ).join('<br>');
 }
 
 function exportCSV() {
@@ -759,47 +1037,155 @@ function exportCSV() {
   showToast('⬇️ CSV descargado');
 }
 
-const COORDS = {"Melide":[42.9144,-8.0125],"Arzúa":[42.9281,-8.1578],"As Cruces":[42.85,-8.5],"Lalín":[42.6597,-8.1133],"Sarria":[42.78,-7.4167],"Santiago de Compostela":[42.8782,-8.5448],"Vigo":[42.2328,-8.7226],"Ponferrada":[42.5461,-6.5963],"Sevilla":[37.3891,-5.9845],"Málaga":[36.7213,-4.4214],"Huelva":[37.2614,-6.9447],"A Coruña":[43.3623,-8.4115],"Lugo":[43.0097,-7.5567],"Ourense":[42.3364,-7.8642],"Pontevedra":[42.4333,-8.65],"Madrid":[40.4168,-3.7038],"Barcelona":[41.3851,2.1734],"Valencia":[39.4699,-0.3763],"Bilbao":[43.263,-2.935],"Zaragoza":[41.6488,-0.8891],"Murcia":[37.9922,-1.1307],"Alicante":[38.3452,-0.481],"Córdoba":[37.8882,-4.7794],"Valladolid":[41.6523,-4.7245],"Granada":[37.1773,-3.5986],"Oviedo":[43.3614,-5.8593],"Santander":[43.4623,-3.8099],"San Sebastián":[43.3183,-1.9812],"Pamplona":[42.8125,-1.6458],"Burgos":[42.3439,-3.6969],"Salamanca":[40.9701,-5.6635],"Toledo":[39.8628,-4.0273],"Cáceres":[39.4753,-6.3724],"Badajoz":[38.8794,-6.9706],"Albacete":[38.9943,-1.8585],"León":[42.5987,-5.5671],"Zamora":[41.5034,-5.7447],"Logroño":[42.4627,-2.4449],"Vitoria":[42.8467,-2.6726],"Jerez":[36.6864,-6.1375],"Almería":[36.834,-2.4637],"Jaén":[37.7796,-3.7849]};
+// COORDENADAS
+const COORDS = {
+  "Melide": [42.9144, -8.0125],
+  "Arzúa": [42.9281, -8.1578],
+  "As Cruces": [42.85, -8.5],
+  "Lalín": [42.6597, -8.1133],
+  "Sarria": [42.78, -7.4167],
+  "Santiago de Compostela": [42.8782, -8.5448],
+  "Vigo": [42.2328, -8.7226],
+  "Ponferrada": [42.5461, -6.5963],
+  "Sevilla": [37.3891, -5.9845],
+  "Málaga": [36.7213, -4.4214],
+  "Huelva": [37.2614, -6.9447],
+  "A Coruña": [43.3623, -8.4115],
+  "Lugo": [43.0097, -7.5567],
+  "Ourense": [42.3364, -7.8642],
+  "Pontevedra": [42.4333, -8.65],
+  "Madrid": [40.4168, -3.7038],
+  "Barcelona": [41.3851, 2.1734],
+  "Valencia": [39.4699, -0.3763],
+  "Bilbao": [43.263, -2.935],
+  "Zaragoza": [41.6488, -0.8891],
+  "Murcia": [37.9922, -1.1307],
+  "Alicante": [38.3452, -0.481],
+  "Córdoba": [37.8882, -4.7794],
+  "Valladolid": [41.6523, -4.7245],
+  "Granada": [37.1773, -3.5986],
+  "Oviedo": [43.3614, -5.8593],
+  "Santander": [43.4623, -3.8099],
+  "San Sebastián": [43.3183, -1.9812],
+  "Pamplona": [42.8125, -1.6458],
+  "Burgos": [42.3439, -3.6969],
+  "Salamanca": [40.9701, -5.6635],
+  "Toledo": [39.8628, -4.0273],
+  "Cáceres": [39.4753, -6.3724],
+  "Badajoz": [38.8794, -6.9706],
+  "Albacete": [38.9943, -1.8585],
+  "León": [42.5987, -5.5671],
+  "Zamora": [41.5034, -5.7447],
+  "Logroño": [42.4627, -2.4449],
+  "Vitoria": [42.8467, -2.6726],
+  "Jerez": [36.6864, -6.1375],
+  "Almería": [36.834, -2.4637],
+  "Jaén": [37.7796, -3.7849]
+};
 
 let globeInstance = null;
+
 function initGlobe(rows) {
   document.getElementById('globe-loading').style.display = 'none';
+  
+  // Build points from rows
+  const points = [];
   const grouped = {};
-  rows.forEach(r => { const zona = r[6]||''; if (!zona||!COORDS[zona]) return; if (!grouped[zona]) grouped[zona]=[]; grouped[zona].push(r[1]||''); });
-  const points = Object.entries(grouped).map(([zona,equipos]) => ({ lat:COORDS[zona][0], lng:COORDS[zona][1], size:0.4+equipos.length*0.15, color:'#ffc107', zona, equipos }));
-  if (globeInstance) { globeInstance.pointsData(points); return; }
+  
+  rows.forEach(r => {
+    const zona = r[6] || '';
+    const equipo = r[1] || '';
+    if (!zona || !COORDS[zona]) return;
+    if (!grouped[zona]) grouped[zona] = [];
+    grouped[zona].push(equipo);
+  });
+
+  Object.entries(grouped).forEach(([zona, equipos]) => {
+    const coords = COORDS[zona];
+    points.push({
+      lat: coords[0],
+      lng: coords[1],
+      size: 0.4 + equipos.length * 0.15,
+      color: '#ffc107',
+      label: zona + '\n' + equipos.join('\n'),
+      zona: zona,
+      equipos: equipos
+    });
+  });
+
+  if (globeInstance) {
+    globeInstance.pointsData(points);
+    return;
+  }
+
   if (typeof Globe === 'undefined') {
-    document.getElementById('globe-loading').style.display='flex';
-    document.getElementById('globe-loading').textContent='Cargando librería...';
+    document.getElementById('globe-loading').style.display = 'flex';
+    document.getElementById('globe-loading').textContent = 'Cargando librería...';
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/globe.gl@2.30.0/dist/globe.gl.min.js';
     script.onload = () => buildGlobe(points);
     document.head.appendChild(script);
-  } else { buildGlobe(points); }
+  } else {
+    buildGlobe(points);
+  }
 }
 
 function buildGlobe(points) {
   const container = document.getElementById('globe-container');
-  const MELIDE = {lat:42.9144,lng:-8.0125};
-  const arcs = points.filter(p=>p.zona!=='Melide').map(p=>({startLat:p.lat,startLng:p.lng,endLat:MELIDE.lat,endLng:MELIDE.lng,color:p.color,zona:p.zona}));
+  const MELIDE = { lat: 42.9144, lng: -8.0125 };
+
+  // Build arcs from each zone to Melide
+  const arcs = points
+    .filter(p => p.zona !== 'Melide')
+    .map(p => ({
+      startLat: p.lat, startLng: p.lng,
+      endLat: MELIDE.lat, endLng: MELIDE.lng,
+      color: p.color,
+      zona: p.zona
+    }));
+
   globeInstance = Globe()(container)
     .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
     .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-    .pointsData(points).pointLat('lat').pointLng('lng').pointColor('color').pointAltitude(0.01).pointRadius('size').pointResolution(12)
-    .pointLabel(d=>`<div style="background:rgba(10,14,26,0.95);border:1px solid #ffc107;border-radius:10px;padding:12px 16px;color:white;font-family:Arial,sans-serif;min-width:160px;"><div style="font-weight:800;color:#ffc107;margin-bottom:8px;">📍 ${d.zona}</div><div style="color:#7a8fa8;font-size:0.75rem;margin-bottom:6px;">${d.equipos.length} equipo${d.equipos.length>1?'s':''}</div>${d.equipos.map(e=>'<div style="font-size:0.82rem;padding:2px 0;">⚽ '+e+'</div>').join('')}</div>`)
-    .onPointClick(p=>{if(p)showToast('📍 '+p.zona+' — '+p.equipos.length+' equipo(s)');})
-    .arcsData(arcs).arcStartLat('startLat').arcStartLng('startLng').arcEndLat('endLat').arcEndLng('endLng')
-    .arcColor(()=>['rgba(255,193,7,0.4)','rgba(255,193,7,0.8)']).arcAltitude(0.25).arcStroke(0.5).arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(2000);
-  globeInstance.pointOfView({lat:40.4,lng:-3.7,altitude:1.5},1000);
+    .pointsData(points)
+    .pointLat('lat')
+    .pointLng('lng')
+    .pointColor('color')
+    .pointAltitude(0.01)
+    .pointRadius('size')
+    .pointResolution(12)
+    .pointLabel(d => `
+      <div style="background:rgba(10,14,26,0.95);border:1px solid #ffc107;border-radius:10px;padding:12px 16px;color:white;font-family:Arial,sans-serif;min-width:160px;">
+        <div style="font-weight:800;color:#ffc107;margin-bottom:8px;font-size:1rem;">📍 ${d.zona}</div>
+        <div style="color:#7a8fa8;font-size:0.75rem;margin-bottom:6px;">${d.equipos.length} equipo${d.equipos.length>1?'s':''}</div>
+        ${d.equipos.map(e => '<div style="font-size:0.82rem;padding:2px 0;">⚽ ' + e + '</div>').join('')}
+      </div>
+    `)
+    .onPointHover(p => { container.style.cursor = p ? 'pointer' : 'default'; })
+    .onPointClick(p => { if (p) showToast('📍 ' + p.zona + ' — ' + p.equipos.length + ' equipo(s)'); })
+    .arcsData(arcs)
+    .arcStartLat('startLat').arcStartLng('startLng')
+    .arcEndLat('endLat').arcEndLng('endLng')
+    .arcColor(() => ['rgba(255,193,7,0.4)', 'rgba(255,193,7,0.8)'])
+    .arcAltitude(0.25)
+    .arcStroke(0.5)
+    .arcDashLength(0.4)
+    .arcDashGap(0.2)
+    .arcDashAnimateTime(2000);
+
+  globeInstance.pointOfView({ lat: 40.4, lng: -3.7, altitude: 1.5 }, 1000);
 }
 
-function recentrarGlobo() { if (globeInstance) globeInstance.pointOfView({lat:40.4,lng:-3.7,altitude:1.5},800); }
+function recentrarGlobo() {
+  if (globeInstance) globeInstance.pointOfView({ lat: 40.4, lng: -3.7, altitude: 1.5 }, 800);
+}
 
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
 </body>
