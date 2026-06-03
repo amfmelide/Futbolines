@@ -308,43 +308,42 @@
     <button class="mesa-preset" onclick="selectMesas(24)">24</button>
     <button class="mesa-preset" onclick="selectMesas(30)">30</button>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <span style="color:#7a8fa8;font-size:.85rem;">O introduce un número:</span>
-    <input id="custom-mesas" type="number" min="1" max="60" value="30"
-      style="background:#1a2236;border:1px solid #1e2d45;color:#e8edf5;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;width:80px;text-align:center;border-radius:10px;padding:8px;outline:none;"
+  <div style="display:flex;flex-direction:column;gap:10px;width:300px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="color:#7a8fa8;font-size:.85rem;">O introduce un número:</span>
+      <input id="custom-mesas" type="number" min="1" max="60" value="30"
+        style="background:#1a2236;border:1px solid #1e2d45;color:#e8edf5;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;width:80px;text-align:center;border-radius:10px;padding:8px;outline:none;"
+        onkeydown="if(event.key==='Enter')document.getElementById('setup-pass').focus()">
+    </div>
+    <input id="setup-pass" type="password" placeholder="🔑 Contraseña de acceso..."
+      style="background:#1a2236;border:1px solid #1e2d45;border-radius:10px;color:#e8edf5;font-family:'Barlow',sans-serif;font-size:1rem;padding:12px 16px;outline:none;width:100%;text-align:center;"
       onkeydown="if(event.key==='Enter')confirmMesas()">
+    <div id="setup-error" style="color:#f50057;font-size:.82rem;min-height:18px;text-align:center;font-weight:700;"></div>
     <button onclick="confirmMesas()"
-      style="background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:.85rem;padding:10px 20px;border-radius:10px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">
-      Confirmar
+      style="background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:.9rem;padding:14px;border-radius:10px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;width:100%;">
+      🔓 Acceder al panel
     </button>
   </div>
   <p style="color:#7a8fa8;font-size:.75rem;text-align:center;max-width:320px;line-height:1.5;">Puedes desactivar mesas individuales más adelante<br>si alguna se estropea durante el evento</p>
 </div>
 
-<!-- ── PIN ── -->
+<!-- ── LOCK SCREEN ── -->
 <div id="lock-screen">
   <div class="lock-icon">🔒</div>
   <h2>ACCESO RESTRINGIDO</h2>
-  <p>Introduce el PIN de 4 dígitos</p>
-  <div class="pin-dots">
-    <div class="pin-dot" id="dot-0"></div><div class="pin-dot" id="dot-1"></div>
-    <div class="pin-dot" id="dot-2"></div><div class="pin-dot" id="dot-3"></div>
-  </div>
+  <p>Introduce la contraseña para continuar</p>
   <div class="pin-error" id="pin-error"></div>
-  <div class="pin-keypad">
-    <button class="pin-key" onclick="pinKey('1')">1</button>
-    <button class="pin-key" onclick="pinKey('2')">2</button>
-    <button class="pin-key" onclick="pinKey('3')">3</button>
-    <button class="pin-key" onclick="pinKey('4')">4</button>
-    <button class="pin-key" onclick="pinKey('5')">5</button>
-    <button class="pin-key" onclick="pinKey('6')">6</button>
-    <button class="pin-key" onclick="pinKey('7')">7</button>
-    <button class="pin-key" onclick="pinKey('8')">8</button>
-    <button class="pin-key" onclick="pinKey('9')">9</button>
-    <button class="pin-key del" onclick="pinDel()">⌫</button>
-    <button class="pin-key zero" onclick="pinKey('0')">0</button>
+  <div style="display:flex;flex-direction:column;gap:12px;width:280px;">
+    <input id="pass-input" type="password"
+      placeholder="Contraseña..."
+      style="background:#1a2236;border:1px solid #1e2d45;border-radius:12px;color:#e8edf5;font-family:'Barlow',sans-serif;font-size:1.1rem;padding:14px 18px;outline:none;text-align:center;width:100%;letter-spacing:0.05em;"
+      onkeydown="if(event.key==='Enter')checkPin()"
+      oninput="document.getElementById('pin-error').textContent=''">
+    <button onclick="checkPin()"
+      style="background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;border-radius:12px;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:1rem;padding:14px;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;width:100%;">
+      🔓 Entrar
+    </button>
   </div>
-  <p class="pin-hint">Introduce tu PIN de acceso</p>
 </div>
 
 <!-- ── APP ── -->
@@ -448,9 +447,9 @@
 <div class="modal-overlay" id="settings-modal">
   <div class="modal">
     <h3>⚙ Ajustes</h3>
-    <div class="modal-row"><label>PIN actual</label><input class="modal-input" type="password" id="set-current-pin" placeholder="PIN actual" maxlength="4"></div>
-    <div class="modal-row"><label>Nuevo PIN (4 dígitos)</label><input class="modal-input" type="password" id="set-new-pin" placeholder="Nuevo PIN" maxlength="4"></div>
-    <div class="modal-row"><label>Confirmar nuevo PIN</label><input class="modal-input" type="password" id="set-confirm-pin" placeholder="Repetir PIN" maxlength="4"></div>
+    <div class="modal-row"><label>Contraseña actual</label><input class="modal-input" type="password" id="set-current-pin" placeholder="Contraseña actual" maxlength="30"></div>
+    <div class="modal-row"><label>Nueva contraseña</label><input class="modal-input" type="password" id="set-new-pin" placeholder="Nueva contraseña" maxlength="30"></div>
+    <div class="modal-row"><label>Confirmar contraseña</label><input class="modal-input" type="password" id="set-confirm-pin" placeholder="Repetir contraseña" maxlength="30"></div>
     <div id="settings-error" style="color:var(--ocupado);font-size:.8rem;min-height:16px;margin-top:2px;"></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSettings()">Cancelar</button>
@@ -473,7 +472,7 @@
 <script>
 // ── CONFIG ──
 const TOTAL = 30;
-let PIN = 'amfmelidegestion';
+let PIN = '2450';
 let pinBuffer = '';
 let timeLimitMin = 10;
 let activeFilter = 'all';
@@ -512,16 +511,19 @@ function pinDel() {
   document.getElementById('pin-error').textContent='';
 }
 function checkPin() {
-  if (pinBuffer===PIN) {
+  const inp = document.getElementById('pass-input');
+  const val = inp ? inp.value : pinBuffer;
+  if (val === PIN) {
     document.getElementById('lock-screen').style.display='none';
     document.getElementById('app').style.display='block';
     pinBuffer='';
+    if (inp) inp.value='';
   } else {
     const el=document.getElementById('pin-error');
-    el.style.animation='none'; el.textContent='❌ PIN incorrecto.';
+    el.style.animation='none'; el.textContent='❌ Contraseña incorrecta.';
     void el.offsetWidth; el.style.animation='shake .3s ease';
     pinBuffer='';
-    for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
+    if (inp) inp.value='';
   }
 }
 function lockApp() {
@@ -529,12 +531,12 @@ function lockApp() {
   document.getElementById('lock-screen').style.display='flex';
   document.getElementById('pin-error').textContent='';
   pinBuffer='';
-  for (let i=0;i<4;i++) document.getElementById(`dot-${i}`).classList.remove('filled');
+  const inp=document.getElementById('pass-input');
+  if (inp) { inp.value=''; setTimeout(()=>inp.focus(),200); }
 }
 document.addEventListener('keydown',e=>{
   if (document.getElementById('lock-screen').style.display==='none') return;
-  if (e.key>='0'&&e.key<='9') pinKey(e.key);
-  if (e.key==='Backspace') pinDel();
+  // Enter handled by input onkeydown
 });
 
 // ── SETTINGS ──
@@ -550,7 +552,7 @@ function savePin() {
   const cnf=document.getElementById('set-confirm-pin').value;
   const err=document.getElementById('settings-error');
   if (cur!==PIN)            {err.textContent='❌ PIN actual incorrecto.';return;}
-  if (!/^\d{4}$/.test(nw)) {err.textContent='❌ El PIN debe tener 4 dígitos.';return;}
+  if (nw.length < 4) {err.textContent='❌ La contraseña debe tener al menos 4 caracteres.';return;}
   if (nw!==cnf)             {err.textContent='❌ Los PINs no coinciden.';return;}
   PIN=nw; err.style.color='var(--libre)'; err.textContent='✅ PIN actualizado.';
   setTimeout(closeSettings,1200); showToast('✅ PIN actualizado');
@@ -846,15 +848,24 @@ function selectMesas(n) {
   document.getElementById('custom-mesas').value = n;
 }
 
+const SETUP_PASS = 'amfmelidegestion';
+
 function confirmMesas() {
+  const passEl = document.getElementById('setup-pass');
+  const errEl  = document.getElementById('setup-error');
+  if (passEl && passEl.value !== SETUP_PASS) {
+    errEl.textContent = '❌ Contraseña incorrecta';
+    passEl.value = '';
+    passEl.focus();
+    return;
+  }
+  if (errEl) errEl.textContent = '';
   const n = parseInt(document.getElementById('custom-mesas').value) || 30;
   TOTAL_ACTIVO = Math.max(1, Math.min(60, n));
-  // Mark tables beyond count as hidden
   for (let i = 1; i <= TOTAL; i++) {
     state[i-1].visible = i <= TOTAL_ACTIVO;
   }
   document.getElementById('setup-screen').style.display = 'none';
-  // Update total counter
   document.querySelector('.score-card.total .score-number').textContent = TOTAL_ACTIVO;
 }
 
