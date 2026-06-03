@@ -12,29 +12,75 @@
     --libre: #00c853; --ocupado: #f50057;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; position: relative; overflow-x: hidden; }
-  .bg-image { position: fixed; inset: 0; z-index: 0; background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/photofut.PNG'); background-size: cover; background-position: center top; filter: brightness(0.25) blur(2px); transform: scale(1.05); }
-  .bg-overlay { position: fixed; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,14,26,0.45) 0%, rgba(10,14,26,0.65) 60%, rgba(10,14,26,0.85) 100%); }
-  #loading-screen { position: fixed; inset: 0; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.6s ease; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px;
+    position: relative; overflow-x: hidden;
+  }
+
+  .bg-image {
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/photofut.PNG');
+    background-size: cover; background-position: center top;
+    filter: brightness(0.25) blur(2px);
+    transform: scale(1.05);
+  }
+  .bg-overlay {
+    position: fixed; inset: 0; z-index: 1;
+    background: linear-gradient(180deg, rgba(10,14,26,0.45) 0%, rgba(10,14,26,0.65) 60%, rgba(10,14,26,0.85) 100%);
+  }
+
+  #loading-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 99999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    transition: opacity 0.6s ease;
+  }
   .loading-logo { font-family: 'Permanent Marker', cursive; font-size: 6rem; color: white; text-shadow: 0 0 40px rgba(21,101,192,0.6); animation: pulse-logo 1.5s ease-in-out infinite; }
   .loading-bar-wrap { width: 200px; height: 3px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
   .loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; animation: loading-fill 1.8s ease-out forwards; }
   .loading-text { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
   @keyframes pulse-logo { 0%,100%{text-shadow:0 0 40px rgba(21,101,192,0.4);} 50%{text-shadow:0 0 60px rgba(21,101,192,0.8), 0 0 80px rgba(255,193,7,0.2);} }
   @keyframes loading-fill { 0%{width:0%} 100%{width:100%} }
+
   #main { opacity: 0; transition: opacity 0.5s ease; position: relative; z-index: 2; width: 100%; max-width: 960px; }
   #main.visible { opacity: 1; }
+
   header { text-align: center; margin-bottom: 40px; }
-  header::after { content: ''; display: block; height: 2px; margin-top: 20px; background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent); }
+  header::after {
+    content: ''; display: block; height: 2px; margin-top: 20px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
+  }
   .logo { font-family: 'Permanent Marker', cursive; font-size: clamp(4rem, 15vw, 8rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 40px rgba(21,101,192,0.5); text-decoration: none; display: block; }
   h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.2rem, 3.5vw, 2.2rem); letter-spacing: 0.08em; color: #fff; margin-top: 8px; line-height: 1; }
   .subtitle { font-size: 0.82rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; width: 100%; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    width: 100%;
+  }
   @media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   @media (min-width: 960px) { .grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
-  .card-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(17,24,39,0.85); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 16px; padding: 28px 16px; text-decoration: none; color: var(--text); transition: all 0.25s; cursor: pointer; position: relative; overflow: hidden; min-height: 160px; }
+
+  .card-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(17,24,39,0.85); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 16px; text-decoration: none; color: var(--text);
+    transition: all 0.25s; cursor: pointer; position: relative; overflow: hidden;
+    min-height: 160px;
+  }
   @media (min-width: 640px) { .card-btn { padding: 34px 20px; min-height: 190px; } }
-  .card-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03)); pointer-events: none; }
+  .card-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255,255,255,0.03));
+    pointer-events: none;
+  }
   .card-btn:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
   .card-btn.inscripcion { border-color: rgba(21,101,192,0.4); }
   .card-btn.inscripcion:hover { border-color: var(--accent); box-shadow: 0 16px 40px rgba(21,101,192,0.25); }
@@ -46,8 +92,10 @@
   .card-btn.liga:hover { border-color: #ce93d8; box-shadow: 0 16px 40px rgba(156,39,176,0.2); }
   .card-btn.bases { border-color: rgba(255,193,7,0.2); }
   .card-btn.bases:hover { border-color: var(--gold); box-shadow: 0 16px 40px rgba(255,193,7,0.15); }
+
   .card-icon { font-size: 2.4rem; margin-bottom: 12px; line-height: 1; }
   @media (min-width: 640px) { .card-icon { font-size: 3rem; } }
+
   .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; text-align: center; line-height: 1.2; }
   @media (min-width: 640px) { .card-title { font-size: 1.2rem; } }
   .card-btn.inscripcion .card-title { color: #90caf9; }
@@ -55,41 +103,75 @@
   .card-btn.ranking .card-title { color: var(--libre); }
   .card-btn.liga .card-title { color: #ce93d8; }
   .card-btn.bases .card-title { color: #ffd54f; }
+
   .card-desc { font-size: 0.75rem; color: var(--text-dim); text-align: center; line-height: 1.4; margin-top: 6px; display: none; }
   @media (min-width: 640px) { .card-desc { display: block; } }
-  .zico-x { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #e53935; font-style: italic; text-shadow: 1px 1px 0 #b71c1c, 0 0 12px rgba(229,57,53,0.5); transform: rotate(-8deg) skewX(-5deg); display: inline-block; margin: 0 1px; }
+
+  .zico-x {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: #e53935;
+    font-style: italic; text-shadow: 1px 1px 0 #b71c1c, 0 0 12px rgba(229,57,53,0.5);
+    transform: rotate(-8deg) skewX(-5deg); display: inline-block; margin: 0 1px;
+  }
+
   .foosball-icon { margin-bottom: 12px; }
-  .badge-nuevo { position: absolute; top: 10px; right: 10px; background: var(--ocupado); color: white; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 20px; }
+
+  .badge-nuevo {
+    position: absolute; top: 10px; right: 10px;
+    background: var(--ocupado); color: white; font-size: 0.6rem; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: 20px;
+  }
+
   footer { margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 0.72rem; letter-spacing: 0.08em; position: relative; z-index: 2; }
+
   .countdown { display: flex; gap: 16px; justify-content: center; margin: 20px 0 10px; flex-wrap: wrap; }
   .cd-box { background: rgba(17,24,39,0.8); border: 1px solid rgba(255,193,7,0.3); border-radius: 12px; padding: 12px 16px; text-align: center; min-width: 70px; backdrop-filter: blur(10px); }
   .cd-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; color: var(--gold); line-height: 1; display: block; }
   .cd-label { font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; display: block; }
   .cd-title { font-size: 0.78rem; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+
   .inscritos-box { display: inline-flex; flex-direction: column; align-items: center; background: rgba(17,24,39,0.8); border: 1px solid rgba(0,200,83,0.3); border-radius: 14px; padding: 14px 28px; margin-bottom: 24px; backdrop-filter: blur(10px); }
   .inscritos-num { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: #00c853; line-height: 1; text-shadow: 0 0 20px rgba(0,200,83,0.4); }
   .inscritos-label { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 2px; }
   .inscritos-dot { width: 8px; height: 8px; background: #00c853; border-radius: 50%; display: inline-block; margin-right: 6px; animation: blink 1.5s ease-in-out infinite; }
   @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
   .social-links { display: flex; gap: 14px; justify-content: center; margin-top: 16px; }
   .social-btn { display: flex; align-items: center; gap: 8px; background: rgba(17,24,39,0.8); border: 1px solid var(--border); border-radius: 10px; padding: 9px 16px; text-decoration: none; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; transition: all 0.2s; backdrop-filter: blur(10px); }
-  .social-btn.ig:hover { border-color: #e1306c; color: #e1306c; }
-  .social-btn.wa:hover { border-color: #25d366; color: #25d366; }
+  .social-btn.ig:hover { border-color: #e1306c; color: #e1306c; box-shadow: 0 4px 16px rgba(225,48,108,0.2); }
+  .social-btn.wa:hover { border-color: #25d366; color: #25d366; box-shadow: 0 4px 16px rgba(37,211,102,0.2); }
+
   .admin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center; }
   .admin-overlay.show { display:flex; }
   .admin-box { background:#0a0e1a; border:1px solid rgba(255,193,7,0.3); border-radius:20px; padding:40px; text-align:center; width:320px; }
   .admin-title { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.1em; color:#ffc107; margin-bottom:6px; }
   .admin-subtitle { font-size:0.72rem; color:var(--text-dim); margin-bottom:20px; letter-spacing:0.08em; }
+  .pin-dots { display:flex; gap:14px; justify-content:center; margin-bottom:16px; }
+  .pin-dot { width:16px; height:16px; border-radius:50%; border:2px solid #7a8fa8; transition:all 0.15s; }
+  .pin-dot.filled { background:#ffc107; border-color:#ffc107; box-shadow:0 0 10px rgba(255,193,7,0.5); }
   .pin-err { color:#f50057; font-size:0.8rem; min-height:20px; margin-bottom:12px; font-weight:700; }
+  .pin-grid { display:grid; grid-template-columns:repeat(3,68px); gap:10px; justify-content:center; }
+  .pin-btn { width:68px; height:68px; border-radius:50%; border:1px solid #1e2d45; background:#111827; color:#e8edf5; font-family:'Bebas Neue',sans-serif; font-size:1.6rem; cursor:pointer; transition:all 0.15s; }
+  .pin-btn:hover { background:#1a2236; border-color:#ffc107; }
+  .pin-btn:active { transform:scale(0.92); background:#ffc107; color:#0a0e1a; }
   .pin-close { margin-top:20px; background:none; border:none; color:#7a8fa8; font-size:0.8rem; cursor:pointer; font-family:'Barlow',sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; }
+
+  /* Menú admin con opciones */
   .admin-menu { display:none; flex-direction:column; gap:10px; margin-top:16px; }
   .admin-menu.show { display:flex; }
   .admin-menu-btn { display:flex; align-items:center; gap:12px; background:#111827; border:1px solid #1e2d45; border-radius:12px; padding:14px 18px; color:#e8edf5; font-family:'Barlow',sans-serif; font-weight:700; font-size:0.9rem; cursor:pointer; text-decoration:none; transition:all 0.2s; text-align:left; }
   .admin-menu-btn:hover { border-color:#ffc107; color:#ffc107; transform:translateX(4px); }
   .admin-menu-btn .btn-icon { font-size:1.4rem; }
+
   .admin-footer-btn { background:none; border:none; color:rgba(255,255,255,0.08); font-size:0.6rem; cursor:pointer; font-family:'Barlow',sans-serif; letter-spacing:0.1em; margin-top:8px; padding:4px 8px; transition:color 0.3s; }
   .admin-footer-btn:hover { color:rgba(255,193,7,0.3); }
-  #toast-main { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+  #toast-main {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+    white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
   #toast-main.show { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -98,12 +180,14 @@
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
 
+<!-- LOADING -->
 <div id="loading-screen">
   <div class="loading-logo">amf</div>
   <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
   <div class="loading-text">Asociación Melide Futbolín</div>
 </div>
 
+<!-- MAIN -->
 <div id="main">
   <header>
     <a href="index.html" class="logo" id="logo-amf" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">amf</a>
@@ -112,22 +196,27 @@
   </header>
 
   <div class="grid">
+
     <a class="card-btn inscripcion" href="INSCRIPCIONES.HTML">
       <div class="card-icon">📝</div>
       <div class="card-title">Inscripción<br>IV Máster</div>
       <div class="card-desc">Apúntate al torneo y gestiona tu inscripción</div>
     </a>
+
     <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html" target="_blank">
       <div class="badge-nuevo">Nuevo</div>
       <div class="card-icon">👕</div>
       <div class="card-title">Camiseta<br>Zico <span class="zico-x">✕</span> AMF</div>
       <div class="card-desc">Reserva tu camiseta oficial. Edición limitada</div>
     </a>
+
+    <!-- ✅ RANKING enlazado al proyecto de Javi -->
     <a class="card-btn ranking" href="https://javilaya.github.io/ranking-evo-amf/" target="_blank">
       <div class="card-icon">🏆</div>
       <div class="card-title">Ranking<br>Jugadores</div>
       <div class="card-desc">Clasificación oficial por categoría</div>
     </a>
+
     <a class="card-btn liga" href="#" onclick="showToast('⚽ Liga Melide próximamente');return false;">
       <div class="foosball-icon">
         <svg width="50" height="50" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
@@ -142,13 +231,16 @@
       <div class="card-title">Liga Melide<br>2026</div>
       <div class="card-desc">Resultados y clasificaciones de la liga</div>
     </a>
+
     <a class="card-btn bases" href="bases_ranking.html">
       <div class="card-icon">📋</div>
       <div class="card-title">Bases del<br>Ranking</div>
       <div class="card-desc">Reglamento y estatutos oficiales</div>
     </a>
+
   </div>
 
+  <!-- CONTADOR INSCRITOS -->
   <div style="position:relative;z-index:2;text-align:center;margin-top:32px;">
     <div class="inscritos-box">
       <div class="inscritos-num" id="contador-inscritos">--</div>
@@ -156,6 +248,7 @@
     </div>
   </div>
 
+  <!-- COUNTDOWN -->
   <div style="position:relative;z-index:2;text-align:center;margin-top:32px;">
     <div class="cd-title">⏳ Cuenta atrás para el torneo</div>
     <div class="countdown">
@@ -166,6 +259,7 @@
     </div>
   </div>
 
+  <!-- SOCIAL -->
   <div style="position:relative;z-index:2;">
     <div class="social-links">
       <a class="social-btn ig" href="https://instagram.com/amfmelide" target="_blank">
@@ -187,11 +281,11 @@
 
 <div id="toast-main"></div>
 
-<!-- ADMIN MODAL -->
+<!-- ADMIN PIN MODAL -->
 <div class="admin-overlay" id="admin-overlay">
   <div class="admin-box">
     <div class="admin-title">🔒 ACCESO ADMIN</div>
-    <div class="admin-subtitle" id="admin-subtitle">Introduce la contraseña para acceder</div>
+    <div class="admin-subtitle">Introduce la contraseña para acceder</div>
     <div class="pin-err" id="admin-err"></div>
     <div id="pin-grid" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px;">
       <input id="admin-pass-input" type="password" placeholder="Contraseña..."
@@ -203,8 +297,10 @@
         Entrar
       </button>
     </div>
+
+    <!-- Menú tras autenticación -->
     <div class="admin-menu" id="admin-menu">
-      <a class="admin-menu-btn" href="INSCRIPCIONES.HTML?admin=1">
+      <a class="admin-menu-btn" href="INSCRIPCIONES.HTML?tab=admin">
         <span class="btn-icon">📝</span>
         <div>
           <div>Gestión de inscripciones</div>
@@ -226,6 +322,7 @@
         </div>
       </a>
     </div>
+
     <button class="pin-close" onclick="cerrarAdmin()">Cancelar</button>
   </div>
 </div>
@@ -250,17 +347,20 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-const ADMIN_PIN = 'amfmaster2025';
+// ADMIN PIN
+const ADMIN_PIN = 'amfmelidegestion';
+let adminBuffer = '';
+let adminAuthed = false;
 let logoPressTimer = null;
 
 function startLogoPress() { logoPressTimer = setTimeout(() => abrirAdmin(), 2000); }
 function cancelLogoPress() { if (logoPressTimer) { clearTimeout(logoPressTimer); logoPressTimer = null; } }
 
 function abrirAdmin() {
+  adminBuffer = ''; adminAuthed = false;
   const inp = document.getElementById('admin-pass-input');
   if (inp) inp.value = '';
   document.getElementById('admin-err').textContent = '';
-  document.getElementById('admin-subtitle').textContent = 'Introduce la contraseña para acceder';
   document.getElementById('pin-grid').style.display = 'flex';
   document.getElementById('admin-menu').classList.remove('show');
   document.getElementById('admin-overlay').classList.add('show');
@@ -268,27 +368,32 @@ function abrirAdmin() {
 }
 function cerrarAdmin() {
   document.getElementById('admin-overlay').classList.remove('show');
+  adminBuffer = ''; adminAuthed = false;
   const inp = document.getElementById('admin-pass-input');
   if (inp) inp.value = '';
 }
+
 function checkAdminPin() {
   const input = document.getElementById('admin-pass-input');
-  const val = input ? input.value : '';
+  const val = input ? input.value : adminBuffer;
   if (val === ADMIN_PIN) {
+    adminAuthed = true;
     document.getElementById('admin-err').textContent = '';
     document.getElementById('pin-grid').style.display = 'none';
     document.getElementById('admin-menu').classList.add('show');
-    document.getElementById('admin-subtitle').textContent = '¿Qué quieres gestionar?';
+    document.getElementById('admin-overlay').querySelector('.admin-subtitle').textContent = '¿Qué quieres gestionar?';
   } else {
     document.getElementById('admin-err').textContent = '❌ Contraseña incorrecta';
     if (input) input.value = '';
+    adminBuffer = '';
   }
 }
 document.addEventListener('keydown', e => {
   if (!document.getElementById('admin-overlay').classList.contains('show')) return;
-  if (e.key === 'Escape') cerrarAdmin();
+  if (e.key==='Escape') cerrarAdmin();
 });
 
+// CONTADOR INSCRITOS
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
 function loadContador() {
   fetch(SCRIPT_URL + '?action=get')
@@ -296,10 +401,13 @@ function loadContador() {
     .then(data => {
       const rows = data.rows || [];
       let total = 0;
-      rows.forEach(r => { if (r[11]) total++; if (r[12]) total++; });
+      rows.forEach(r => {
+        if (r[11]) total++;
+        if (r[12]) total++;
+      });
       const el = document.getElementById('contador-inscritos');
       let current = 0;
-      const step = Math.ceil(total / 30) || 1;
+      const step = Math.ceil(total / 30);
       const interval = setInterval(() => {
         current = Math.min(current + step, total);
         el.textContent = current;
@@ -311,10 +419,15 @@ function loadContador() {
 loadContador();
 setInterval(loadContador, 30000);
 
+// COUNTDOWN
 function updateCountdown() {
   const target = new Date('2026-09-18T09:00:00');
-  const diff = target - new Date();
-  if (diff <= 0) { ['cd-dias','cd-horas','cd-min','cd-seg'].forEach(id => document.getElementById(id).textContent = '00'); return; }
+  const now = new Date();
+  const diff = target - now;
+  if (diff <= 0) {
+    ['cd-dias','cd-horas','cd-min','cd-seg'].forEach(id => document.getElementById(id).textContent = '00');
+    return;
+  }
   document.getElementById('cd-dias').textContent  = String(Math.floor(diff/(1000*60*60*24))).padStart(2,'0');
   document.getElementById('cd-horas').textContent = String(Math.floor((diff%(1000*60*60*24))/(1000*60*60))).padStart(2,'0');
   document.getElementById('cd-min').textContent   = String(Math.floor((diff%(1000*60*60))/(1000*60))).padStart(2,'0');
