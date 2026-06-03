@@ -262,6 +262,20 @@
   #install-banner .btn-install{flex:1;background:var(--accent);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:700;font-size:.75rem;padding:7px;border-radius:8px;cursor:pointer;}
   #install-banner .btn-dismiss{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.75rem;padding:7px 10px;border-radius:8px;cursor:pointer;}
 
+
+  /* Setup screen */
+  .mesa-preset{width:72px;height:72px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.8rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+  .mesa-preset:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.05);}
+  .mesa-preset.selected{background:var(--accent);border-color:var(--accent);box-shadow:0 0 16px rgba(21,101,192,.5);}
+  /* Disabled card */
+  .card.desactivada{opacity:.4;border-color:rgba(255,255,255,.1) !important;animation:none !important;filter:grayscale(1);}
+  .card.desactivada .toggle-btn{pointer-events:none;opacity:.5;}
+  .desactivada-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);border-radius:14px;font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.2rem;color:rgba(255,255,255,.5);letter-spacing:.1em;pointer-events:none;}
+  .btn-desactivar{background:rgba(100,100,100,.15);border:1px solid rgba(100,100,100,.3);color:#7a8fa8;font-family:'Barlow',sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:8px;cursor:pointer;transition:all .2s;margin-left:4px;}
+  .btn-desactivar:hover{border-color:var(--ocupado);color:var(--ocupado);}
+  .btn-reactivar{background:rgba(0,200,83,.1);border:1px solid rgba(0,200,83,.3);color:var(--libre);font-family:'Barlow',sans-serif;font-weight:700;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:8px;cursor:pointer;transition:all .2s;}
+  .btn-reactivar:hover{background:rgba(0,200,83,.2);}
+
   @media(max-width:600px){
     .grid{grid-template-columns:1fr 1fr;gap:7px;}
     .grid-container{padding:10px 10px 14px;}
@@ -277,6 +291,35 @@
 </style>
 </head>
 <body>
+
+<!-- ── SETUP SCREEN ── -->
+<div id="setup-screen" style="position:fixed;inset:0;z-index:2000;background:#070b14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;">
+  <div style="font-size:3rem;">⚽</div>
+  <h2 style="font-family:'Bebas Neue',system-ui,sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#fff;">CONFIGURAR EVENTO</h2>
+  <p style="color:#7a8fa8;font-size:.9rem;">¿Cuántas mesas de futbolín hay disponibles?</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:400px;">
+    <button class="mesa-preset" onclick="selectMesas(4)">4</button>
+    <button class="mesa-preset" onclick="selectMesas(6)">6</button>
+    <button class="mesa-preset" onclick="selectMesas(8)">8</button>
+    <button class="mesa-preset" onclick="selectMesas(10)">10</button>
+    <button class="mesa-preset" onclick="selectMesas(12)">12</button>
+    <button class="mesa-preset" onclick="selectMesas(16)">16</button>
+    <button class="mesa-preset" onclick="selectMesas(20)">20</button>
+    <button class="mesa-preset" onclick="selectMesas(24)">24</button>
+    <button class="mesa-preset" onclick="selectMesas(30)">30</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="color:#7a8fa8;font-size:.85rem;">O introduce un número:</span>
+    <input id="custom-mesas" type="number" min="1" max="60" value="30"
+      style="background:#1a2236;border:1px solid #1e2d45;color:#e8edf5;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;width:80px;text-align:center;border-radius:10px;padding:8px;outline:none;"
+      onkeydown="if(event.key==='Enter')confirmMesas()">
+    <button onclick="confirmMesas()"
+      style="background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:.85rem;padding:10px 20px;border-radius:10px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">
+      Confirmar
+    </button>
+  </div>
+  <p style="color:#7a8fa8;font-size:.75rem;text-align:center;max-width:320px;line-height:1.5;">Puedes desactivar mesas individuales más adelante<br>si alguna se estropea durante el evento</p>
+</div>
 
 <!-- ── PIN ── -->
 <div id="lock-screen">
@@ -301,7 +344,7 @@
     <button class="pin-key del" onclick="pinDel()">⌫</button>
     <button class="pin-key zero" onclick="pinKey('0')">0</button>
   </div>
-  <p class="pin-hint">PIN por defecto: <strong style="color:var(--gold)">1234</strong></p>
+  <p class="pin-hint">Introduce tu PIN de acceso</p>
 </div>
 
 <!-- ── APP ── -->
@@ -430,7 +473,7 @@
 <script>
 // ── CONFIG ──
 const TOTAL = 30;
-let PIN = '2450';
+let PIN = 'amfmelidegestion';
 let pinBuffer = '';
 let timeLimitMin = 10;
 let activeFilter = 'all';
@@ -607,6 +650,18 @@ function renderCard(id){
   const s=state[id-1];
   const card=document.getElementById(`card-${id}`);
   if (!card) return;
+  // Handle desactivada
+  const overlay=card.querySelector('.desactivada-overlay');
+  const desbtn=card.querySelector('.btn-desactivar');
+  if (s.desactivada) {
+    card.className='card desactivada';
+    if (overlay) overlay.style.display='flex';
+    if (desbtn) { desbtn.textContent='✅'; desbtn.className='btn-reactivar'; desbtn.title='Reactivar mesa'; }
+    return;
+  } else {
+    if (overlay) overlay.style.display='none';
+    if (desbtn) { desbtn.textContent='🚫'; desbtn.className='btn-desactivar'; desbtn.title='Desactivar mesa'; }
+  }
   const cls=getCardClass(s);
   // Forzar reset completo antes de cambiar clase
   card.style.animation='none';
@@ -657,6 +712,7 @@ function renderCard(id){
 function updateCounters(){
   let libres=0,ocupados=0,alertas=0,partidas=0;
   state.forEach(s=>{
+    if (!s.visible||s.desactivada) return;
     partidas+=s.partidas;
     if (s.libre){libres++;return;}
     getCardClass(s)==='alerta'?alertas++:ocupados++;
@@ -771,10 +827,53 @@ function applyFilters(){
   for (let i=1;i<=TOTAL;i++){
     const s=state[i-1];
     const card=document.getElementById(`card-${i}`);
+    if (!s.visible) { card.style.display='none'; continue; }
     const mS=s.name.toLowerCase().includes(q)||String(i).includes(q);
     const mC=activeFilter==='all'||s.cat===activeFilter;
     card.style.display=(mS&&mC)?'':'none';
   }
+}
+
+
+// ── SETUP MESAS ──
+let TOTAL_ACTIVO = 30;
+let selectedMesas = 30;
+
+function selectMesas(n) {
+  selectedMesas = n;
+  document.querySelectorAll('.mesa-preset').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.mesa-preset').forEach(b => { if (parseInt(b.textContent) === n) b.classList.add('selected'); });
+  document.getElementById('custom-mesas').value = n;
+}
+
+function confirmMesas() {
+  const n = parseInt(document.getElementById('custom-mesas').value) || 30;
+  TOTAL_ACTIVO = Math.max(1, Math.min(60, n));
+  // Mark tables beyond count as hidden
+  for (let i = 1; i <= TOTAL; i++) {
+    state[i-1].visible = i <= TOTAL_ACTIVO;
+  }
+  document.getElementById('setup-screen').style.display = 'none';
+  // Update total counter
+  document.querySelector('.score-card.total .score-number').textContent = TOTAL_ACTIVO;
+}
+
+// ── DESACTIVAR / REACTIVAR MESA ──
+function toggleDesactivar(id) {
+  const s = state[id-1];
+  if (!s.desactivada) {
+    if (!confirm(`¿Desactivar ${s.name}? No se podrá usar hasta reactivarla.`)) return;
+    // Free it first if occupied
+    if (!s.libre) {
+      s.libre = true; s.time = null; s.alerted = false;
+    }
+    s.desactivada = true;
+  } else {
+    s.desactivada = false;
+  }
+  renderCard(id);
+  updateCounters();
+  showToast(s.desactivada ? `🚫 ${s.name} desactivada` : `✅ ${s.name} reactivada`);
 }
 
 // ── BUILD GRID ──
