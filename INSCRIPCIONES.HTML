@@ -601,7 +601,7 @@ function showTab(tab, btn) {
     document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   if (tab === 'participantes') loadParticipantes();
 }
 
