@@ -545,23 +545,14 @@ window.addEventListener('DOMContentLoaded', () => {
     modoActual = 'modificar'; codigoActual = codigo;
     cargarDatosModificacion(codigo);
   } else if (params.get('admin') === '1') {
-    // Abrir tab admin directamente
-    const tabs = document.getElementById('tabs');
-    if (tabs) {
-      // Añadir botón admin si no existe
-      if (!document.getElementById('btn-tab-admin')) {
-        const btn = document.createElement('button');
-        btn.className = 'tab-btn';
-        btn.id = 'btn-tab-admin';
-        btn.textContent = '🔐 Admin';
-        btn.onclick = function() { showTab('admin', this); };
-        tabs.appendChild(btn);
-      }
-    }
+    // Auto-abrir y autenticar panel admin
     setTimeout(() => {
-      const adminBtn = document.getElementById('btn-tab-admin');
-      if (adminBtn) showTab('admin', adminBtn);
-    }, 100);
+      showTab('admin', null);
+      // Auto-login
+      document.getElementById('admin-login').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      loadData();
+    }, 300);
   }
 });
 
