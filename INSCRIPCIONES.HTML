@@ -527,13 +527,15 @@ window.addEventListener('DOMContentLoaded', () => {
     modoActual = 'modificar'; codigoActual = codigo;
     cargarDatosModificacion(codigo);
   } else if (p.get('admin') === '1') {
-    setTimeout(() => {
-      const btn = document.getElementById('btn-admin-tab');
-      if (btn) { btn.style.display = ''; showTab('admin', btn); }
-      document.getElementById('admin-login').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'block';
-      loadData();
-    }, 200);
+    // Mostrar tab admin directamente, ocultar tabs públicas
+    document.getElementById('tab-inscripcion').style.display = 'none';
+    document.getElementById('tab-participantes').style.display = 'none';
+    document.getElementById('tab-admin').style.display = '';
+    document.getElementById('tabs').style.display = 'none';
+    // Auto-login: ya se autenticó en index.html
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadData();
   }
 });
 
@@ -688,8 +690,8 @@ function resetForm() {
 // ─── PARTICIPANTES ────────────────────────────────────────────────────────
 function loadParticipantes() {
   document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
-  fetch(SCRIPT_URL + '?action=get')
-    .then(r => r.json())
+  fetch(SCRIPT_URL + '?action=get', { method: 'GET', mode: 'cors' })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(data => {
       const rows = data.rows || [];
       window._partRows = rows;
@@ -720,7 +722,11 @@ function loadParticipantes() {
 
       renderParticipantes(rows);
     })
-    .catch(() => { document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes</p></div>'; });
+    .catch(err => { 
+      console.error('Error participantes:', err);
+      document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes. Comprueba la consola.</p></div>';
+      document.getElementById('part-total-counter').textContent = '?';
+    });
 }
 
 function renderParticipantes(rows) {
@@ -773,8 +779,8 @@ function checkPass() {
 
 function loadData() {
   showToast('🔄 Cargando...');
-  fetch(SCRIPT_URL + '?action=get')
-    .then(r => r.json())
+  fetch(SCRIPT_URL + '?action=get', { method: 'GET', mode: 'cors' })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(data => {
       allData = data.rows || [];
       renderStats(); renderTable(); checkDuplicados();
