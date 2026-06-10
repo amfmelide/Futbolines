@@ -12,32 +12,23 @@
     --libre: #00c853; --ocupado: #f50057;
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    font-family: 'Barlow', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+  html, body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
   body { padding-bottom: 60px; position: relative; overflow-x: hidden; }
 
   .bg-image { position: fixed; inset: 0; z-index: 0; background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/photofut.PNG'); background-size: cover; background-position: center; filter: brightness(0.25) blur(2px); transform: scale(1.05); }
   .bg-overlay { position: fixed; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,14,26,0.45) 0%, rgba(10,14,26,0.65) 60%, rgba(10,14,26,0.85) 100%); }
+  header, .tabs, #tab-inscripcion, #tab-participantes, #tab-admin, .modal-overlay, .confirm-overlay, #toast, #nav-volver { position: relative; z-index: 2; }
 
-  header, .tabs, #tab-inscripcion, #tab-participantes, #tab-admin, .modal-overlay, .confirm-overlay, #toast { position: relative; z-index: 2; }
-
-  /* HEADER */
   header { text-align: center; padding: 32px 20px 20px; }
   header::after { content: ''; display: block; height: 2px; margin-top: 20px; background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent); }
   .header-icon { display: flex; justify-content: center; margin-bottom: 10px; }
   h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 5vw, 3.6rem); letter-spacing: 0.06em; color: #fff; text-shadow: 0 0 40px rgba(21,101,192,0.5); line-height: 1; }
   .subtitle { font-size: 0.85rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; }
 
-  /* TABS */
   .tabs { display: flex; justify-content: center; gap: 10px; padding: 24px 20px 0; flex-wrap: wrap; }
   .tab-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-  /* FORM */
   .form-wrap { max-width: 560px; margin: 30px auto 0; padding: 0 20px; }
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; }
   .form-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 24px; text-align: center; }
@@ -65,7 +56,6 @@
   .cancel-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--ocupado); margin-bottom: 8px; }
   .success-msg p, .cancel-msg p { color: var(--text-dim); font-size: 0.9rem; }
 
-  /* PARTICIPANTES */
   .participantes-wrap { max-width: 900px; margin: 30px auto 0; padding: 0 20px; }
   .live-counter-box { text-align: center; padding: 24px 0 20px; }
   .live-counter-inner { display: inline-flex; flex-direction: column; align-items: center; background: rgba(17,24,39,0.9); border: 2px solid rgba(0,200,83,0.4); border-radius: 20px; padding: 20px 48px; box-shadow: 0 0 40px rgba(0,200,83,0.15); }
@@ -98,8 +88,8 @@
   .equipo-jugadores { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
   .equipo-zona { font-size: 0.75rem; color: var(--text-dim); }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .error-box { background: rgba(245,0,87,0.08); border: 1px solid rgba(245,0,87,0.3); border-radius: 12px; padding: 20px; margin: 10px 0; color: #ff8aa8; font-size: 0.85rem; word-break: break-word; }
 
-  /* ADMIN */
   .admin-wrap { max-width: 1400px; margin: 30px auto 0; padding: 0 20px; }
   .admin-login { max-width: 360px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
   .admin-login h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 20px; }
@@ -149,7 +139,6 @@
   .btn-edit { background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.3); color: #90caf9; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; margin-right: 4px; }
   .btn-edit:hover { background: rgba(21,101,192,0.3); }
 
-  /* MODALS */
   .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 10001; justify-content: center; align-items: center; padding: 20px; }
   .confirm-overlay.show { display: flex; }
   .confirm-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -168,7 +157,6 @@
   .btn-guardar { flex: 1; padding: 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
   .btn-cerrar { padding: 12px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
 
-  /* TOAST */
   #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   #toast.show { transform: translateX(-50%) translateY(0); }
 </style>
@@ -186,14 +174,13 @@
   <p class="subtitle">18-19-20 SEPTIEMBRE · IV MÁSTER DE MELIDE</p>
 </header>
 
-<div style="text-align:center;padding:16px 20px 0;position:relative;z-index:2;">
+<div id="nav-volver" style="text-align:center;padding:16px 20px 0;">
   <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Volver al inicio</a>
 </div>
 
 <div class="tabs" id="tabs">
   <button class="tab-btn active" onclick="showTab('inscripcion',this)">📝 Inscribirse</button>
   <button class="tab-btn" onclick="showTab('participantes',this)">🏆 Participantes</button>
-  <button class="tab-btn" id="btn-admin-tab" style="display:none" onclick="showTab('admin',this)">🔐 Admin</button>
 </div>
 
 <!-- ===== FORMULARIO ===== -->
@@ -219,65 +206,27 @@
           <select id="zona">
             <option value="">Seleccionar zona...</option>
             <optgroup label="🟢 Galicia">
-              <option value="Melide">Melide</option>
-              <option value="Arzúa">Arzúa</option>
-              <option value="As Cruces">As Cruces</option>
-              <option value="Carballo">Carballo</option>
-              <option value="Ferrol">Ferrol</option>
-              <option value="Lalín">Lalín</option>
-              <option value="Outes">Outes</option>
-              <option value="Sarria">Sarria</option>
-              <option value="Santiago de Compostela">Santiago de Compostela</option>
-              <option value="Vigo">Vigo</option>
-              <option value="A Coruña">A Coruña (provincia)</option>
-              <option value="Lugo">Lugo (provincia)</option>
-              <option value="Ourense">Ourense (provincia)</option>
-              <option value="Pontevedra">Pontevedra (provincia)</option>
+              <option value="Melide">Melide</option><option value="Arzúa">Arzúa</option><option value="As Cruces">As Cruces</option><option value="Carballo">Carballo</option><option value="Ferrol">Ferrol</option><option value="Lalín">Lalín</option><option value="Outes">Outes</option><option value="Sarria">Sarria</option><option value="Santiago de Compostela">Santiago de Compostela</option><option value="Vigo">Vigo</option><option value="A Coruña">A Coruña</option><option value="Lugo">Lugo</option><option value="Ourense">Ourense</option><option value="Pontevedra">Pontevedra</option>
             </optgroup>
             <optgroup label="🔵 Castilla y León">
-              <option value="Burgos">Burgos</option>
-              <option value="León">León</option>
-              <option value="Palencia">Palencia</option>
-              <option value="Ponferrada">Ponferrada</option>
-              <option value="Salamanca">Salamanca</option>
-              <option value="Valladolid">Valladolid</option>
-              <option value="Zamora">Zamora</option>
+              <option value="Burgos">Burgos</option><option value="León">León</option><option value="Palencia">Palencia</option><option value="Ponferrada">Ponferrada</option><option value="Salamanca">Salamanca</option><option value="Valladolid">Valladolid</option><option value="Zamora">Zamora</option>
             </optgroup>
-            <optgroup label="🟠 Comunidad de Madrid"><option value="Madrid">Madrid</option></optgroup>
+            <optgroup label="🟠 Madrid"><option value="Madrid">Madrid</option></optgroup>
             <optgroup label="🔴 Andalucía">
-              <option value="Almería">Almería</option>
-              <option value="Córdoba">Córdoba</option>
-              <option value="Granada">Granada</option>
-              <option value="Huelva">Huelva</option>
-              <option value="Jaén">Jaén</option>
-              <option value="Jerez">Jerez</option>
-              <option value="Málaga">Málaga</option>
-              <option value="Sevilla">Sevilla</option>
+              <option value="Almería">Almería</option><option value="Córdoba">Córdoba</option><option value="Granada">Granada</option><option value="Huelva">Huelva</option><option value="Jaén">Jaén</option><option value="Jerez">Jerez</option><option value="Málaga">Málaga</option><option value="Sevilla">Sevilla</option>
             </optgroup>
             <optgroup label="🟡 Cataluña"><option value="Barcelona">Barcelona</option></optgroup>
-            <optgroup label="🟣 País Vasco">
-              <option value="Bilbao">Bilbao</option>
-              <option value="San Sebastián">San Sebastián</option>
-              <option value="Vitoria">Vitoria</option>
-            </optgroup>
-            <optgroup label="⚪ Comunidad Valenciana">
-              <option value="Alicante">Alicante</option>
-              <option value="Valencia">Valencia</option>
-            </optgroup>
+            <optgroup label="🟣 País Vasco"><option value="Bilbao">Bilbao</option><option value="San Sebastián">San Sebastián</option><option value="Vitoria">Vitoria</option></optgroup>
+            <optgroup label="⚪ C. Valenciana"><option value="Alicante">Alicante</option><option value="Valencia">Valencia</option></optgroup>
             <optgroup label="🟤 Asturias"><option value="Oviedo">Oviedo</option></optgroup>
             <optgroup label="🔵 Cantabria"><option value="Santander">Santander</option></optgroup>
             <optgroup label="🟢 Navarra"><option value="Pamplona">Pamplona</option></optgroup>
             <optgroup label="🔴 La Rioja"><option value="Logroño">Logroño</option></optgroup>
-            <optgroup label="🟠 Castilla-La Mancha">
-              <option value="Albacete">Albacete</option>
-              <option value="Toledo">Toledo</option>
-            </optgroup>
-            <optgroup label="🟡 Extremadura">
-              <option value="Badajoz">Badajoz</option>
-              <option value="Cáceres">Cáceres</option>
-            </optgroup>
-            <optgroup label="🔵 Región de Murcia"><option value="Murcia">Murcia</option></optgroup>
-            <optgroup label="🌍 Otras zonas"><option value="Otra">Otra provincia / país</option></optgroup>
+            <optgroup label="🟠 Castilla-La Mancha"><option value="Albacete">Albacete</option><option value="Toledo">Toledo</option></optgroup>
+            <optgroup label="🟡 Extremadura"><option value="Badajoz">Badajoz</option><option value="Cáceres">Cáceres</option></optgroup>
+            <optgroup label="🔵 Murcia"><option value="Murcia">Murcia</option></optgroup>
+            <optgroup label="🟠 Aragón"><option value="Zaragoza">Zaragoza</option></optgroup>
+            <optgroup label="🌍 Otras"><option value="Otra">Otra provincia / país</option></optgroup>
           </select>
         </div>
         <div class="form-group"><label>Teléfono de contacto del equipo</label><input type="tel" id="telefono" placeholder="6XX XXX XXX"></div>
@@ -292,20 +241,14 @@
           <label>Categoría movimiento <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catMovimiento">
             <option value="">Seleccionar...</option>
-            <option value="Elite">🏆 Elite</option>
-            <option value="Plata">🥈 Plata</option>
-            <option value="Bronce">🥉 Bronce</option>
-            <option value="Rookie">⭐ Rookie</option>
+            <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
           </select>
         </div>
         <div class="form-group">
           <label>Categoría parado <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catParado">
             <option value="">Seleccionar...</option>
-            <option value="Elite">🏆 Elite</option>
-            <option value="Plata">🥈 Plata</option>
-            <option value="Bronce">🥉 Bronce</option>
-            <option value="Rookie">⭐ Rookie</option>
+            <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
           </select>
         </div>
       </div>
@@ -330,42 +273,25 @@
 <!-- ===== PARTICIPANTES ===== -->
 <div id="tab-participantes" style="display:none">
   <div class="participantes-wrap">
-
-    <!-- Contador live -->
     <div class="live-counter-box">
       <div class="live-counter-inner">
         <div class="live-counter-num" id="part-total-counter">--</div>
-        <div class="live-counter-label">
-          <span class="live-dot"></span>
-          <span>Inscripciones confirmadas</span>
-        </div>
+        <div class="live-counter-label"><span class="live-dot"></span><span>Equipos inscritos</span></div>
         <div class="live-cats" id="part-cat-mini"></div>
       </div>
     </div>
-
-    <!-- Stats por categoría -->
     <div class="stats-row" id="part-stats-row"></div>
-
-    <!-- Controles -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
       <select id="filter-part-cat" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="">Todas las categorías</option>
-        <option value="Elite">🏆 Elite</option>
-        <option value="Plata">🥈 Plata</option>
-        <option value="Bronce">🥉 Bronce</option>
-        <option value="Rookie">⭐ Rookie</option>
+        <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
       </select>
       <select id="sort-part" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
-        <option value="cat">Ordenar por categoría</option>
-        <option value="fecha">Ordenar por fecha</option>
-        <option value="alfa">Ordenar alfabético</option>
+        <option value="cat">Ordenar por categoría</option><option value="fecha">Ordenar por fecha</option><option value="alfa">Ordenar alfabético</option>
       </select>
       <button onclick="compartir()" style="background:linear-gradient(135deg,#1b5e20,#2e7d32);border:none;color:#a5d6a7;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;cursor:pointer;">📤 Compartir</button>
     </div>
-
-    <div id="participantes-content">
-      <div class="empty-state"><p>Cargando participantes...</p></div>
-    </div>
+    <div id="participantes-content"><div class="empty-state"><p>Cargando participantes...</p></div></div>
   </div>
 </div>
 
@@ -386,6 +312,7 @@
           <button class="btn-refresh" onclick="toggleHistorial()">📋 Historial</button>
         </div>
       </div>
+      <div id="admin-error" style="display:none" class="error-box"></div>
       <div id="duplicados-banner" style="display:none;background:rgba(245,0,87,0.1);border:1px solid rgba(245,0,87,0.3);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
         <div style="font-weight:700;color:var(--ocupado);margin-bottom:8px;">⚠️ TELÉFONOS REPETIDOS DETECTADOS</div>
         <div id="duplicados-lista" style="font-size:0.82rem;color:var(--text-dim);"></div>
@@ -399,28 +326,16 @@
         <input class="search-input" type="text" id="search-admin" placeholder="🔍 Buscar jugador o equipo..." oninput="renderTable()">
         <select class="filter-select" id="filter-cat" onchange="renderTable()">
           <option value="">Todas las categorías</option>
-          <option value="Elite">🏆 Elite</option>
-          <option value="Plata">🥈 Plata</option>
-          <option value="Bronce">🥉 Bronce</option>
-          <option value="Rookie">⭐ Rookie</option>
+          <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
         </select>
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
-          <option value="Si">✅ Pagados</option>
-          <option value="No">❌ Pendientes</option>
+          <option value="Si">✅ Pagados</option><option value="No">❌ Pendientes</option>
         </select>
       </div>
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Equipo</th>
-              <th>Jugador 1</th><th>📞</th><th>💰 J1</th>
-              <th>Jugador 2</th><th>📞</th><th>💰 J2</th>
-              <th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th>
-              <th>Fecha</th><th>Notas</th><th>Acc.</th>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>Equipo</th><th>Jugador 1</th><th>📞</th><th>💰 J1</th><th>Jugador 2</th><th>📞</th><th>💰 J2</th><th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th><th>Fecha</th><th>Notas</th><th>Acc.</th></tr></thead>
           <tbody id="table-body"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none"><p>No hay inscripciones todavía</p></div>
@@ -431,7 +346,7 @@
 
 <div id="toast"></div>
 
-<!-- Modal confirmación inscripción -->
+<!-- Modal confirmación -->
 <div class="confirm-overlay" id="confirm-modal">
   <div class="confirm-box">
     <div class="confirm-title">✅ CONFIRMA TU INSCRIPCIÓN</div>
@@ -453,7 +368,7 @@
   </div>
 </div>
 
-<!-- Modal editar admin -->
+<!-- Modal editar -->
 <div class="modal-overlay" id="modal-editar">
   <div class="modal-box">
     <div class="modal-title">✏️ EDITAR INSCRIPCIÓN</div>
@@ -471,25 +386,11 @@
       <div class="form-group"><label>Email</label><input type="email" id="m-email" placeholder="correo@ejemplo.com"></div>
     </div>
     <div class="form-row">
-      <div class="form-group">
-        <label>Cat. Movimiento</label>
-        <select id="m-catMov">
-          <option value="">Seleccionar...</option>
-          <option value="Elite">🏆 Elite</option>
-          <option value="Plata">🥈 Plata</option>
-          <option value="Bronce">🥉 Bronce</option>
-          <option value="Rookie">⭐ Rookie</option>
-        </select>
+      <div class="form-group"><label>Cat. Movimiento</label>
+        <select id="m-catMov"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
       </div>
-      <div class="form-group">
-        <label>Cat. Parado</label>
-        <select id="m-catPar">
-          <option value="">Seleccionar...</option>
-          <option value="Elite">🏆 Elite</option>
-          <option value="Plata">🥈 Plata</option>
-          <option value="Bronce">🥉 Bronce</option>
-          <option value="Rookie">⭐ Rookie</option>
-        </select>
+      <div class="form-group"><label>Cat. Parado</label>
+        <select id="m-catPar"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
       </div>
     </div>
     <div class="modal-actions">
@@ -501,89 +402,114 @@
 
 <script>
 'use strict';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
-const ADMIN_PASS = 'amf2025';
-const PRECIO = 25;
-const CATS = ['Elite','Plata','Bronce','Rookie'];
-const CAT_COLORS = {Elite:'#ffd700',Plata:'#b0bec5',Bronce:'#cd7f32',Rookie:'#ce93d8'};
-const CAT_EMOJI  = {Elite:'🏆',Plata:'🥈',Bronce:'🥉',Rookie:'⭐'};
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTHhBZCiNjwHnpgJAwvDFUnvpoEnhtpab6GkTDEFkNNDRmGFjANOZxFKtHec86E4Y/exec';
+var ADMIN_PASS = 'amf2025';
+var PRECIO = 25;
+var CATS = ['Elite','Plata','Bronce','Rookie'];
+var CAT_COLORS = {Elite:'#ffd700',Plata:'#b0bec5',Bronce:'#cd7f32',Rookie:'#ce93d8'};
+var CAT_EMOJI  = {Elite:'🏆',Plata:'🥈',Bronce:'🥉',Rookie:'⭐'};
+var GALICIA = ['Melide','Arzúa','As Cruces','Lalín','Sarria','Santiago de Compostela','Vigo','A Coruña','Lugo','Ourense','Pontevedra','Ponferrada','Carballo','Ferrol','Outes'];
 
-let allData = [];
-let modoActual = 'nuevo';
-let codigoActual = '';
-let editIdx = -1;
-let toastTimer;
+var allData = [];
+var modoActual = 'nuevo';
+var codigoActual = '';
+var editIdx = -1;
+var toastTimer;
 
-// ─── BOOT ─────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  const p = new URLSearchParams(window.location.search);
-  const accion = p.get('accion');
-  const codigo = p.get('codigo');
+// ─── DETECCIÓN DE ADMIN (robusta: acepta muchas variantes) ───
+function esModoAdmin() {
+  var p = new URLSearchParams(window.location.search);
+  if (p.has('admin')) return true;              // ?admin / ?admin=1 / ?admin=true
+  if (p.get('tab') === 'admin') return true;    // ?tab=admin
+  if (p.has('gestion')) return true;            // ?gestion
+  if (p.get('view') === 'admin') return true;   // ?view=admin
+  if (window.location.hash === '#admin') return true; // #admin
+  return false;
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  var p = new URLSearchParams(window.location.search);
+  var accion = p.get('accion');
+  var codigo = p.get('codigo');
 
   if (accion === 'cancelar' && codigo) {
     modoActual = 'cancelar'; codigoActual = codigo;
     mostrarFormularioCancelar(codigo);
-  } else if (accion === 'modificar' && codigo) {
+    return;
+  }
+  if (accion === 'modificar' && codigo) {
     modoActual = 'modificar'; codigoActual = codigo;
     cargarDatosModificacion(codigo);
-  } else if (p.get('admin') === '1') {
-    // Mostrar tab admin directamente, ocultar tabs públicas
-    document.getElementById('tab-inscripcion').style.display = 'none';
-    document.getElementById('tab-participantes').style.display = 'none';
-    document.getElementById('tab-admin').style.display = '';
-    document.getElementById('tabs').style.display = 'none';
-    // Auto-login: ya se autenticó en index.html
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-panel').style.display = 'block';
-    loadData();
+    return;
   }
+  if (esModoAdmin()) {
+    abrirAdminDirecto();
+    return;
+  }
+  // Vista normal por defecto: formulario de inscripción visible
 });
 
-// ─── TABS ─────────────────────────────────────────────────────────────────
+function abrirAdminDirecto() {
+  document.getElementById('tab-inscripcion').style.display = 'none';
+  document.getElementById('tab-participantes').style.display = 'none';
+  document.getElementById('tab-admin').style.display = '';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  loadData();
+}
+
+// ─── TABS ───
 function showTab(tab, btn) {
-  ['inscripcion','participantes','admin'].forEach(t => {
-    document.getElementById('tab-' + t).style.display = (t === tab) ? '' : 'none';
+  ['inscripcion','participantes','admin'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display = (t===tab) ? '' : 'none';
   });
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'participantes') loadParticipantes();
 }
 
-// ─── UTILS ────────────────────────────────────────────────────────────────
+// ─── UTILS ───
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3000);
 }
-
-function validarTelefono(tel) {
-  return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,''));
-}
-
+function validarTelefono(tel) { return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,'')); }
 function animCounter(el, target) {
-  let c = 0; const step = Math.max(1, Math.ceil(target / 30));
-  const iv = setInterval(() => { c = Math.min(c + step, target); el.textContent = c; if (c >= target) clearInterval(iv); }, 40);
+  var c = 0, step = Math.max(1, Math.ceil(target/30));
+  var iv = setInterval(function(){ c = Math.min(c+step, target); el.textContent = c; if (c>=target) clearInterval(iv); }, 40);
 }
 
-// ─── FORM ─────────────────────────────────────────────────────────────────
+// ─── FETCH ROBUSTO (texto -> JSON, error visible) ───
+function pedirDatos(action) {
+  return fetch(SCRIPT_URL + '?action=' + action)
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      try { return JSON.parse(txt); }
+      catch(e){ throw new Error('El servidor no devolvió datos válidos. Respuesta: ' + txt.slice(0,200)); }
+    });
+}
+
+// ─── FORM ───
 function submitForm() {
-  document.querySelectorAll('input.error').forEach(el => el.classList.remove('error'));
-  const req = {equipo:'Nombre del equipo',jugador1:'Jugador 1',telefono1:'Tel. Jugador 1',jugador2:'Jugador 2',telefono2:'Tel. Jugador 2',zona:'Zona',telefono:'Tel. equipo',email:'Email'};
-  for (const [id, label] of Object.entries(req)) {
-    const el = document.getElementById(id);
-    if (!el.value.trim()) { el.classList.add('error'); showToast('⚠️ Falta: ' + label); el.focus(); return; }
+  document.querySelectorAll('input.error').forEach(function(el){ el.classList.remove('error'); });
+  var req = {equipo:'Nombre del equipo',jugador1:'Jugador 1',telefono1:'Tel. Jugador 1',jugador2:'Jugador 2',telefono2:'Tel. Jugador 2',zona:'Zona',telefono:'Tel. equipo',email:'Email'};
+  for (var id in req) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.classList.add('error'); showToast('⚠️ Falta: '+req[id]); el.focus(); return; }
   }
-  const tel1 = document.getElementById('telefono1').value.trim();
-  const tel2 = document.getElementById('telefono2').value.trim();
-  const telEq = document.getElementById('telefono').value.trim();
+  var tel1 = document.getElementById('telefono1').value.trim();
+  var tel2 = document.getElementById('telefono2').value.trim();
+  var telEq = document.getElementById('telefono').value.trim();
   if (!validarTelefono(tel1)) { document.getElementById('telefono1').classList.add('error'); showToast('⚠️ Teléfono Jugador 1 no válido'); return; }
   if (!validarTelefono(tel2)) { document.getElementById('telefono2').classList.add('error'); showToast('⚠️ Teléfono Jugador 2 no válido'); return; }
   if (!validarTelefono(telEq)) { document.getElementById('telefono').classList.add('error'); showToast('⚠️ Teléfono equipo no válido'); return; }
-  const email = document.getElementById('email').value.trim();
+  var email = document.getElementById('email').value.trim();
   if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { document.getElementById('email').classList.add('error'); showToast('⚠️ Email no válido'); return; }
-  const catMov = document.getElementById('catMovimiento').value;
-  const catPar = document.getElementById('catParado').value;
+  var catMov = document.getElementById('catMovimiento').value;
+  var catPar = document.getElementById('catParado').value;
   if (!catMov && !catPar) { showToast('⚠️ Selecciona al menos una categoría'); return; }
 
   document.getElementById('c-equipo').textContent   = document.getElementById('equipo').value.trim();
@@ -595,7 +521,7 @@ function submitForm() {
   document.getElementById('c-email').textContent    = email;
   document.getElementById('c-catmov').textContent   = catMov || '—';
   document.getElementById('c-catpar').textContent   = catPar || '—';
-  const coment = document.getElementById('comentarios').value.trim();
+  var coment = document.getElementById('comentarios').value.trim();
   document.getElementById('c-coment-row').style.display = coment ? 'flex' : 'none';
   if (coment) document.getElementById('c-comentarios').textContent = coment;
   document.getElementById('confirm-modal').classList.add('show');
@@ -605,10 +531,10 @@ function cerrarConfirm() { document.getElementById('confirm-modal').classList.re
 
 function enviarFormulario() {
   cerrarConfirm();
-  const btn = document.getElementById('btn-submit');
+  var btn = document.getElementById('btn-submit');
   btn.disabled = true;
   btn.textContent = modoActual === 'modificar' ? 'Guardando...' : 'Enviando...';
-  const data = {
+  var data = {
     action: modoActual === 'modificar' ? 'modificar' : undefined,
     codigo: modoActual === 'modificar' ? codigoActual : undefined,
     equipo: document.getElementById('equipo').value.trim(),
@@ -624,7 +550,7 @@ function enviarFormulario() {
     catParado: document.getElementById('catParado').value
   };
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
-    .then(() => {
+    .then(function(){
       document.getElementById('form-card').style.display = 'none';
       if (modoActual === 'modificar') {
         document.getElementById('success-title').textContent = '¡Inscripción modificada!';
@@ -632,16 +558,16 @@ function enviarFormulario() {
       }
       document.getElementById('success-msg').style.display = 'block';
     })
-    .catch(() => { showToast('❌ Error al enviar'); btn.disabled = false; btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO'; });
+    .catch(function(){ showToast('❌ Error al enviar'); btn.disabled = false; btn.textContent = modoActual==='modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO'; });
 }
 
 function cancelarInscripcion() {
   if (!confirm('¿Seguro que quieres cancelar tu inscripción?')) return;
-  const btn = document.getElementById('btn-cancelar');
+  var btn = document.getElementById('btn-cancelar');
   btn.disabled = true; btn.textContent = 'Cancelando...';
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'cancelar',codigo:codigoActual}) })
-    .then(() => { document.getElementById('form-card').style.display='none'; document.getElementById('cancel-msg').style.display='block'; })
-    .catch(() => { showToast('❌ Error al cancelar'); btn.disabled=false; btn.textContent='❌ CANCELAR INSCRIPCIÓN'; });
+    .then(function(){ document.getElementById('form-card').style.display='none'; document.getElementById('cancel-msg').style.display='block'; })
+    .catch(function(){ showToast('❌ Error al cancelar'); btn.disabled=false; btn.textContent='❌ CANCELAR INSCRIPCIÓN'; });
 }
 
 function mostrarFormularioCancelar(codigo) {
@@ -659,19 +585,19 @@ function cargarDatosModificacion(codigo) {
     document.getElementById('btn-submit').textContent = '💾 GUARDAR CAMBIOS';
   }
   fetch(SCRIPT_URL + '?codigo=' + codigo)
-    .then(r => r.json())
-    .then(res => {
+    .then(function(r){ return r.json(); })
+    .then(function(res){
       if (res.ok && res.datos) {
-        const d = res.datos;
-        ['equipo','jugador1','jugador2','zona','telefono','email'].forEach(id => document.getElementById(id).value = d[id] || '');
+        var d = res.datos;
+        ['equipo','jugador1','jugador2','zona','telefono','email'].forEach(function(id){ document.getElementById(id).value = d[id] || ''; });
         document.getElementById('catMovimiento').value = d.catMovimiento || '';
         document.getElementById('catParado').value     = d.catParado || '';
       } else { showToast('❌ Código no válido'); }
-    }).catch(() => showToast('❌ Error cargando datos'));
+    }).catch(function(){ showToast('❌ Error cargando datos'); });
 }
 
 function resetForm() {
-  ['equipo','jugador1','telefono1','jugador2','telefono2','zona','telefono','email','comentarios'].forEach(id => document.getElementById(id).value = '');
+  ['equipo','jugador1','telefono1','jugador2','telefono2','zona','telefono','email','comentarios'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('catMovimiento').value = '';
   document.getElementById('catParado').value = '';
   document.getElementById('form-card').style.display = '';
@@ -687,88 +613,76 @@ function resetForm() {
   window.history.replaceState({}, '', window.location.pathname);
 }
 
-// ─── PARTICIPANTES ────────────────────────────────────────────────────────
+// ─── PARTICIPANTES ───
 function loadParticipantes() {
   document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
-  fetch(SCRIPT_URL + '?action=get', { method: 'GET', mode: 'cors' })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
-      const rows = data.rows || [];
+  pedirDatos('get')
+    .then(function(data){
+      var rows = data.rows || [];
       window._partRows = rows;
 
-      // Contador
-      let total = 0;
-      rows.forEach(r => { if (r[11]) total++; if (r[12]) total++; });
-      animCounter(document.getElementById('part-total-counter'), total);
+      animCounter(document.getElementById('part-total-counter'), rows.length);
 
-      // Mini cats
-      const mini = document.getElementById('part-cat-mini');
-      mini.innerHTML = CATS.map(cat => {
-        const n = rows.filter(r => r[11]===cat || r[12]===cat).length;
+      var mini = document.getElementById('part-cat-mini');
+      mini.innerHTML = CATS.map(function(cat){
+        var n = rows.filter(function(r){ return r[11]===cat || r[12]===cat; }).length;
         if (!n) return '';
         return '<span style="font-size:0.72rem;color:'+CAT_COLORS[cat]+';font-weight:700;">'+CAT_EMOJI[cat]+' '+cat+' <span style="color:#e8edf5;">'+n+'</span></span>';
       }).join('<span style="color:#1e2d45;margin:0 4px;">·</span>');
 
-      // Stats row
-      const zonas = [...new Set(rows.map(r=>r[6]).filter(Boolean))];
-      const galicia = rows.filter(r=>['Melide','Arzúa','As Cruces','Lalín','Sarria','Santiago de Compostela','Vigo','A Coruña','Lugo','Ourense','Pontevedra','Ponferrada','Carballo','Ferrol','Outes'].includes(r[6])).length;
-      const statsRow = document.getElementById('part-stats-row');
+      var zonas = rows.map(function(r){return r[6];}).filter(Boolean);
+      var zonasUnicas = zonas.filter(function(v,i){ return zonas.indexOf(v)===i; });
+      var galicia = rows.filter(function(r){ return GALICIA.indexOf(r[6])>=0; }).length;
+      var statsRow = document.getElementById('part-stats-row');
       statsRow.innerHTML =
         '<div class="stats-box"><div class="slabel">Total equipos</div><div class="snum" style="color:#7cb3ff;">'+rows.length+'</div></div>' +
-        '<div class="stats-box"><div class="slabel">Zonas</div><div class="snum" style="color:#ffc107;">'+zonas.length+'</div></div>' +
+        '<div class="stats-box"><div class="slabel">Zonas</div><div class="snum" style="color:#ffc107;">'+zonasUnicas.length+'</div></div>' +
         '<div class="stats-box"><div class="slabel">De Galicia</div><div class="snum" style="color:#00c853;">'+galicia+'</div></div>' +
         '<div class="stats-box"><div class="slabel">De fuera</div><div class="snum" style="color:#f50057;">'+(rows.length-galicia)+'</div></div>' +
-        CATS.map(cat=>{const n=rows.filter(r=>r[11]===cat||r[12]===cat).length;return '<div class="stats-box '+cat.toLowerCase()+'"><div class="slabel">'+cat+'</div><div class="snum">'+n+'</div></div>';}).join('');
+        CATS.map(function(cat){ var n=rows.filter(function(r){return r[11]===cat||r[12]===cat;}).length; return '<div class="stats-box '+cat.toLowerCase()+'"><div class="slabel">'+cat+'</div><div class="snum">'+n+'</div></div>'; }).join('');
 
       renderParticipantes(rows);
     })
-    .catch(err => { 
-      console.error('Error participantes:', err);
-      document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes. Comprueba la consola.</p></div>';
-      document.getElementById('part-total-counter').textContent = '?';
+    .catch(function(err){
+      document.getElementById('part-total-counter').textContent = '0';
+      document.getElementById('participantes-content').innerHTML = '<div class="error-box"><strong>No se pudieron cargar los participantes.</strong><br>'+ (err && err.message ? err.message : 'Error de conexión') +'</div>';
     });
 }
 
 function renderParticipantes(rows) {
   if (!rows) return;
-  const catF = (document.getElementById('filter-part-cat')||{}).value || '';
-  const sort  = (document.getElementById('sort-part')||{}).value || 'cat';
-  let filtered = rows.filter(r => !catF || r[11]===catF || r[12]===catF);
-  if (sort==='alfa')  filtered.sort((a,b)=>(a[1]||'').localeCompare(b[1]||''));
-  if (sort==='fecha') filtered.sort((a,b)=>(a[0]||'').localeCompare(b[0]||''));
+  var catF = (document.getElementById('filter-part-cat')||{}).value || '';
+  var sort  = (document.getElementById('sort-part')||{}).value || 'cat';
+  var filtered = rows.filter(function(r){ return !catF || r[11]===catF || r[12]===catF; });
+  if (sort==='alfa')  filtered.sort(function(a,b){ return (a[1]||'').localeCompare(b[1]||''); });
+  if (sort==='fecha') filtered.sort(function(a,b){ return (a[0]||'').localeCompare(b[0]||''); });
 
-  let html = '';
+  var html = '';
   if (sort==='cat' && !catF) {
-    CATS.forEach(cat => {
-      const eq = filtered.filter(r=>r[11]===cat||r[12]===cat);
+    CATS.forEach(function(cat){
+      var eq = filtered.filter(function(r){ return r[11]===cat || r[12]===cat; });
       if (!eq.length) return;
       html += '<div class="cat-section"><div class="cat-title '+cat.toLowerCase()+'">'+CAT_EMOJI[cat]+' '+cat.toUpperCase()+' — '+eq.length+' equipo'+(eq.length>1?'s':'')+'</div>';
-      eq.forEach((r,i) => { html += equipoCard(r, i+1); });
+      eq.forEach(function(r,i){ html += equipoCard(r, i+1); });
       html += '</div>';
     });
   } else {
-    filtered.forEach((r,i) => { html += equipoCard(r, i+1); });
+    filtered.forEach(function(r,i){ html += equipoCard(r, i+1); });
   }
   document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
 }
 
 function equipoCard(r, n) {
-  return '<div class="equipo-card">' +
-    '<div class="equipo-num">'+String(n).padStart(2,'0')+'</div>' +
-    '<div class="equipo-info">' +
-      '<div class="equipo-nombre">'+(r[1]||'')+'</div>' +
-      '<div class="equipo-jugadores">'+(r[2]||'')+' · '+(r[4]||'')+'</div>' +
-      '<div class="equipo-zona">📍 '+(r[6]||'')+'</div>' +
-    '</div></div>';
+  return '<div class="equipo-card"><div class="equipo-num">'+String(n).padStart(2,'0')+'</div><div class="equipo-info"><div class="equipo-nombre">'+(r[1]||'')+'</div><div class="equipo-jugadores">'+(r[2]||'')+' · '+(r[4]||'')+'</div><div class="equipo-zona">📍 '+(r[6]||'')+'</div></div></div>';
 }
 
 function compartir() {
-  const url = window.location.href.split('?')[0];
+  var url = window.location.href.split('?')[0];
   if (navigator.share) { navigator.share({title:'IV Máster de Melide — Participantes',url:url}); }
   else { navigator.clipboard.writeText(url); showToast('📋 Enlace copiado'); }
 }
 
-// ─── ADMIN ────────────────────────────────────────────────────────────────
+// ─── ADMIN ───
 function checkPass() {
   if (document.getElementById('admin-pass').value === ADMIN_PASS) {
     document.getElementById('admin-login').style.display = 'none';
@@ -779,56 +693,60 @@ function checkPass() {
 
 function loadData() {
   showToast('🔄 Cargando...');
-  fetch(SCRIPT_URL + '?action=get', { method: 'GET', mode: 'cors' })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
+  document.getElementById('admin-error').style.display = 'none';
+  pedirDatos('get')
+    .then(function(data){
       allData = data.rows || [];
       renderStats(); renderTable(); checkDuplicados();
       showToast('✅ ' + allData.length + ' inscripciones');
     })
-    .catch(() => showToast('❌ Error cargando datos'));
+    .catch(function(err){
+      var box = document.getElementById('admin-error');
+      box.style.display = 'block';
+      box.innerHTML = '<strong>No se pudieron cargar las inscripciones.</strong><br>'+ (err && err.message ? err.message : 'Error de conexión');
+    });
 }
 
 function renderStats() {
-  const p1 = allData.filter(r=>r[3]==='Si').length;
-  const p2 = allData.filter(r=>r[5]==='Si').length;
-  const tp = p1+p2, tj = allData.length*2;
-  let html = '<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">'+allData.length+'</div></div>';
-  CATS.forEach(cat => { const n=allData.filter(r=>r[11]===cat||r[12]===cat).length; html+='<div class="stat-card '+cat.toLowerCase()+'"><div class="stat-label">'+cat+'</div><div class="stat-num">'+n+'</div></div>'; });
+  var p1 = allData.filter(function(r){return r[3]==='Si';}).length;
+  var p2 = allData.filter(function(r){return r[5]==='Si';}).length;
+  var tp = p1+p2, tj = allData.length*2;
+  var html = '<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">'+allData.length+'</div></div>';
+  CATS.forEach(function(cat){ var n=allData.filter(function(r){return r[11]===cat||r[12]===cat;}).length; html+='<div class="stat-card '+cat.toLowerCase()+'"><div class="stat-label">'+cat+'</div><div class="stat-num">'+n+'</div></div>'; });
   html += '<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">'+tp+'/'+tj+'</div></div>';
   html += '<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">'+(tp*PRECIO)+'€</div></div>';
-  html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+(( tj-tp)*PRECIO)+'€</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+((tj-tp)*PRECIO)+'€</div></div>';
   document.getElementById('stats-grid').innerHTML = html;
 }
 
 function renderTable() {
-  const q   = (document.getElementById('search-admin').value||'').toLowerCase();
-  const cf  = document.getElementById('filter-cat').value;
-  const pf  = document.getElementById('filter-pago').value;
-  const filtered = allData.filter(r => {
-    const ms = !q  || [r[1],r[2],r[4],r[6]].some(v=>(v||'').toLowerCase().includes(q));
-    const mc = !cf || r[11]===cf || r[12]===cf;
-    const mp = !pf || r[3]===pf  || r[5]===pf;
+  var q  = (document.getElementById('search-admin').value||'').toLowerCase();
+  var cf = document.getElementById('filter-cat').value;
+  var pf = document.getElementById('filter-pago').value;
+  var filtered = allData.filter(function(r){
+    var ms = !q  || [r[1],r[2],r[4],r[6]].some(function(v){ return (v||'').toLowerCase().indexOf(q)>=0; });
+    var mc = !cf || r[11]===cf || r[12]===cf;
+    var mp = !pf || r[3]===pf  || r[5]===pf;
     return ms && mc && mp;
   });
-  const tbody = document.getElementById('table-body');
+  var tbody = document.getElementById('table-body');
   if (!filtered.length) { tbody.innerHTML=''; document.getElementById('empty-state').style.display='block'; return; }
   document.getElementById('empty-state').style.display = 'none';
-  tbody.innerHTML = filtered.map(r => {
-    const ri = allData.indexOf(r);
-    const p1 = r[3]==='Si', p2 = r[5]==='Si';
-    const t1 = r[7]||'', t2 = r[8]||'';
-    const d1 = allData.filter(x=>(x[7]||'')===t1 && t1!=='').length > 1;
-    const d2 = allData.filter(x=>(x[8]||'')===t2 && t2!=='').length > 1;
-    const cc = c => (c||'').toLowerCase();
+  tbody.innerHTML = filtered.map(function(r){
+    var ri = allData.indexOf(r);
+    var p1 = r[3]==='Si', p2 = r[5]==='Si';
+    var t1 = r[7]||'', t2 = r[8]||'';
+    var d1 = allData.filter(function(x){ return (x[7]||'')===t1 && t1!==''; }).length > 1;
+    var d2 = allData.filter(function(x){ return (x[8]||'')===t2 && t2!==''; }).length > 1;
+    var cc = function(c){ return (c||'').toLowerCase(); };
     return '<tr>' +
       '<td style="color:var(--text-dim);font-weight:700">'+(ri+1)+'</td>' +
       '<td style="font-weight:700">'+(r[1]||'')+'</td>' +
       '<td>'+(r[2]||'')+'</td>' +
-      '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+(t1)+(d1?' ⚠️':'')+'</td>' +
+      '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+t1+(d1?' ⚠️':'')+'</td>' +
       '<td><button class="btn-pago '+(p1?'si':'no')+'" onclick="togglePago('+ri+',1)">'+(p1?'✅':'❌')+'</button></td>' +
       '<td>'+(r[4]||'')+'</td>' +
-      '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+(t2)+(d2?' ⚠️':'')+'</td>' +
+      '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+t2+(d2?' ⚠️':'')+'</td>' +
       '<td><button class="btn-pago '+(p2?'si':'no')+'" onclick="togglePago('+ri+',2)">'+(p2?'✅':'❌')+'</button></td>' +
       '<td style="color:var(--text-dim)">'+(r[6]||'')+'</td>' +
       '<td><span class="badge '+cc(r[11])+'">'+(r[11]||'-')+'</span></td>' +
@@ -841,8 +759,8 @@ function renderTable() {
 }
 
 function togglePago(idx, jugador) {
-  const col = jugador===1 ? 3 : 5;
-  const nv  = allData[idx][col]==='Si' ? 'No' : 'Si';
+  var col = jugador===1 ? 3 : 5;
+  var nv  = allData[idx][col]==='Si' ? 'No' : 'Si';
   allData[idx][col] = nv;
   renderStats(); renderTable();
   fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updatePago',row:idx+2,col:col+1,value:nv})});
@@ -857,7 +775,7 @@ function guardarNotas(idx, valor) {
 
 function abrirModal(idx) {
   editIdx = idx;
-  const r = allData[idx];
+  var r = allData[idx];
   document.getElementById('m-equipo').value    = r[1]||'';
   document.getElementById('m-jugador1').value  = r[2]||'';
   document.getElementById('m-telefono1').value = r[7]||'';
@@ -874,8 +792,8 @@ function cerrarModal() { document.getElementById('modal-editar').classList.remov
 
 function guardarEdicion() {
   if (editIdx < 0) return;
-  const r = allData[editIdx];
-  const data = {
+  var r = allData[editIdx];
+  var data = {
     action:'modificar', codigo:r[13],
     equipo: document.getElementById('m-equipo').value.trim(),
     jugador1: document.getElementById('m-jugador1').value.trim(),
@@ -897,7 +815,7 @@ function guardarEdicion() {
 }
 
 function eliminarInscrito(idx) {
-  const eq = allData[idx][1], j1 = allData[idx][2];
+  var eq = allData[idx][1], j1 = allData[idx][2];
   if (!confirm('¿Eliminar la inscripción de "'+eq+'" ('+j1+')? Esta acción no se puede deshacer.')) return;
   fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cancelar',codigo:allData[idx][13]})});
   allData.splice(idx, 1);
@@ -906,49 +824,47 @@ function eliminarInscrito(idx) {
 }
 
 function checkDuplicados() {
-  const tels = {};
-  allData.forEach(r => {
-    [r[7], r[8]].forEach(tel => {
+  var tels = {};
+  allData.forEach(function(r){
+    [r[7], r[8]].forEach(function(tel){
       if (!tel) return;
       if (!tels[tel]) tels[tel] = [];
       tels[tel].push(r[1]);
     });
   });
-  const dups = Object.entries(tels).filter(([,v])=>v.length>1);
-  const banner = document.getElementById('duplicados-banner');
+  var dups = Object.keys(tels).filter(function(k){ return tels[k].length>1; });
+  var banner = document.getElementById('duplicados-banner');
   if (!dups.length) { banner.style.display='none'; return; }
   banner.style.display = 'block';
-  document.getElementById('duplicados-lista').innerHTML = dups.map(([tel,names])=>'📞 <strong>'+tel+'</strong>: '+names.join(' · ')).join('<br>');
+  document.getElementById('duplicados-lista').innerHTML = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+tels[tel].join(' · '); }).join('<br>');
 }
 
 function toggleHistorial() {
-  const p = document.getElementById('historial-panel');
-  const hidden = p.style.display === 'none';
+  var p = document.getElementById('historial-panel');
+  var hidden = p.style.display === 'none';
   p.style.display = hidden ? 'block' : 'none';
   if (hidden) loadHistorial();
 }
 
 function loadHistorial() {
-  fetch(SCRIPT_URL + '?action=historial')
-    .then(r => r.json())
-    .then(data => {
-      const rows = data.rows || [];
+  pedirDatos('historial')
+    .then(function(data){
+      var rows = data.rows || [];
       if (!rows.length) { document.getElementById('historial-lista').innerHTML = '<p>No hay cambios registrados todavía.</p>'; return; }
-      document.getElementById('historial-lista').innerHTML = [...rows].reverse().map(r =>
-        '<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;">' +
+      document.getElementById('historial-lista').innerHTML = rows.slice().reverse().map(function(r){
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;">' +
         '<div style="min-width:100px;color:var(--text-dim);font-size:0.75rem;">'+(r[0]||'').toString().substring(0,16)+'</div>' +
-        '<div><span style="font-weight:700;color:'+(r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)')+';">'+(r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅')+' '+(r[1]||'')+'</span><span style="margin-left:8px;">'+(r[2]||'')+'</span></div>' +
-        '</div>'
-      ).join('');
+        '<div><span style="font-weight:700;color:'+(r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)')+';">'+(r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅')+' '+(r[1]||'')+'</span><span style="margin-left:8px;">'+(r[2]||'')+'</span></div></div>';
+      }).join('');
     })
-    .catch(() => { document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
+    .catch(function(){ document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
 }
 
 function exportCSV() {
   if (!allData.length) { showToast('No hay datos'); return; }
-  const headers = ['Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.Eq','Tel.J1','Tel.J2','Email','Cat.Mov','Cat.Par','Código','Notas'];
-  const rows = [headers, ...allData].map(r => r.slice(0,15).map(c=>'"'+(c||'')+'"').join(',')).join('\n');
-  const a = document.createElement('a');
+  var headers = ['Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas'];
+  var rows = [headers].concat(allData).map(function(r){ return r.slice(0,15).map(function(c){ return '"'+(c||'')+'"'; }).join(','); }).join('\n');
+  var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([rows], {type:'text/csv;charset=utf-8;'}));
   a.download = 'inscripciones_amf.csv';
   a.click();
