@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inscripciones — Asociación Melide Futbolín</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -15,7 +14,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   .bg-image { position: fixed; inset: 0; z-index: 0; background-image: url('https://raw.githubusercontent.com/amfmelide/Futbolines/main/photofut.PNG'); background-size: cover; background-position: center; filter: brightness(0.25) blur(2px); transform: scale(1.05); }
   .bg-overlay { position: fixed; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,14,26,0.45) 0%, rgba(10,14,26,0.65) 60%, rgba(10,14,26,0.85) 100%); }
-  header, .tabs, #tab-inscripcion, #tab-participantes, #tab-admin, .modal-overlay, .confirm-overlay, #toast { position: relative; z-index: 2; }
+  header, .tabs, #tab-inscripcion, #tab-participantes, #tab-admin, #notif-banner, .modal-overlay, .confirm-overlay, #toast { position: relative; z-index: 2; }
   body { font-family: 'Barlow', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 60px; position: relative; }
   header { text-align: center; padding: 32px 20px 20px; }
   header::after { content: ''; display: block; height: 2px; margin-top: 20px; background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent); }
@@ -47,6 +46,8 @@
   .success-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--libre); margin-bottom: 8px; }
   .cancel-msg h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--ocupado); margin-bottom: 8px; }
   .success-msg p, .cancel-msg p { color: var(--text-dim); font-size: 0.9rem; }
+
+  /* PARTICIPANTES */
   .participantes-wrap { max-width: 900px; margin: 30px auto 0; padding: 0 20px; }
   .cat-section { margin-bottom: 30px; }
   .cat-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid; }
@@ -60,6 +61,8 @@
   .equipo-nombre { font-weight: 700; font-size: 0.95rem; }
   .equipo-jugadores { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
   .equipo-zona { font-size: 0.75rem; color: var(--text-dim); }
+
+  /* ADMIN */
   .admin-wrap { max-width: 1400px; margin: 30px auto 0; padding: 0 20px; }
   .admin-login { max-width: 360px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
   .admin-login h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); margin-bottom: 20px; }
@@ -110,6 +113,8 @@
   #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 24px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; transition: transform 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
   #toast.show { transform: translateX(-50%) translateY(0); }
   @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .form-card { padding: 20px; } }
+
+  /* CONFIRMATION MODAL */
   .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 10001; justify-content: center; align-items: center; padding: 20px; }
   .confirm-overlay.show { display: flex; }
   .confirm-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
@@ -121,6 +126,8 @@
   .confirm-btn-ok { flex: 1; padding: 14px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.9rem; text-transform: uppercase; cursor: pointer; }
   .confirm-btn-back { padding: 14px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
   input.error { border-color: var(--ocupado) !important; }
+
+  /* MODAL EDITAR */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center; padding: 20px; }
   .modal-overlay.show { display: flex; }
   .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
@@ -130,593 +137,28 @@
   .btn-cerrar { padding: 12px 20px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-dim); font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
   .btn-edit { background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.3); color: #90caf9; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; margin-right: 4px; }
   .btn-edit:hover { background: rgba(21,101,192,0.3); }
-  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-  /* CAMINO MAP */
-  #camino-wrap { position:relative; width:100%; height:500px; border-radius:16px; overflow:hidden; border:1px solid var(--border); margin-bottom:30px; }
-  #camino-wrap #app { position:absolute; inset:0; width:100%; height:100%; }
-
-  /* =============================================
-     RESET & BASE
-  ============================================= */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --black:       #07080d;
-    --navy-deep:   #0d1528;
-    --navy-mid:    #1a2740;
-    --gold:        #c9a227;
-    --gold-light:  #e8d5a0;
-    --gold-dim:    #7a6117;
-    --red-amf:     #8b1a1a;
-    --red-glow:    #cc2222;
-    --blue-mid:    #1e3a5f;
-    --text-muted:  #6a7a90;
-    --text-dim:    #3d4d60;
-  }
-
-  html, body {
-    width: 100%; height: 100%;
-    background: var(--black);
-    color: #d4c9a8;
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-  }
-
-  /* =============================================
-     LAYOUT
-  ============================================= */
-  #app {
-    position: relative;
-    width: 100vw; height: 100vh;
-    overflow: hidden;
-  }
-
-  /* Canvas fills entire background */
-  #mapCanvas {
-    position: absolute;
-    inset: 0;
-    width: 100%; height: 100%;
-    cursor: grab;
-  }
-  #mapCanvas:active { cursor: grabbing; }
-
-  /* Overlay gradient vignette */
-  #vignette {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 40%, rgba(7,8,13,0.7) 100%);
-    pointer-events: none;
-  }
-
-  /* =============================================
-     HEADER
-  ============================================= */
-  #header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    padding: 28px 40px 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    pointer-events: none;
-    z-index: 10;
-  }
-
-  .header-left {}
-
-  .eyebrow {
-    font-family: 'Inter', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--gold);
-    opacity: 0.8;
-    margin-bottom: 6px;
-  }
-
-  .main-title {
-    font-family: 'Cinzel', serif;
-    font-size: clamp(2.2rem, 5vw, 4.2rem);
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    line-height: 1;
-    background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dim) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: none;
-    filter: drop-shadow(0 0 30px rgba(201,162,39,0.4));
-  }
-
-  .subtitle {
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(0.7rem, 1.2vw, 0.88rem);
-    font-weight: 300;
-    letter-spacing: 0.12em;
-    color: var(--gold-light);
-    opacity: 0.65;
-    margin-top: 8px;
-    text-transform: uppercase;
-  }
-
-  .slogan {
-    font-family: 'Cinzel', serif;
-    font-size: clamp(0.6rem, 0.9vw, 0.75rem);
-    color: var(--gold);
-    opacity: 0.5;
-    letter-spacing: 0.2em;
-    margin-top: 5px;
-    font-style: italic;
-  }
-
-  /* Logo / badge top-right */
-  .amf-badge {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    pointer-events: all;
-  }
-
-  .amf-logo-circle {
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(201,162,39,0.5);
-    background: rgba(13,21,40,0.8);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    font-size: 10px;
-    color: var(--gold);
-    letter-spacing: 0.05em;
-  }
-
-  /* =============================================
-     VIEW TOGGLE
-  ============================================= */
-  #viewToggle {
-    position: absolute;
-    top: 50%;
-    left: 40px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    z-index: 20;
-  }
-
-  .toggle-btn {
-    padding: 8px 14px;
-    background: rgba(13,21,40,0.7);
-    border: 1px solid rgba(201,162,39,0.2);
-    border-radius: 4px;
-    color: var(--text-muted);
-    font-family: 'Inter', sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    backdrop-filter: blur(8px);
-    white-space: nowrap;
-  }
-
-  .toggle-btn:hover {
-    border-color: rgba(201,162,39,0.5);
-    color: var(--gold-light);
-  }
-
-  .toggle-btn.active {
-    background: rgba(201,162,39,0.12);
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-
-  /* =============================================
-     TOURNAMENT CARD
-  ============================================= */
-  #tournamentCard {
-    position: absolute;
-    bottom: 40px;
-    left: 40px;
-    background: rgba(7,8,13,0.85);
-    border: 1px solid rgba(201,162,39,0.25);
-    border-left: 3px solid var(--gold);
-    border-radius: 6px;
-    padding: 18px 22px;
-    min-width: 220px;
-    z-index: 20;
-    backdrop-filter: blur(12px);
-  }
-
-  .card-label {
-    font-family: 'Inter', sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    color: var(--gold);
-    opacity: 0.7;
-    margin-bottom: 10px;
-  }
-
-  .card-title {
-    font-family: 'Cinzel', serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--gold-light);
-    line-height: 1.3;
-    margin-bottom: 4px;
-  }
-
-  .card-dates {
-    font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
-    font-weight: 400;
-    color: var(--gold);
-    letter-spacing: 0.12em;
-    margin-bottom: 6px;
-  }
-
-  .card-venue {
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-    letter-spacing: 0.05em;
-  }
-
-  .card-cta {
-    display: inline-block;
-    padding: 6px 14px;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    color: var(--black);
-    font-family: 'Inter', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    border-radius: 3px;
-    text-decoration: none;
-  }
-
-  /* =============================================
-     STATS CARDS
-  ============================================= */
-  #statsRow {
-    position: absolute;
-    top: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-    z-index: 20;
-    pointer-events: none;
-  }
-
-  .stat-card {
-    background: rgba(7,8,13,0.75);
-    border: 1px solid rgba(201,162,39,0.15);
-    border-radius: 5px;
-    padding: 10px 16px;
-    text-align: center;
-    backdrop-filter: blur(8px);
-    min-width: 90px;
-  }
-
-  .stat-number {
-    font-family: 'Cinzel', serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--gold);
-    line-height: 1;
-    margin-bottom: 3px;
-    transition: all 0.3s ease;
-  }
-
-  .stat-label {
-    font-size: 8px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    line-height: 1.3;
-  }
-
-  /* =============================================
-     RIGHT PANELS
-  ============================================= */
-  #rightPanels {
-    position: absolute;
-    top: 50%;
-    right: 30px;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    z-index: 20;
-    width: 200px;
-  }
-
-  .panel {
-    background: rgba(7,8,13,0.82);
-    border: 1px solid rgba(201,162,39,0.15);
-    border-radius: 6px;
-    padding: 14px 16px;
-    backdrop-filter: blur(10px);
-  }
-
-  .panel-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 8.5px;
-    font-weight: 600;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--gold);
-    opacity: 0.8;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(201,162,39,0.1);
-  }
-
-  /* Latest registrations */
-  #regList {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    max-height: 130px;
-    overflow: hidden;
-  }
-
-  .reg-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.72rem;
-    color: var(--gold-light);
-    animation: slideIn 0.4s ease-out forwards;
-    opacity: 0;
-  }
-
-  @keyframes slideIn {
-    from { transform: translateX(20px); opacity: 0; }
-    to   { transform: translateX(0);    opacity: 1; }
-  }
-
-  .reg-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--gold);
-    flex-shrink: 0;
-    box-shadow: 0 0 4px var(--gold);
-  }
-
-  .reg-name { font-weight: 500; color: var(--gold-light); }
-  .reg-place { color: var(--text-muted); font-size: 0.67rem; }
-
-  /* Top origins */
-  .origin-item {
-    margin-bottom: 8px;
-  }
-
-  .origin-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-    font-size: 0.7rem;
-  }
-
-  .origin-rank {
-    font-family: 'Cinzel', serif;
-    font-size: 0.62rem;
-    color: var(--gold-dim);
-    margin-right: 5px;
-  }
-
-  .origin-name { color: var(--gold-light); font-weight: 500; }
-  .origin-pct  { color: var(--gold); font-size: 0.65rem; }
-
-  .origin-bar {
-    height: 2px;
-    background: rgba(201,162,39,0.1);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-
-  .origin-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    border-radius: 1px;
-    transition: width 1s ease;
-  }
-
-  /* =============================================
-     TOOLTIP
-  ============================================= */
-  #tooltip {
-    position: absolute;
-    display: none;
-    background: rgba(7,8,13,0.92);
-    border: 1px solid rgba(201,162,39,0.4);
-    border-radius: 6px;
-    padding: 12px 16px;
-    min-width: 170px;
-    z-index: 50;
-    pointer-events: none;
-    backdrop-filter: blur(12px);
-  }
-
-  .tt-city {
-    font-family: 'Cinzel', serif;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--gold-light);
-    margin-bottom: 2px;
-  }
-
-  .tt-prov {
-    font-size: 0.7rem;
-    color: var(--gold);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    opacity: 0.8;
-  }
-
-  .tt-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-  }
-
-  .tt-val { color: var(--gold-light); font-weight: 500; }
-
-  .tt-rumbo {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(201,162,39,0.15);
-    font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
-    letter-spacing: 0.2em;
-    color: var(--gold);
-    text-align: center;
-  }
-
-  /* =============================================
-     MELIDE LABEL
-  ============================================= */
-  #melideLabel {
-    position: absolute;
-    pointer-events: none;
-    z-index: 30;
-    transform: translate(-50%, -130%);
-    text-align: center;
-    opacity: 0;
-    transition: opacity 0.5s;
-  }
-
-  #melideLabel.visible { opacity: 1; }
-
-  .melide-name {
-    font-family: 'Cinzel', serif;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--gold-light);
-    letter-spacing: 0.15em;
-    text-shadow: 0 0 10px rgba(201,162,39,0.8);
-    white-space: nowrap;
-  }
-
-  .melide-sub {
-    font-size: 0.55rem;
-    color: var(--gold);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    opacity: 0.7;
-  }
-
-  /* =============================================
-     MOBILE ADJUSTMENTS
-  ============================================= */
-  @media (max-width: 768px) {
-    #header { padding: 16px 16px 0; }
-    #viewToggle { left: 12px; top: auto; bottom: 130px; transform: none; }
-    #tournamentCard { left: 12px; bottom: 16px; padding: 12px 14px; min-width: 170px; }
-    #statsRow { top: auto; bottom: 16px; left: 50%; transform: translateX(-50%); gap: 6px; }
-    #statsRow { top: 60px; bottom: auto; transform: none; left: 50%; transform: translateX(-50%); }
-    #rightPanels { display: none; }
-    .stat-card { padding: 7px 10px; min-width: 70px; }
-    .stat-number { font-size: 1.1rem; }
-    .stat-label { font-size: 7px; }
-    #tournamentCard { display: none; }
-  }
-
-  @media (max-width: 480px) {
-    .main-title { font-size: 1.8rem; }
-    #statsRow { gap: 4px; }
-    .stat-card { min-width: 60px; padding: 6px 8px; }
-  }
-
-  /* =============================================
-     SCALLOP SHELL ICON (SVG inline, near Melide)
-  ============================================= */
-  .shell-icon {
-    position: absolute;
-    pointer-events: none;
-    opacity: 0.18;
-    animation: shellPulse 4s ease-in-out infinite;
-  }
-
-  @keyframes shellPulse {
-    0%, 100% { opacity: 0.12; transform: scale(1); }
-    50%       { opacity: 0.28; transform: scale(1.1); }
-  }
-
-  /* Loading screen */
-  #loader {
-    position: absolute; inset: 0;
-    background: var(--black);
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column;
-    z-index: 100;
-    transition: opacity 0.8s ease;
-  }
-  #loader.fade { opacity: 0; pointer-events: none; }
-
-  .loader-title {
-    font-family: 'Cinzel', serif;
-    font-size: 1.4rem;
-    color: var(--gold);
-    letter-spacing: 0.3em;
-    margin-bottom: 20px;
-    animation: loaderPulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes loaderPulse {
-    0%, 100% { opacity: 0.5; }
-    50%       { opacity: 1; }
-  }
-
-  .loader-bar {
-    width: 200px; height: 2px;
-    background: rgba(201,162,39,0.2);
-    border-radius: 1px;
-    overflow: hidden;
-  }
-
-  .loader-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
-    border-radius: 1px;
-    animation: loaderFill 1.5s ease-out forwards;
-  }
-
-  @keyframes loaderFill {
-    from { width: 0%; }
-    to   { width: 100%; }
-  }
-
 </style>
 </head>
 <body>
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
+
 <header>
   <div class="header-icon">
-    <a href="index.html" style="font-family:'Permanent Marker',cursive;font-size:clamp(3rem,10vw,5rem);color:white;letter-spacing:0.05em;line-height:1;text-shadow:0 0 30px rgba(21,101,192,0.4);text-decoration:none;">amf</a>
+    <a href="index.html" style="font-family: 'Permanent Marker', cursive; font-size: clamp(3rem, 10vw, 5rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 30px rgba(21,101,192,0.4); text-decoration: none;">amf</a>
   </div>
   <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
   <p class="subtitle">18-19-20 SEPTIEMBRE · IV MÁSTER DE MELIDE</p>
 </header>
+
 <div style="text-align:center;padding:16px 20px 0;">
-  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Volver al inicio</a>
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">← Volver al inicio</a>
 </div>
+
 <div class="tabs" id="tabs">
-  <button class="tab-btn active" onclick="showTab('inscripcion',this)">📝 Inscribirse</button>
-  <button class="tab-btn" onclick="showTab('participantes',this)">🏆 Participantes</button>
-  <button class="tab-btn" id="btn-admin-tab" style="display:none" onclick="showTab('admin',this)">🔐 Admin</button>
+  <button class="tab-btn active" onclick="showTab('inscripcion', this)">📝 Inscribirse</button>
+  <button class="tab-btn" onclick="showTab('participantes', this)">🏆 Participantes</button>
+  <button class="tab-btn" onclick="showTab('admin', this)">🔐 Admin</button>
 </div>
 
 <!-- FORMULARIO -->
@@ -724,136 +166,177 @@
   <div class="form-wrap">
     <div class="form-card" id="form-card">
       <div class="form-title" id="form-title">INSCRIPCIÓN DE EQUIPO</div>
-      <div class="form-group"><label>Nombre del equipo</label><input type="text" id="equipo" placeholder="Ej: Los Cracks de Melide"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Jugador 1 — Nombre</label><input type="text" id="jugador1" placeholder="Nombre completo"></div>
-        <div class="form-group"><label>Jugador 1 — Teléfono</label><input type="tel" id="telefono1" placeholder="6XX XXX XXX"></div>
+      <div class="form-group">
+        <label>Nombre del equipo</label>
+        <input type="text" id="equipo" placeholder="Ej: Los Cracks de Melide">
       </div>
       <div class="form-row">
-        <div class="form-group"><label>Jugador 2 — Nombre</label><input type="text" id="jugador2" placeholder="Nombre completo"></div>
-        <div class="form-group"><label>Jugador 2 — Teléfono</label><input type="tel" id="telefono2" placeholder="6XX XXX XXX"></div>
+        <div class="form-group">
+          <label>Jugador 1 — Nombre</label>
+          <input type="text" id="jugador1" placeholder="Nombre completo">
+        </div>
+        <div class="form-group">
+          <label>Jugador 1 — Teléfono</label>
+          <input type="tel" id="telefono1" placeholder="6XX XXX XXX">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jugador 2 — Nombre</label>
+          <input type="text" id="jugador2" placeholder="Nombre completo">
+        </div>
+        <div class="form-group">
+          <label>Jugador 2 — Teléfono</label>
+          <input type="tel" id="telefono2" placeholder="6XX XXX XXX">
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>Zona del equipo</label>
           <select id="zona">
             <option value="">Seleccionar zona...</option>
-            <optgroup label="🟢 Galicia">
-              <option value="Melide">Melide</option><option value="Arzúa">Arzúa</option><option value="As Cruces">As Cruces</option><option value="Carballo">Carballo</option><option value="Ferrol">Ferrol</option><option value="Lalín">Lalín</option><option value="Outes">Outes</option><option value="Sarria">Sarria</option><option value="Santiago de Compostela">Santiago de Compostela</option><option value="Vigo">Vigo</option><option value="A Coruña">A Coruña (provincia)</option><option value="Lugo">Lugo (provincia)</option><option value="Ourense">Ourense (provincia)</option><option value="Pontevedra">Pontevedra (provincia)</option>
-            </optgroup>
-            <optgroup label="🔵 Castilla y León">
-              <option value="Burgos">Burgos</option><option value="León">León</option><option value="Palencia">Palencia</option><option value="Ponferrada">Ponferrada</option><option value="Salamanca">Salamanca</option><option value="Valladolid">Valladolid</option><option value="Zamora">Zamora</option>
-            </optgroup>
-            <optgroup label="🟠 Comunidad de Madrid"><option value="Madrid">Madrid</option></optgroup>
-            <optgroup label="🔴 Andalucía">
-              <option value="Almería">Almería</option><option value="Córdoba">Córdoba</option><option value="Granada">Granada</option><option value="Huelva">Huelva</option><option value="Jaén">Jaén</option><option value="Jerez">Jerez</option><option value="Málaga">Málaga</option><option value="Sevilla">Sevilla</option>
-            </optgroup>
-            <optgroup label="🟡 Cataluña"><option value="Barcelona">Barcelona</option></optgroup>
-            <optgroup label="🟣 País Vasco">
-              <option value="Bilbao">Bilbao</option><option value="San Sebastián">San Sebastián</option><option value="Vitoria">Vitoria</option>
-            </optgroup>
-            <optgroup label="⚪ Comunidad Valenciana"><option value="Alicante">Alicante</option><option value="Valencia">Valencia</option></optgroup>
-            <optgroup label="🟤 Asturias"><option value="Oviedo">Oviedo</option></optgroup>
-            <optgroup label="🔵 Cantabria"><option value="Santander">Santander</option></optgroup>
-            <optgroup label="🟢 Navarra"><option value="Pamplona">Pamplona</option></optgroup>
-            <optgroup label="🔴 La Rioja"><option value="Logroño">Logroño</option></optgroup>
-            <optgroup label="🟠 Castilla-La Mancha"><option value="Albacete">Albacete</option><option value="Toledo">Toledo</option></optgroup>
-            <optgroup label="🟡 Extremadura"><option value="Badajoz">Badajoz</option><option value="Cáceres">Cáceres</option></optgroup>
-            <optgroup label="🔵 Región de Murcia"><option value="Murcia">Murcia</option></optgroup>
-            <optgroup label="🌍 Otras zonas"><option value="Otra">Otra provincia / país</option></optgroup>
+              <option value="A Coruña">A Coruña</option>
+              <option value="Albacete">Albacete</option>
+              <option value="Alicante">Alicante</option>
+              <option value="Almería">Almería</option>
+              <option value="Arzúa">Arzúa</option>
+              <option value="As Cruces">As Cruces</option>
+              <option value="Badajoz">Badajoz</option>
+              <option value="Barcelona">Barcelona</option>
+              <option value="Bilbao">Bilbao</option>
+              <option value="Burgos">Burgos</option>
+              <option value="Carballo">Carballo</option>
+              <option value="Cáceres">Cáceres</option>
+              <option value="Córdoba">Córdoba</option>
+              <option value="Ferrol">Ferrol</option>
+              <option value="Granada">Granada</option>
+              <option value="Huelva">Huelva</option>
+              <option value="Jaén">Jaén</option>
+              <option value="Jerez">Jerez</option>
+              <option value="Lalín">Lalín</option>
+              <option value="León">León</option>
+              <option value="Logroño">Logroño</option>
+              <option value="Lugo">Lugo</option>
+              <option value="Madrid">Madrid</option>
+              <option value="Melide">Melide</option>
+              <option value="Murcia">Murcia</option>
+              <option value="Málaga">Málaga</option>
+              <option value="Ourense">Ourense</option>
+              <option value="Outes">Outes</option>
+              <option value="Oviedo">Oviedo</option>
+              <option value="Palencia">Palencia</option>
+              <option value="Pamplona">Pamplona</option>
+              <option value="Ponferrada">Ponferrada</option>
+              <option value="Pontevedra">Pontevedra</option>
+              <option value="Salamanca">Salamanca</option>
+              <option value="San Sebastián">San Sebastián</option>
+              <option value="Santander">Santander</option>
+              <option value="Santiago de Compostela">Santiago de Compostela</option>
+              <option value="Sarria">Sarria</option>
+              <option value="Sevilla">Sevilla</option>
+              <option value="Toledo">Toledo</option>
+              <option value="Valencia">Valencia</option>
+              <option value="Valladolid">Valladolid</option>
+              <option value="Vigo">Vigo</option>
+              <option value="Vitoria">Vitoria</option>
+              <option value="Zamora">Zamora</option>
+              <option value="Zaragoza">Zaragoza</option>
           </select>
         </div>
-        <div class="form-group"><label>Teléfono de contacto del equipo</label><input type="tel" id="telefono" placeholder="6XX XXX XXX"></div>
+        <div class="form-group">
+          <label>Teléfono de contacto del equipo</label>
+          <input type="tel" id="telefono" placeholder="6XX XXX XXX">
+        </div>
       </div>
-      <div class="form-group"><label>Email de contacto</label><input type="email" id="email" placeholder="correo@ejemplo.com"></div>
-      <div class="form-group"><label>Comentarios <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label><textarea id="comentarios" placeholder="Alergias, preferencias de horario, dudas..." style="min-height:80px;"></textarea></div>
+      <div class="form-group">
+        <label>Email de contacto</label>
+        <input type="email" id="email" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Comentarios <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
+        <textarea id="comentarios" placeholder="Alergias, preferencias de horario, dudas..." style="min-height:80px;"></textarea>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label>Categoría movimiento <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
-          <select id="catMovimiento"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
+          <select id="catMovimiento">
+            <option value="">Seleccionar...</option>
+            <option value="Elite">🏆 Elite</option>
+            <option value="Plata">🥈 Plata</option>
+            <option value="Bronce">🥉 Bronce</option>
+            <option value="Rookie">⭐ Rookie</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Categoría parado <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
-          <select id="catParado"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
+          <select id="catParado">
+            <option value="">Seleccionar...</option>
+            <option value="Elite">🏆 Elite</option>
+            <option value="Plata">🥈 Plata</option>
+            <option value="Bronce">🥉 Bronce</option>
+            <option value="Rookie">⭐ Rookie</option>
+          </select>
         </div>
       </div>
       <button class="btn-submit" id="btn-submit" onclick="submitForm()">⚡ INSCRIBIRSE AL TORNEO</button>
       <button class="btn-cancelar" id="btn-cancelar" style="display:none" onclick="cancelarInscripcion()">❌ CANCELAR INSCRIPCIÓN</button>
     </div>
-    <div class="success-msg" id="success-msg"><div class="icon">✅</div><h2 id="success-title">¡Inscripción enviada!</h2><p id="success-text">Tu equipo ha sido registrado correctamente.<br>Recibirás un email de confirmación en breve.</p><button class="btn-submit" style="margin-top:20px" onclick="resetForm()">Inscribir otro equipo</button></div>
-    <div class="cancel-msg" id="cancel-msg"><div class="icon">❌</div><h2>Inscripción cancelada</h2><p>Tu inscripción ha sido eliminada correctamente.</p><button class="btn-submit" style="margin-top:20px" onclick="resetForm()">Volver al inicio</button></div>
+    <div class="success-msg" id="success-msg">
+      <div class="icon">✅</div>
+      <h2 id="success-title">¡Inscripción enviada!</h2>
+      <p id="success-text">Tu equipo ha sido registrado correctamente.<br>Recibirás un email de confirmación en breve.</p>
+      <button class="btn-submit" style="margin-top:20px" onclick="resetForm()">Inscribir otro equipo</button>
+    </div>
+    <div class="cancel-msg" id="cancel-msg">
+      <div class="icon">❌</div>
+      <h2>Inscripción cancelada</h2>
+      <p>Tu inscripción ha sido eliminada correctamente.</p>
+      <button class="btn-submit" style="margin-top:20px" onclick="resetForm()">Volver al inicio</button>
+    </div>
   </div>
 </div>
 
 <!-- PARTICIPANTES -->
 <div id="tab-participantes" style="display:none">
   <div class="participantes-wrap">
-    <!-- CONTADOR LIVE -->
-    <div style="text-align:center;padding:24px 0 20px;">
-      <div style="display:inline-flex;flex-direction:column;align-items:center;background:rgba(17,24,39,0.9);border:2px solid rgba(0,200,83,0.4);border-radius:20px;padding:20px 48px;box-shadow:0 0 40px rgba(0,200,83,0.15);">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:4.5rem;color:#00c853;line-height:1;text-shadow:0 0 30px rgba(0,200,83,0.5);" id="part-total-counter">--</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-          <span style="width:9px;height:9px;background:#00c853;border-radius:50%;display:inline-block;animation:blink 1.5s ease-in-out infinite;"></span>
-          <span style="font-size:0.8rem;color:#7a8fa8;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;">Inscripciones confirmadas</span>
+
+    <!-- GLOBE -->
+    <div style="margin-bottom:30px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:14px;text-align:center;">🌍 MAPA DE PARTICIPANTES</div>
+      <div style="position:relative;">
+        <div id="globe-container" style="width:100%;height:500px;background:#0a0e1a;border-radius:16px;border:1px solid var(--border);overflow:hidden;position:relative;">
+          <div id="globe-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);">Cargando mapa...</div>
         </div>
-        <div id="part-cat-mini" style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center;"></div>
+        <button onclick="recentrarGlobo()" style="position:absolute;top:12px;right:12px;background:rgba(10,14,26,0.8);border:1px solid var(--border);color:var(--text-dim);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:0.8rem;font-family:'Barlow',sans-serif;font-weight:700;">🎯 Centrar</button>
+        <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(10,14,26,0.7);border-radius:20px;padding:4px 12px;font-size:0.72rem;color:var(--text-dim);">Arrastra para rotar · Pellizca para zoom</div>
       </div>
     </div>
-    <!-- CAMINO A MELIDE -->
-    <div id="camino-wrap">
-      <div id="app">
-        <div id="loader"><div class="loader-title">CAMINO A MELIDE</div><div class="loader-bar"><div class="loader-fill"></div></div></div>
-        <canvas id="mapCanvas"></canvas>
-        <div id="vignette"></div>
-        <div id="melideLabel"><div class="melide-name">MELIDE</div><div class="melide-sub">Galicia · Destino</div></div>
-        <svg class="shell-icon" id="shellIcon" width="28" height="28" viewBox="0 0 100 100" fill="none">
-          <path d="M50 95 C30 80, 10 60, 15 35 C20 10, 40 5, 50 5 C60 5, 80 10, 85 35 C90 60, 70 80, 50 95Z" stroke="#c9a227" stroke-width="2.5" fill="none"/>
-          <path d="M50 95 L50 5" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
-        </svg>
-        <header id="header">
-          <div class="header-left">
-            <div class="eyebrow">IV Máster de Melide 2026</div>
-            <h1 class="main-title">CAMINO A MELIDE</h1>
-            <p class="subtitle">Jugadores de toda España rumbo al torneo</p>
-          </div>
-          <div class="amf-badge"><div class="amf-logo-circle">AMF<br>2026</div></div>
-        </header>
-        <div id="statsRow">
-          <div class="stat-card"><div class="stat-number" id="statPlayers">0</div><div class="stat-label">Jugadores<br>inscritos</div></div>
-          <div class="stat-card"><div class="stat-number" id="statPairs">0</div><div class="stat-label">Parejas<br>inscritas</div></div>
-          <div class="stat-card"><div class="stat-number" id="statProvinces">0</div><div class="stat-label">Provincias</div></div>
-          <div class="stat-card"><div class="stat-number" id="statCCAA">0</div><div class="stat-label">CC.AA.</div></div>
-          <div class="stat-card"><div class="stat-number" id="statKm">0</div><div class="stat-label">Km totales</div></div>
-        </div>
-        <div id="viewToggle">
-          <button class="toggle-btn active" id="btnGlobe" onclick="setView('globe')">Vista Globo</button>
-          <button class="toggle-btn" id="btnSpain" onclick="setView('spain')">Vista España</button>
-        </div>
-        <div id="rightPanels">
-          <div class="panel"><div class="panel-title">Últimas inscripciones</div><div id="regList"></div></div>
-          <div class="panel"><div class="panel-title">Zonas con más jugadores</div><div id="originsList"></div></div>
-        </div>
-        <div id="tooltip">
-          <div class="tt-city" id="ttCity"></div>
-          <div class="tt-prov" id="ttProv"></div>
-          <div class="tt-row"><span>Jugadores</span><span class="tt-val" id="ttPlayers"></span></div>
-          <div class="tt-row"><span>Parejas</span><span class="tt-val" id="ttPairs"></span></div>
-          <div class="tt-row"><span>Distancia a Melide</span><span class="tt-val" id="ttDist"></span></div>
-          <div class="tt-rumbo">▶ Rumbo a Melide</div>
-        </div>
-      </div>
-    </div>
+
+    <!-- STATS -->
+    <div id="part-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;"></div>
+
     <!-- CONTROLES -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
+
       <select id="filter-part-cat" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
-        <option value="">Todas las categorías</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+        <option value="">Todas las categorías</option>
+        <option value="Elite">🏆 Elite</option>
+        <option value="Oro">🥇 Oro</option>
+        <option value="Plata">🥈 Plata</option>
+        <option value="Bronce">🥉 Bronce</option>
       </select>
       <select id="sort-part" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
-        <option value="cat">Ordenar por categoría</option><option value="fecha">Ordenar por fecha</option><option value="alfa">Ordenar alfabético</option>
+        <option value="cat">Ordenar por categoría</option>
+        <option value="fecha">Ordenar por fecha</option>
+        <option value="alfa">Ordenar alfabético</option>
       </select>
       <button onclick="compartir()" style="background:linear-gradient(135deg,#1b5e20,#2e7d32);border:none;color:#a5d6a7;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;padding:8px 18px;border-radius:8px;cursor:pointer;">📤 Compartir</button>
     </div>
-    <div id="participantes-content"><div class="empty-state"><p>Cargando participantes...</p></div></div>
+
+    <div id="participantes-content">
+      <div class="empty-state"><p>Cargando participantes...</p></div>
+    </div>
+  </div>
   </div>
 </div>
 
@@ -874,10 +357,14 @@
           <button class="btn-refresh" onclick="toggleHistorial()" id="btn-historial">📋 Historial</button>
         </div>
       </div>
+
+      <!-- DUPLICADOS BANNER -->
       <div id="duplicados-banner" style="display:none;background:rgba(245,0,87,0.1);border:1px solid rgba(245,0,87,0.3);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
         <div style="font-weight:700;color:var(--ocupado);margin-bottom:8px;">⚠️ TELÉFONOS REPETIDOS DETECTADOS</div>
         <div id="duplicados-lista" style="font-size:0.82rem;color:var(--text-dim);"></div>
       </div>
+
+      <!-- HISTORIAL -->
       <div id="historial-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:14px;">📋 HISTORIAL DE CAMBIOS</div>
         <div id="historial-lista" style="font-size:0.82rem;color:var(--text-dim);">Cargando...</div>
@@ -886,18 +373,34 @@
       <div class="table-controls">
         <input class="search-input" type="text" id="search-admin" placeholder="🔍 Buscar jugador o equipo..." oninput="renderTable()">
         <select class="filter-select" id="filter-cat" onchange="renderTable()">
-          <option value="">Todas las categorías</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+          <option value="">Todas las categorías</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+          <option value="Rookie">⭐ Rookie</option>
         </select>
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
-          <option value="">Todos los pagos</option><option value="Si">✅ Pagados</option><option value="No">❌ Pendientes</option>
+          <option value="">Todos los pagos</option>
+          <option value="Si">✅ Pagados</option>
+          <option value="No">❌ Pendientes</option>
         </select>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Equipo</th><th>Jugador 1</th><th>📞</th><th>💰 J1</th><th>Jugador 2</th><th>📞</th><th>💰 J2</th><th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th><th>Fecha</th><th>Notas</th><th>Acc.</th></tr></thead>
+          <thead>
+            <tr>
+              <th>#</th><th>Equipo</th>
+              <th>Jugador 1</th><th>📞</th><th>💰 J1</th>
+              <th>Jugador 2</th><th>📞</th><th>💰 J2</th>
+              <th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th>
+              <th>Fecha</th><th>Notas</th><th>Acc.</th>
+            </tr>
+          </thead>
           <tbody id="table-body"></tbody>
         </table>
-        <div class="empty-state" id="empty-state" style="display:none"><p>No hay inscripciones todavía</p></div>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <p>No hay inscripciones todavía</p>
+        </div>
       </div>
     </div>
   </div>
@@ -905,7 +408,7 @@
 
 <div id="toast"></div>
 
-<!-- CONFIRMACION -->
+<!-- CONFIRMACION INSCRIPCION -->
 <div class="confirm-overlay" id="confirm-modal">
   <div class="confirm-box">
     <div class="confirm-title">✅ CONFIRMA TU INSCRIPCIÓN</div>
@@ -927,26 +430,65 @@
   </div>
 </div>
 
-<!-- MODAL EDITAR -->
+<!-- MODAL EDITAR ADMIN -->
 <div class="modal-overlay" id="modal-editar">
   <div class="modal-box">
     <div class="modal-title">✏️ EDITAR INSCRIPCIÓN</div>
-    <div class="form-group"><label>Nombre del equipo</label><input type="text" id="m-equipo" placeholder="Nombre del equipo"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Jugador 1</label><input type="text" id="m-jugador1" placeholder="Nombre completo"></div>
-      <div class="form-group"><label>Tel. Jugador 1</label><input type="tel" id="m-telefono1" placeholder="6XX XXX XXX"></div>
+    <div class="form-group">
+      <label>Nombre del equipo</label>
+      <input type="text" id="m-equipo" placeholder="Nombre del equipo">
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Jugador 2</label><input type="text" id="m-jugador2" placeholder="Nombre completo"></div>
-      <div class="form-group"><label>Tel. Jugador 2</label><input type="tel" id="m-telefono2" placeholder="6XX XXX XXX"></div>
+      <div class="form-group">
+        <label>Jugador 1</label>
+        <input type="text" id="m-jugador1" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tel. Jugador 1</label>
+        <input type="tel" id="m-telefono1" placeholder="6XX XXX XXX">
+      </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Zona</label><input type="text" id="m-zona" placeholder="Zona"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="m-email" placeholder="correo@ejemplo.com"></div>
+      <div class="form-group">
+        <label>Jugador 2</label>
+        <input type="text" id="m-jugador2" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Tel. Jugador 2</label>
+        <input type="tel" id="m-telefono2" placeholder="6XX XXX XXX">
+      </div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Cat. Movimiento</label><select id="m-catMov"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select></div>
-      <div class="form-group"><label>Cat. Parado</label><select id="m-catPar"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select></div>
+      <div class="form-group">
+        <label>Zona</label>
+        <input type="text" id="m-zona" placeholder="Zona">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="m-email" placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cat. Movimiento</label>
+        <select id="m-catMov">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Oro">🥇 Oro</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cat. Parado</label>
+        <select id="m-catPar">
+          <option value="">Seleccionar...</option>
+          <option value="Elite">🏆 Elite</option>
+          <option value="Oro">🥇 Oro</option>
+          <option value="Plata">🥈 Plata</option>
+          <option value="Bronce">🥉 Bronce</option>
+        </select>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn-cerrar" onclick="cerrarModal()">Cancelar</button>
@@ -973,14 +515,6 @@ window.addEventListener('DOMContentLoaded', () => {
   } else if (accion === 'modificar' && codigo) {
     modoActual = 'modificar'; codigoActual = codigo;
     cargarDatosModificacion(codigo);
-  } else if (params.get('admin') === '1') {
-    setTimeout(() => {
-      const adminBtn = document.getElementById('btn-admin-tab');
-      if (adminBtn) { adminBtn.style.display = ''; showTab('admin', adminBtn); }
-      document.getElementById('admin-login').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'block';
-      loadData();
-    }, 300);
   }
 });
 
@@ -1020,30 +554,46 @@ function showTab(tab, btn) {
     document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  btn.classList.add('active');
   if (tab === 'participantes') loadParticipantes();
 }
 
-function validarTelefono(tel) { return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,'')); }
+function validarTelefono(tel) {
+  return /^[0-9+\s]{9,15}$/.test(tel.replace(/\s/g,''));
+}
 
 function submitForm() {
+  // Clear previous errors
   document.querySelectorAll('input.error').forEach(el => el.classList.remove('error'));
+
   const fields = { equipo:'Nombre del equipo', jugador1:'Jugador 1', telefono1:'Teléfono Jugador 1', jugador2:'Jugador 2', telefono2:'Teléfono Jugador 2', zona:'Zona', telefono:'Teléfono equipo', email:'Email' };
   for (const [id, label] of Object.entries(fields)) {
     const el = document.getElementById(id);
-    if (!el.value.trim()) { el.classList.add('error'); showToast(`⚠️ Falta: ${label}`); el.focus(); return; }
+    if (!el.value.trim()) {
+      el.classList.add('error');
+      showToast(`⚠️ Falta: ${label}`);
+      el.focus();
+      return;
+    }
   }
+
+  // Validate phones
   const tel1 = document.getElementById('telefono1').value.trim();
   const tel2 = document.getElementById('telefono2').value.trim();
   const telEq = document.getElementById('telefono').value.trim();
   if (!validarTelefono(tel1)) { document.getElementById('telefono1').classList.add('error'); showToast('⚠️ Teléfono Jugador 1 no válido'); return; }
   if (!validarTelefono(tel2)) { document.getElementById('telefono2').classList.add('error'); showToast('⚠️ Teléfono Jugador 2 no válido'); return; }
   if (!validarTelefono(telEq)) { document.getElementById('telefono').classList.add('error'); showToast('⚠️ Teléfono del equipo no válido'); return; }
+
+  // Validate email
   const email = document.getElementById('email').value.trim();
   if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { document.getElementById('email').classList.add('error'); showToast('⚠️ Email no válido'); return; }
+
   const catMov = document.getElementById('catMovimiento').value;
   const catPar = document.getElementById('catParado').value;
   if (!catMov && !catPar) { showToast('⚠️ Selecciona al menos una categoría'); return; }
+
+  // Show confirmation modal
   document.getElementById('c-equipo').textContent = document.getElementById('equipo').value.trim();
   document.getElementById('c-jugador1').textContent = document.getElementById('jugador1').value.trim();
   document.getElementById('c-tel1').textContent = tel1;
@@ -1054,12 +604,18 @@ function submitForm() {
   document.getElementById('c-catmov').textContent = catMov || '—';
   document.getElementById('c-catpar').textContent = catPar || '—';
   const coment = document.getElementById('comentarios').value.trim();
-  if (coment) { document.getElementById('c-comentarios').textContent = coment; document.getElementById('c-coment-row').style.display = 'flex'; }
-  else { document.getElementById('c-coment-row').style.display = 'none'; }
+  if (coment) {
+    document.getElementById('c-comentarios').textContent = coment;
+    document.getElementById('c-coment-row').style.display = 'flex';
+  } else {
+    document.getElementById('c-coment-row').style.display = 'none';
+  }
   document.getElementById('confirm-modal').classList.add('show');
 }
 
-function cerrarConfirm() { document.getElementById('confirm-modal').classList.remove('show'); }
+function cerrarConfirm() {
+  document.getElementById('confirm-modal').classList.remove('show');
+}
 
 function enviarFormulario() {
   cerrarConfirm();
@@ -1084,9 +640,16 @@ function enviarFormulario() {
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
     .then(() => {
       document.getElementById('form-card').style.display = 'none';
-      if (modoActual === 'modificar') { document.getElementById('success-title').textContent = '¡Inscripción modificada!'; document.getElementById('success-text').textContent = 'Tus datos han sido actualizados correctamente.'; }
+      if (modoActual === 'modificar') {
+        document.getElementById('success-title').textContent = '¡Inscripción modificada!';
+        document.getElementById('success-text').textContent = 'Tus datos han sido actualizados correctamente.';
+      }
       document.getElementById('success-msg').style.display = 'block';
-    }).catch(() => { showToast('❌ Error al enviar'); btn.disabled = false; btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO'; });
+    }).catch(() => {
+      showToast('❌ Error al enviar');
+      btn.disabled = false;
+      btn.textContent = modoActual === 'modificar' ? '💾 GUARDAR CAMBIOS' : '⚡ INSCRIBIRSE AL TORNEO';
+    });
 }
 
 function cancelarInscripcion() {
@@ -1094,8 +657,10 @@ function cancelarInscripcion() {
   const btn = document.getElementById('btn-cancelar');
   btn.disabled = true; btn.textContent = 'Cancelando...';
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'cancelar', codigo:codigoActual }) })
-    .then(() => { document.getElementById('form-card').style.display = 'none'; document.getElementById('cancel-msg').style.display = 'block'; })
-    .catch(() => { showToast('❌ Error al cancelar'); btn.disabled = false; btn.textContent = '❌ CANCELAR INSCRIPCIÓN'; });
+    .then(() => {
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('cancel-msg').style.display = 'block';
+    }).catch(() => { showToast('❌ Error al cancelar'); btn.disabled = false; btn.textContent = '❌ CANCELAR INSCRIPCIÓN'; });
 }
 
 function resetForm() {
@@ -1115,66 +680,140 @@ function resetForm() {
   window.history.replaceState({}, '', window.location.pathname);
 }
 
+// PARTICIPANTES PUBLICOS
 function loadParticipantes() {
   document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Cargando...</p></div>';
   fetch(SCRIPT_URL + '?action=get')
     .then(r => r.json())
     .then(data => {
       const rows = data.rows || [];
-      window._partRows = rows;
-      // Contador
-      let total = 0;
-      rows.forEach(r => { if(r[11]) total++; if(r[12]) total++; });
-      const cel = document.getElementById('part-total-counter');
-      if (cel) { let c=0; const step=Math.ceil(total/30)||1; const iv=setInterval(()=>{c=Math.min(c+step,total);cel.textContent=c;if(c>=total)clearInterval(iv);},40); }
-      const catColors={Elite:'#ffd700',Plata:'#b0bec5',Bronce:'#cd7f32',Rookie:'#ce93d8'};
-      const mini=document.getElementById('part-cat-mini');
-      if(mini){mini.innerHTML=['Elite','Plata','Bronce','Rookie'].map(cat=>{const n=rows.filter(r=>r[11]===cat||r[12]===cat).length;if(!n)return '';return `<span style="font-size:0.72rem;color:${catColors[cat]};font-weight:700;">${getCatEmoji(cat)} ${cat} <span style="color:#e8edf5;">${n}</span></span>`;}).join('<span style="color:#1e2d45;margin:0 4px;">·</span>');}
-      // Update camino data
-      updateCaminoData(rows);
-      // List
-      renderParticipantes(rows);
-    }).catch(() => { document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes</p></div>'; });
+      const cats = ['Elite','Oro','Plata','Bronce'];
+      let html = '';
+      cats.forEach(cat => {
+        const equipos = rows.filter(r => r[11] === cat || r[12] === cat);
+        if (equipos.length === 0) return;
+        html += `<div class="cat-section">
+          <div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipos</div>`;
+        equipos.forEach((r, i) => {
+          html += `<div class="equipo-card">
+            <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+            <div class="equipo-info">
+              <div class="equipo-nombre">${r[1]}</div>
+              <div class="equipo-jugadores">${r[2]} · ${r[4]}</div>
+              <div class="equipo-zona">📍 ${r[6]}</div>
+            </div>
+          </div>`;
+        });
+        html += '</div>';
+      });
+      document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
+      initGlobe(rows);
+    }).catch(() => {
+      document.getElementById('participantes-content').innerHTML = '<div class="empty-state"><p>Error cargando participantes</p></div>';
+    });
 }
 
-function updateCaminoData(rows) {
-  const grouped={};
-  rows.forEach(r=>{const z=r[6]||'';if(!z)return;if(!grouped[z])grouped[z]={players:0,pairs:0};if(r[11]){grouped[z].pairs++;grouped[z].players+=2;}if(r[12]){grouped[z].pairs++;grouped[z].players+=2;}});
-  if(typeof PLAYERS_DATA!=='undefined'){PLAYERS_DATA.forEach(d=>{const m=grouped[d.city]||grouped[d.province];if(m){d.players=m.players;d.pairs=m.pairs;}});}
-  const tp=rows.reduce((s,r)=>s+(r[11]?1:0)+(r[12]?1:0),0);
-  const tpl=tp*2; const tz=Object.keys(grouped).length;
-  if(typeof STATS!=='undefined'){STATS.players=tpl;STATS.pairs=tp;STATS.provinces=tz;}
-  ['statPlayers','statPairs','statProvinces'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=id==='statPlayers'?tpl:id==='statPairs'?tp:tz;});
-  const rl=document.getElementById('regList');
-  if(rl&&rows.length>0){rl.innerHTML=[...rows].reverse().slice(0,6).map(r=>`<div class="reg-item" style="opacity:1;transform:none;"><div class="reg-dot"></div><span class="reg-name">${r[1]||''}</span><span class="reg-place">&nbsp;·&nbsp;${r[6]||''}</span></div>`).join('');}
+function renderPartStats(rows) {
+  const zonas = [...new Set(rows.map(r => r[6]).filter(Boolean))];
+  const cats = ['Elite','Oro','Plata','Bronce'];
+  const galicia = rows.filter(r => ['Melide','Arzúa','As Cruces','Lalín','Sarria','Santiago de Compostela','Vigo','A Coruña','Lugo','Ourense','Pontevedra','Ponferrada'].includes(r[6])).length;
+  const fuera = rows.length - galicia;
+  // Farthest team
+  const MELIDE = [42.9144, -8.0125];
+  let maxDist = 0, farZona = '';
+  rows.forEach(r => {
+    const zona = r[6];
+    if (!zona || !COORDS[zona]) return;
+    const c = COORDS[zona];
+    const d = Math.sqrt(Math.pow(c[0]-MELIDE[0],2) + Math.pow(c[1]-MELIDE[1],2));
+    if (d > maxDist) { maxDist = d; farZona = zona; }
+  });
+  document.getElementById('part-stats').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Total equipos</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#7cb3ff;">${rows.length}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Zonas distintas</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#ffc107;">${zonas.length}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De Galicia</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#00c853;">${galicia}</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">De fuera</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#f50057;">${fuera}</div>
+    </div>
+    ${farZona ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;grid-column:span 1;">
+      <div style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;font-weight:700;">Más lejano</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#ce93d8;">📍 ${farZona}</div>
+    </div>` : ''}
+  `;
 }
 
 function renderParticipantes(rows) {
   if (!rows) return;
-  const catFilter=(document.getElementById('filter-part-cat')||{}).value||'';
-  const sort=(document.getElementById('sort-part')||{}).value||'cat';
-  const cats=['Elite','Plata','Bronce','Rookie'];
-  let filtered=rows.filter(r=>!catFilter||r[11]===catFilter||r[12]===catFilter);
-  if(sort==='alfa') filtered.sort((a,b)=>(a[1]||'').localeCompare(b[1]||''));
-  else if(sort==='fecha') filtered.sort((a,b)=>(a[0]||'').localeCompare(b[0]||''));
-  let html='';
-  if(sort==='cat'||!catFilter){
-    cats.forEach(cat=>{
-      const equipos=filtered.filter(r=>r[11]===cat||r[12]===cat);
-      if(!equipos.length)return;
-      html+=`<div class="cat-section"><div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipo${equipos.length>1?'s':''}</div>`;
-      equipos.forEach((r,i)=>{html+=`<div class="equipo-card"><div class="equipo-num">${String(i+1).padStart(2,'0')}</div><div class="equipo-info"><div class="equipo-nombre">${r[1]||''}</div><div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div><div class="equipo-zona">📍 ${r[6]||''}</div></div></div>`;});
-      html+='</div>';
+  const catFilter = (document.getElementById('filter-part-cat')||{}).value || '';
+  const sort = (document.getElementById('sort-part')||{}).value || 'cat';
+  const cats = ['Elite','Oro','Plata','Bronce'];
+
+  let filtered = rows.filter(r => !catFilter || r[11] === catFilter || r[12] === catFilter);
+
+  if (sort === 'alfa') filtered.sort((a,b) => (a[1]||'').localeCompare(b[1]||''));
+  else if (sort === 'fecha') filtered.sort((a,b) => (a[0]||'').localeCompare(b[0]||''));
+
+  if (sort === 'cat' || !catFilter) {
+    let html = '';
+    cats.forEach(cat => {
+      const equipos = filtered.filter(r => r[11] === cat || r[12] === cat);
+      if (equipos.length === 0) return;
+      html += `<div class="cat-section">
+        <div class="cat-title ${cat.toLowerCase()}">${getCatEmoji(cat)} ${cat.toUpperCase()} — ${equipos.length} equipo${equipos.length>1?'s':''}</div>`;
+      equipos.forEach((r, i) => {
+        html += `<div class="equipo-card">
+          <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="equipo-info">
+            <div class="equipo-nombre">${r[1]||''}</div>
+            <div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div>
+            <div class="equipo-zona">📍 ${r[6]||''}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div>';
     });
+    document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
   } else {
-    filtered.forEach((r,i)=>{html+=`<div class="equipo-card"><div class="equipo-num">${String(i+1).padStart(2,'0')}</div><div class="equipo-info"><div class="equipo-nombre">${r[1]||''}</div><div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div><div class="equipo-zona">📍 ${r[6]||''}</div></div></div>`;});
+    let html = '';
+    filtered.forEach((r, i) => {
+      html += `<div class="equipo-card">
+        <div class="equipo-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="equipo-info">
+          <div class="equipo-nombre">${r[1]||''}</div>
+          <div class="equipo-jugadores">${r[2]||''} · ${r[4]||''}</div>
+          <div class="equipo-zona">📍 ${r[6]||''}</div>
+        </div>
+      </div>`;
+    });
+    document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes</p></div>';
   }
-  document.getElementById('participantes-content').innerHTML=html||'<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
 }
 
-function compartir(){const url=window.location.href.split('?')[0];if(navigator.share){navigator.share({title:'IV Máster de Melide — Participantes',text:'¡Mira quién se ha apuntado al IV Máster de Melide!',url:url});}else{navigator.clipboard.writeText(url);showToast('📋 Enlace copiado al portapapeles');}}
-function getCatEmoji(cat){return{Elite:'🏆',Plata:'🥈',Bronce:'🥉',Rookie:'⭐'}[cat]||'';}
+function compartir() {
+  const url = window.location.href.split('?')[0];
+  if (navigator.share) {
+    navigator.share({ title: 'IV Máster de Melide — Participantes', text: '¡Mira quién se ha apuntado al IV Máster de Melide!', url: url });
+  } else {
+    navigator.clipboard.writeText(url);
+    showToast('📋 Enlace copiado al portapapeles');
+  }
+}
 
+function getCatEmoji(cat) {
+  return { Elite:'🏆', Plata:'🥈', Bronce:'🥉', Rookie:'⭐' }[cat] || '';
+}
+
+// ADMIN
 function checkPass() {
   if (document.getElementById('admin-pass').value === ADMIN_PASS) {
     document.getElementById('admin-login').style.display = 'none';
@@ -1187,914 +826,367 @@ function loadData() {
   showToast('🔄 Cargando...');
   fetch(SCRIPT_URL + '?action=get')
     .then(r => r.json())
-    .then(data => { allData = data.rows || []; renderStats(); renderTable(); showToast(`✅ ${allData.length} inscripciones`); checkDuplicados(); })
-    .catch(() => showToast('❌ Error cargando datos'));
+    .then(data => {
+      allData = data.rows || [];
+      renderStats(); renderTable();
+      showToast(`✅ ${allData.length} inscripciones`);
+    }).catch(() => showToast('❌ Error cargando datos'));
 }
 
 function renderStats() {
-  const cats=['Elite','Plata','Bronce','Rookie'];
-  const p1=allData.filter(r=>r[3]==='Si').length, p2=allData.filter(r=>r[5]==='Si').length;
-  const tp=p1+p2, tj=allData.length*2, rec=tp*PRECIO;
-  let html=`<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">${allData.length}</div></div>`;
-  cats.forEach(cat=>{const n=allData.filter(r=>r[11]===cat||r[12]===cat).length;html+=`<div class="stat-card ${cat.toLowerCase()}"><div class="stat-label">${cat}</div><div class="stat-num">${n}</div></div>`;});
-  html+=`<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">${tp}/${tj}</div></div>`;
-  html+=`<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">${rec}€</div></div>`;
-  html+=`<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">${(tj-tp)*PRECIO}€</div></div>`;
-  document.getElementById('stats-grid').innerHTML=html;
+  const cats = ['Elite','Oro','Plata','Bronce'];
+  const pagadosJ1 = allData.filter(r => r[3] === 'Si').length;
+  const pagadosJ2 = allData.filter(r => r[5] === 'Si').length;
+  const totalPagados = pagadosJ1 + pagadosJ2;
+  const totalJugadores = allData.length * 2;
+  const recaudacion = totalPagados * PRECIO;
+  let html = `<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">${allData.length}</div></div>`;
+  cats.forEach(cat => {
+    const n = allData.filter(r => r[11] === cat || r[12] === cat).length;
+    html += `<div class="stat-card ${cat.toLowerCase()}"><div class="stat-label">${cat}</div><div class="stat-num">${n}</div></div>`;
+  });
+  html += `<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">${totalPagados}/${totalJugadores}</div></div>`;
+  html += `<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">${recaudacion}€</div></div>`;
+  html += `<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">${(totalJugadores-totalPagados)*PRECIO}€</div></div>`;
+  document.getElementById('stats-grid').innerHTML = html;
 }
 
 function renderTable() {
-  const q=(document.getElementById('search-admin').value||'').toLowerCase();
-  const cf=document.getElementById('filter-cat').value;
-  const pf=document.getElementById('filter-pago').value;
-  const filtered=allData.filter(r=>{
-    const ms=!q||[r[1],r[2],r[4],r[6]].some(v=>(v||'').toLowerCase().includes(q));
-    const mc=!cf||r[11]===cf||r[12]===cf;
-    const mp=!pf||r[3]===pf||r[5]===pf;
-    return ms&&mc&&mp;
+  const q = (document.getElementById('search-admin').value || '').toLowerCase();
+  const catFilter = document.getElementById('filter-cat').value;
+  const pagoFilter = document.getElementById('filter-pago').value;
+  const filtered = allData.filter(r => {
+    const matchSearch = !q || [r[1],r[2],r[4],r[6]].some(v => (v||'').toLowerCase().includes(q));
+    const matchCat = !catFilter || r[11] === catFilter || r[12] === catFilter;
+    const matchPago = !pagoFilter || r[3] === pagoFilter || r[5] === pagoFilter;
+    return matchSearch && matchCat && matchPago;
   });
-  const tbody=document.getElementById('table-body');
-  if(!filtered.length){tbody.innerHTML='';document.getElementById('empty-state').style.display='block';return;}
-  document.getElementById('empty-state').style.display='none';
-  tbody.innerHTML=filtered.map(r=>{
-    const ri=allData.indexOf(r);
-    const p1=r[3]==='Si',p2=r[5]==='Si';
-    const cc=c=>(c||'').toLowerCase();
-    const t1=r[7]||'',t2=r[8]||'';
-    const d1=allData.filter(x=>(x[7]||'')===t1&&t1!=='').length>1;
-    const d2=allData.filter(x=>(x[8]||'')===t2&&t2!=='').length>1;
+  const tbody = document.getElementById('table-body');
+  if (filtered.length === 0) { tbody.innerHTML = ''; document.getElementById('empty-state').style.display = 'block'; return; }
+  document.getElementById('empty-state').style.display = 'none';
+  tbody.innerHTML = filtered.map(r => {
+    const realIdx = allData.indexOf(r);
+    const p1 = r[3] === 'Si', p2 = r[5] === 'Si';
+    const cc = c => (c||'').toLowerCase();
+    const tel1 = r[7]||''; const tel2 = r[8]||'';
+    const dupTel1 = allData.filter(x => (x[7]||'') === tel1 && tel1 !== '').length > 1;
+    const dupTel2 = allData.filter(x => (x[8]||'') === tel2 && tel2 !== '').length > 1;
     return `<tr>
-      <td style="color:var(--text-dim);font-weight:700">${ri+1}</td>
+      <td style="color:var(--text-dim);font-weight:700">${realIdx+1}</td>
       <td style="font-weight:700">${r[1]||''}</td>
       <td>${r[2]||''}</td>
-      <td style="color:${d1?'#f50057':'var(--text-dim)'};">${t1}${d1?' ⚠️':''}</td>
-      <td><button class="btn-pago ${p1?'si':'no'}" onclick="togglePago(${ri},1)">${p1?'✅':'❌'}</button></td>
+      <td style="color:${dupTel1?'#f50057':'var(--text-dim)'};" title="${dupTel1?'⚠️ Tel. repetido':''}">${tel1}${dupTel1?' ⚠️':''}</td>
+      <td><button class="btn-pago ${p1?'si':'no'}" onclick="togglePago(${realIdx},1)">${p1?'✅':'❌'}</button></td>
       <td>${r[4]||''}</td>
-      <td style="color:${d2?'#f50057':'var(--text-dim)'};">${t2}${d2?' ⚠️':''}</td>
-      <td><button class="btn-pago ${p2?'si':'no'}" onclick="togglePago(${ri},2)">${p2?'✅':'❌'}</button></td>
+      <td style="color:${dupTel2?'#f50057':'var(--text-dim)'};" title="${dupTel2?'⚠️ Tel. repetido':''}">${tel2}${dupTel2?' ⚠️':''}</td>
+      <td><button class="btn-pago ${p2?'si':'no'}" onclick="togglePago(${realIdx},2)">${p2?'✅':'❌'}</button></td>
       <td style="color:var(--text-dim)">${r[6]||''}</td>
       <td><span class="badge ${cc(r[11])}">${r[11]||'-'}</span></td>
       <td><span class="badge ${cc(r[12])}">${r[12]||'-'}</span></td>
       <td style="color:var(--text-dim);font-size:0.75rem">${(r[0]||'').toString().substring(0,10)}</td>
-      <td><input class="notas-input" value="${r[14]||''}" placeholder="Notas..." onblur="guardarNotas(${ri},this.value)"></td>
-      <td><button class="btn-edit" onclick="abrirModal(${ri})">✏️</button><button class="btn-delete" onclick="eliminarInscrito(${ri})">🗑️</button></td>
+      <td><input class="notas-input" value="${r[14]||''}" placeholder="Notas..." onblur="guardarNotas(${realIdx}, this.value)"></td>
+      <td><button class="btn-edit" onclick="abrirModal(${realIdx})">✏️</button><button class="btn-delete" onclick="eliminarInscrito(${realIdx})">🗑️</button></td>
     </tr>`;
   }).join('');
 }
 
-function togglePago(idx,jugador){const col=jugador===1?3:5;const nv=allData[idx][col]==='Si'?'No':'Si';allData[idx][col]=nv;renderStats();renderTable();fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updatePago',row:idx+2,col:col+1,value:nv})});showToast(nv==='Si'?`✅ ${allData[idx][jugador===1?2:4]} pagado`:`❌ ${allData[idx][jugador===1?2:4]} pendiente`);}
-function guardarNotas(idx,valor){allData[idx][14]=valor;fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateNotas',row:idx+2,value:valor})});showToast('📝 Nota guardada');}
-
-let editIdx=-1;
-function abrirModal(idx){editIdx=idx;const r=allData[idx];document.getElementById('m-equipo').value=r[1]||'';document.getElementById('m-jugador1').value=r[2]||'';document.getElementById('m-telefono1').value=r[7]||'';document.getElementById('m-jugador2').value=r[4]||'';document.getElementById('m-telefono2').value=r[8]||'';document.getElementById('m-zona').value=r[6]||'';document.getElementById('m-email').value=r[10]||'';document.getElementById('m-catMov').value=r[11]||'';document.getElementById('m-catPar').value=r[12]||'';document.getElementById('modal-editar').classList.add('show');}
-function cerrarModal(){document.getElementById('modal-editar').classList.remove('show');editIdx=-1;}
-
-function guardarEdicion(){
-  if(editIdx<0)return;
-  const r=allData[editIdx];
-  const data={action:'modificar',codigo:r[13],equipo:document.getElementById('m-equipo').value.trim(),jugador1:document.getElementById('m-jugador1').value.trim(),telefono1:document.getElementById('m-telefono1').value.trim(),jugador2:document.getElementById('m-jugador2').value.trim(),telefono2:document.getElementById('m-telefono2').value.trim(),zona:document.getElementById('m-zona').value.trim(),email:document.getElementById('m-email').value.trim(),telefono:r[9]||'',catMovimiento:document.getElementById('m-catMov').value,catParado:document.getElementById('m-catPar').value};
-  allData[editIdx][1]=data.equipo;allData[editIdx][2]=data.jugador1;allData[editIdx][7]=data.telefono1;allData[editIdx][4]=data.jugador2;allData[editIdx][8]=data.telefono2;allData[editIdx][6]=data.zona;allData[editIdx][10]=data.email;allData[editIdx][11]=data.catMovimiento;allData[editIdx][12]=data.catParado;
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  cerrarModal();renderStats();renderTable();showToast('✅ Inscripción actualizada');
+function togglePago(idx, jugador) {
+  const col = jugador === 1 ? 3 : 5;
+  const newVal = allData[idx][col] === 'Si' ? 'No' : 'Si';
+  allData[idx][col] = newVal;
+  renderStats(); renderTable();
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'updatePago', row:idx+2, col:col+1, value:newVal }) });
+  const nombre = allData[idx][jugador === 1 ? 2 : 4];
+  showToast(newVal === 'Si' ? `✅ ${nombre} pagado` : `❌ ${nombre} pendiente`);
 }
 
-function eliminarInscrito(idx){
-  const eq=allData[idx][1],j1=allData[idx][2];
-  if(!confirm(`¿Eliminar la inscripción de "${eq}" (${j1})? Esta acción no se puede deshacer.`))return;
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cancelar',codigo:allData[idx][13]})});
-  allData.splice(idx,1);renderStats();renderTable();showToast(`🗑️ ${eq} eliminado`);
+function guardarNotas(idx, valor) {
+  allData[idx][14] = valor;
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'updateNotas', row:idx+2, value:valor }) });
+  showToast('📝 Nota guardada');
 }
 
-function toggleHistorial(){const p=document.getElementById('historial-panel');const h=p.style.display==='none';p.style.display=h?'block':'none';if(h)loadHistorial();}
-function loadHistorial(){fetch(SCRIPT_URL+'?action=historial').then(r=>r.json()).then(data=>{const rows=data.rows||[];if(!rows.length){document.getElementById('historial-lista').innerHTML='<p>No hay cambios registrados todavía.</p>';return;}document.getElementById('historial-lista').innerHTML=rows.reverse().map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;"><div style="min-width:100px;color:var(--text-dim);font-size:0.75rem;">${(r[0]||'').toString().substring(0,16)}</div><div><span style="font-weight:700;color:${r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)'};">${r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅'} ${r[1]||''}</span><span style="margin-left:8px;">${r[2]||''}</span></div></div>`).join('');}).catch(()=>{document.getElementById('historial-lista').innerHTML='<p>Error cargando historial.</p>';});}
+let editIdx = -1;
 
-function checkDuplicados(){const tels={};allData.forEach((r,idx)=>{[r[7],r[8]].forEach(tel=>{if(!tel)return;if(!tels[tel])tels[tel]=[];tels[tel].push({equipo:r[1],jugador:tel===r[7]?r[2]:r[4],idx});});});const dl=Object.entries(tels).filter(([t,l])=>l.length>1);const b=document.getElementById('duplicados-banner');if(!dl.length){b.style.display='none';return;}b.style.display='block';document.getElementById('duplicados-lista').innerHTML=dl.map(([tel,list])=>`📞 <strong>${tel}</strong>: ${list.map(x=>x.jugador+' ('+x.equipo+')').join(' · ')}`).join('<br>');}
+function abrirModal(idx) {
+  editIdx = idx;
+  const r = allData[idx];
+  document.getElementById('m-equipo').value = r[1]||'';
+  document.getElementById('m-jugador1').value = r[2]||'';
+  document.getElementById('m-telefono1').value = r[7]||'';
+  document.getElementById('m-jugador2').value = r[4]||'';
+  document.getElementById('m-telefono2').value = r[8]||'';
+  document.getElementById('m-zona').value = r[6]||'';
+  document.getElementById('m-email').value = r[10]||'';
+  document.getElementById('m-catMov').value = r[11]||'';
+  document.getElementById('m-catPar').value = r[12]||'';
+  document.getElementById('modal-editar').classList.add('show');
+}
 
-function exportCSV(){if(!allData.length){showToast('No hay datos');return;}const headers=['Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Teléfono','Email','Cat. Mov.','Cat. Par.','Código','Notas'];const rows=[headers,...allData].map(r=>r.slice(0,13).map(c=>`"${c||''}"`).join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows],{type:'text/csv;charset=utf-8;'}));a.download='inscripciones_amf.csv';a.click();showToast('⬇️ CSV descargado');}
+function cerrarModal() {
+  document.getElementById('modal-editar').classList.remove('show');
+  editIdx = -1;
+}
+
+function guardarEdicion() {
+  if (editIdx < 0) return;
+  const r = allData[editIdx];
+  const data = {
+    action: 'modificar',
+    codigo: r[13],
+    equipo: document.getElementById('m-equipo').value.trim(),
+    jugador1: document.getElementById('m-jugador1').value.trim(),
+    telefono1: document.getElementById('m-telefono1').value.trim(),
+    jugador2: document.getElementById('m-jugador2').value.trim(),
+    telefono2: document.getElementById('m-telefono2').value.trim(),
+    zona: document.getElementById('m-zona').value.trim(),
+    email: document.getElementById('m-email').value.trim(),
+    telefono: r[9]||'',
+    catMovimiento: document.getElementById('m-catMov').value,
+    catParado: document.getElementById('m-catPar').value
+  };
+  // Update local data
+  allData[editIdx][1] = data.equipo;
+  allData[editIdx][2] = data.jugador1;
+  allData[editIdx][7] = data.telefono1;
+  allData[editIdx][4] = data.jugador2;
+  allData[editIdx][8] = data.telefono2;
+  allData[editIdx][6] = data.zona;
+  allData[editIdx][10] = data.email;
+  allData[editIdx][11] = data.catMovimiento;
+  allData[editIdx][12] = data.catParado;
+
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  cerrarModal();
+  renderStats();
+  renderTable();
+  showToast('✅ Inscripción actualizada');
+}
+
+function eliminarInscrito(idx) {
+  const equipo = allData[idx][1];
+  const jugador1 = allData[idx][2];
+  if (!confirm(`¿Eliminar la inscripción de "${equipo}" (${jugador1})? Esta acción no se puede deshacer.`)) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ action: 'cancelar', codigo: allData[idx][13] })
+  });
+  allData.splice(idx, 1);
+  renderStats();
+  renderTable();
+  showToast(`🗑️ ${equipo} eliminado`);
+}
+
+function toggleHistorial() {
+  const panel = document.getElementById('historial-panel');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) loadHistorial();
+}
+
+function loadHistorial() {
+  fetch(SCRIPT_URL + '?action=historial')
+    .then(r => r.json())
+    .then(data => {
+      const rows = data.rows || [];
+      if (rows.length === 0) {
+        document.getElementById('historial-lista').innerHTML = '<p>No hay cambios registrados todavía.</p>';
+        return;
+      }
+      document.getElementById('historial-lista').innerHTML = rows.reverse().map(r => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;">
+          <div style="min-width:100px;color:var(--text-dim);font-size:0.75rem;">${(r[0]||'').toString().substring(0,16)}</div>
+          <div>
+            <span style="font-weight:700;color:${r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)'};">${r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅'} ${r[1]||''}</span>
+            <span style="margin-left:8px;">${r[2]||''}</span>
+          </div>
+        </div>
+      `).join('');
+    }).catch(() => {
+      document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>';
+    });
+}
+
+function checkDuplicados() {
+  const tels = [];
+  const dups = {};
+  allData.forEach((r, idx) => {
+    [r[7], r[8]].forEach(tel => {
+      if (!tel) return;
+      if (!tels[tel]) tels[tel] = [];
+      tels[tel].push({ equipo: r[1], jugador: tel === r[7] ? r[2] : r[4], idx });
+    });
+  });
+  const dupList = Object.entries(tels).filter(([tel, list]) => list.length > 1);
+  const banner = document.getElementById('duplicados-banner');
+  if (dupList.length === 0) { banner.style.display = 'none'; return; }
+  banner.style.display = 'block';
+  document.getElementById('duplicados-lista').innerHTML = dupList.map(([tel, list]) =>
+    `📞 <strong>${tel}</strong>: ${list.map(x => x.jugador + ' (' + x.equipo + ')').join(' · ')}`
+  ).join('<br>');
+}
+
+function exportCSV() {
+  if (!allData.length) { showToast('No hay datos'); return; }
+  const headers = ['Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Teléfono','Email','Cat. Mov.','Cat. Par.','Código','Notas'];
+  const rows = [headers, ...allData].map(r => r.slice(0,13).map(c => `"${c||''}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows], {type:'text/csv;charset=utf-8;'}));
+  a.download = 'inscripciones_amf.csv'; a.click();
+  showToast('⬇️ CSV descargado');
+}
+
+// COORDENADAS
+const COORDS = {
+  "Melide": [42.9144, -8.0125],
+  "Arzúa": [42.9281, -8.1578],
+  "As Cruces": [42.85, -8.5],
+  "Lalín": [42.6597, -8.1133],
+  "Sarria": [42.78, -7.4167],
+  "Santiago de Compostela": [42.8782, -8.5448],
+  "Vigo": [42.2328, -8.7226],
+  "Ponferrada": [42.5461, -6.5963],
+  "Sevilla": [37.3891, -5.9845],
+  "Málaga": [36.7213, -4.4214],
+  "Huelva": [37.2614, -6.9447],
+  "A Coruña": [43.3623, -8.4115],
+  "Lugo": [43.0097, -7.5567],
+  "Ourense": [42.3364, -7.8642],
+  "Pontevedra": [42.4333, -8.65],
+  "Madrid": [40.4168, -3.7038],
+  "Barcelona": [41.3851, 2.1734],
+  "Valencia": [39.4699, -0.3763],
+  "Bilbao": [43.263, -2.935],
+  "Zaragoza": [41.6488, -0.8891],
+  "Murcia": [37.9922, -1.1307],
+  "Alicante": [38.3452, -0.481],
+  "Córdoba": [37.8882, -4.7794],
+  "Valladolid": [41.6523, -4.7245],
+  "Granada": [37.1773, -3.5986],
+  "Oviedo": [43.3614, -5.8593],
+  "Santander": [43.4623, -3.8099],
+  "San Sebastián": [43.3183, -1.9812],
+  "Pamplona": [42.8125, -1.6458],
+  "Burgos": [42.3439, -3.6969],
+  "Salamanca": [40.9701, -5.6635],
+  "Toledo": [39.8628, -4.0273],
+  "Cáceres": [39.4753, -6.3724],
+  "Badajoz": [38.8794, -6.9706],
+  "Albacete": [38.9943, -1.8585],
+  "León": [42.5987, -5.5671],
+  "Zamora": [41.5034, -5.7447],
+  "Logroño": [42.4627, -2.4449],
+  "Vitoria": [42.8467, -2.6726],
+  "Jerez": [36.6864, -6.1375],
+  "Almería": [36.834, -2.4637],
+  "Jaén": [37.7796, -3.7849]
+};
+
+let globeInstance = null;
+
+function initGlobe(rows) {
+  document.getElementById('globe-loading').style.display = 'none';
+  
+  // Build points from rows
+  const points = [];
+  const grouped = {};
+  
+  rows.forEach(r => {
+    const zona = r[6] || '';
+    const equipo = r[1] || '';
+    if (!zona || !COORDS[zona]) return;
+    if (!grouped[zona]) grouped[zona] = [];
+    grouped[zona].push(equipo);
+  });
+
+  Object.entries(grouped).forEach(([zona, equipos]) => {
+    const coords = COORDS[zona];
+    points.push({
+      lat: coords[0],
+      lng: coords[1],
+      size: 0.4 + equipos.length * 0.15,
+      color: '#ffc107',
+      label: zona + '\n' + equipos.join('\n'),
+      zona: zona,
+      equipos: equipos
+    });
+  });
+
+  if (globeInstance) {
+    globeInstance.pointsData(points);
+    return;
+  }
+
+  if (typeof Globe === 'undefined') {
+    document.getElementById('globe-loading').style.display = 'flex';
+    document.getElementById('globe-loading').textContent = 'Cargando librería...';
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/globe.gl@2.30.0/dist/globe.gl.min.js';
+    script.onload = () => buildGlobe(points);
+    document.head.appendChild(script);
+  } else {
+    buildGlobe(points);
+  }
+}
+
+function buildGlobe(points) {
+  const container = document.getElementById('globe-container');
+  const MELIDE = { lat: 42.9144, lng: -8.0125 };
+
+  // Build arcs from each zone to Melide
+  const arcs = points
+    .filter(p => p.zona !== 'Melide')
+    .map(p => ({
+      startLat: p.lat, startLng: p.lng,
+      endLat: MELIDE.lat, endLng: MELIDE.lng,
+      color: p.color,
+      zona: p.zona
+    }));
+
+  globeInstance = Globe()(container)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .pointsData(points)
+    .pointLat('lat')
+    .pointLng('lng')
+    .pointColor('color')
+    .pointAltitude(0.01)
+    .pointRadius('size')
+    .pointResolution(12)
+    .pointLabel(d => `
+      <div style="background:rgba(10,14,26,0.95);border:1px solid #ffc107;border-radius:10px;padding:12px 16px;color:white;font-family:Arial,sans-serif;min-width:160px;">
+        <div style="font-weight:800;color:#ffc107;margin-bottom:8px;font-size:1rem;">📍 ${d.zona}</div>
+        <div style="color:#7a8fa8;font-size:0.75rem;margin-bottom:6px;">${d.equipos.length} equipo${d.equipos.length>1?'s':''}</div>
+        ${d.equipos.map(e => '<div style="font-size:0.82rem;padding:2px 0;">⚽ ' + e + '</div>').join('')}
+      </div>
+    `)
+    .onPointHover(p => { container.style.cursor = p ? 'pointer' : 'default'; })
+    .onPointClick(p => { if (p) showToast('📍 ' + p.zona + ' — ' + p.equipos.length + ' equipo(s)'); })
+    .arcsData(arcs)
+    .arcStartLat('startLat').arcStartLng('startLng')
+    .arcEndLat('endLat').arcEndLng('endLng')
+    .arcColor(() => ['rgba(255,193,7,0.4)', 'rgba(255,193,7,0.8)'])
+    .arcAltitude(0.25)
+    .arcStroke(0.5)
+    .arcDashLength(0.4)
+    .arcDashGap(0.2)
+    .arcDashAnimateTime(2000);
+
+  globeInstance.pointOfView({ lat: 40.4, lng: -3.7, altitude: 1.5 }, 1000);
+}
+
+function recentrarGlobo() {
+  if (globeInstance) globeInstance.pointOfView({ lat: 40.4, lng: -3.7, altitude: 1.5 }, 800);
+}
 
 let toastTimer;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3000);}
-
-// CAMINO A MELIDE MAP
-
-/* ================================================================
-   CAMINO A MELIDE · IV Máster de Melide 2026
-   amfmelide.es
-   ================================================================ */
-
-/* ================================================================
-   1. MOCK DATA
-   Replace STATS and PLAYERS with real API data when ready.
-   ================================================================ */
-
-// --- LIVE STATS (replace with API) ---
-const STATS = {
-  players:    87,   // Jugadores inscritos
-  pairs:      41,   // Parejas inscritas
-  provinces:  18,   // Provincias representadas
-  ccaa:       10,   // CC.AA. representadas
-  km:        4280   // Total km acumulados
-};
-
-// --- LATEST REGISTRATIONS (replace with API / WebSocket) ---
-const RECENT_REGS = [
-  { name: "Carlos",  place: "Valladolid"  },
-  { name: "David",   place: "Madrid"      },
-  { name: "Pablo",   place: "Lugo"        },
-  { name: "Javi",    place: "León"        },
-  { name: "Manu",    place: "Asturias"    },
-  { name: "Sergio",  place: "Valencia"    },
-  { name: "Rubén",   place: "Bilbao"      },
-  { name: "Iván",    place: "A Coruña"    },
-  { name: "Alberto", place: "Salamanca"   },
-  { name: "Miguel",  place: "Zaragoza"    },
-];
-
-// --- TOP ORIGINS (replace with API) ---
-const TOP_ORIGINS = [
-  { name: "Galicia",          pct: 100 },
-  { name: "Castilla y León",  pct: 68  },
-  { name: "Madrid",           pct: 52  },
-  { name: "Asturias",         pct: 38  },
-  { name: "País Vasco",       pct: 28  },
-];
-
-// --- PLAYER ORIGINS DATA ---
-// Each entry: city, province, autonomousCommunity, lat, lon, players, pairs, distanceToMelideKm
-const PLAYERS_DATA = [
-  // Galicia
-  { city:"A Coruña",     province:"A Coruña",      cc:"Galicia",           lat:43.370, lon:-8.395,  players:12, pairs:5, dist:57  },
-  { city:"Santiago",     province:"A Coruña",      cc:"Galicia",           lat:42.878, lon:-8.544,  players:8,  pairs:3, dist:48  },
-  { city:"Lugo",         province:"Lugo",           cc:"Galicia",           lat:43.012, lon:-7.556,  players:7,  pairs:3, dist:53  },
-  { city:"Ourense",      province:"Ourense",        cc:"Galicia",           lat:42.336, lon:-7.864,  players:5,  pairs:2, dist:97  },
-  { city:"Pontevedra",   province:"Pontevedra",     cc:"Galicia",           lat:42.432, lon:-8.648,  players:4,  pairs:2, dist:110 },
-  { city:"Vigo",         province:"Pontevedra",     cc:"Galicia",           lat:42.231, lon:-8.712,  players:6,  pairs:3, dist:136 },
-  { city:"Ferrol",       province:"A Coruña",      cc:"Galicia",           lat:43.484, lon:-8.232,  players:3,  pairs:1, dist:88  },
-  // Asturias
-  { city:"Oviedo",       province:"Asturias",       cc:"Asturias",          lat:43.362, lon:-5.849,  players:6,  pairs:3, dist:182 },
-  { city:"Gijón",        province:"Asturias",       cc:"Asturias",          lat:43.535, lon:-5.661,  players:4,  pairs:2, dist:193 },
-  { city:"Avilés",       province:"Asturias",       cc:"Asturias",          lat:43.557, lon:-5.925,  players:2,  pairs:1, dist:176 },
-  // Cantabria
-  { city:"Santander",    province:"Cantabria",      cc:"Cantabria",         lat:43.462, lon:-3.810,  players:3,  pairs:1, dist:290 },
-  { city:"Torrelavega",  province:"Cantabria",      cc:"Cantabria",         lat:43.352, lon:-4.051,  players:2,  pairs:1, dist:270 },
-  // País Vasco
-  { city:"Bilbao",       province:"Vizcaya",        cc:"País Vasco",        lat:43.263, lon:-2.934,  players:5,  pairs:2, dist:367 },
-  { city:"San Sebastián",province:"Gipuzkoa",       cc:"País Vasco",        lat:43.319, lon:-1.980,  players:3,  pairs:1, dist:428 },
-  { city:"Vitoria",      province:"Álava",          cc:"País Vasco",        lat:42.850, lon:-2.672,  players:2,  pairs:1, dist:390 },
-  // La Rioja
-  { city:"Logroño",      province:"La Rioja",       cc:"La Rioja",          lat:42.465, lon:-2.445,  players:2,  pairs:1, dist:410 },
-  // Navarra
-  { city:"Pamplona",     province:"Navarra",        cc:"Navarra",           lat:42.814, lon:-1.643,  players:3,  pairs:1, dist:458 },
-  // Aragón
-  { city:"Zaragoza",     province:"Zaragoza",       cc:"Aragón",            lat:41.649, lon:-0.888,  players:3,  pairs:1, dist:548 },
-  { city:"Huesca",       province:"Huesca",         cc:"Aragón",            lat:42.136, lon:-0.411,  players:1,  pairs:0, dist:560 },
-  // Castilla y León
-  { city:"León",         province:"León",           cc:"Castilla y León",   lat:42.599, lon:-5.572,  players:8,  pairs:4, dist:177 },
-  { city:"Valladolid",   province:"Valladolid",     cc:"Castilla y León",   lat:41.651, lon:-4.722,  players:6,  pairs:3, dist:260 },
-  { city:"Salamanca",    province:"Salamanca",      cc:"Castilla y León",   lat:40.969, lon:-5.664,  players:4,  pairs:2, dist:320 },
-  { city:"Burgos",       province:"Burgos",         cc:"Castilla y León",   lat:42.343, lon:-3.696,  players:4,  pairs:2, dist:315 },
-  { city:"Zamora",       province:"Zamora",         cc:"Castilla y León",   lat:41.503, lon:-5.745,  players:2,  pairs:1, dist:298 },
-  { city:"Palencia",     province:"Palencia",       cc:"Castilla y León",   lat:42.011, lon:-4.528,  players:3,  pairs:1, dist:253 },
-  { city:"Segovia",      province:"Segovia",        cc:"Castilla y León",   lat:40.942, lon:-4.118,  players:2,  pairs:1, dist:380 },
-  { city:"Ávila",        province:"Ávila",          cc:"Castilla y León",   lat:40.656, lon:-4.700,  players:1,  pairs:0, dist:370 },
-  { city:"Soria",        province:"Soria",          cc:"Castilla y León",   lat:41.764, lon:-2.465,  players:1,  pairs:0, dist:460 },
-  // Madrid
-  { city:"Madrid",       province:"Madrid",         cc:"Comunidad de Madrid",lat:40.416, lon:-3.703, players:9,  pairs:4, dist:590 },
-  { city:"Alcalá de H.", province:"Madrid",         cc:"Comunidad de Madrid",lat:40.482, lon:-3.362, players:2,  pairs:1, dist:618 },
-  { city:"Móstoles",     province:"Madrid",         cc:"Comunidad de Madrid",lat:40.321, lon:-3.864, players:1,  pairs:0, dist:607 },
-  // Castilla-La Mancha
-  { city:"Toledo",       province:"Toledo",         cc:"Castilla-La Mancha", lat:39.857, lon:-4.024, players:2,  pairs:1, dist:650 },
-  { city:"Guadalajara",  province:"Guadalajara",    cc:"Castilla-La Mancha", lat:40.634, lon:-3.165, players:1,  pairs:0, dist:598 },
-  { city:"Ciudad Real",  province:"Ciudad Real",    cc:"Castilla-La Mancha", lat:38.987, lon:-3.920, players:1,  pairs:0, dist:720 },
-  // Extremadura
-  { city:"Cáceres",      province:"Cáceres",        cc:"Extremadura",        lat:39.473, lon:-6.371, players:2,  pairs:1, dist:620 },
-  { city:"Badajoz",      province:"Badajoz",        cc:"Extremadura",        lat:38.879, lon:-6.970, players:1,  pairs:0, dist:700 },
-  // Cataluña
-  { city:"Barcelona",    province:"Barcelona",      cc:"Cataluña",           lat:41.388, lon:2.159,  players:4,  pairs:2, dist:1080},
-  { city:"Girona",       province:"Girona",         cc:"Cataluña",           lat:41.982, lon:2.822,  players:1,  pairs:0, dist:1120},
-  { city:"Lleida",       province:"Lleida",         cc:"Cataluña",           lat:41.617, lon:0.624,  players:1,  pairs:0, dist:1020},
-  // Comunidad Valenciana
-  { city:"Valencia",     province:"Valencia",       cc:"C. Valenciana",      lat:39.470, lon:-0.376, players:4,  pairs:2, dist:840 },
-  { city:"Alicante",     province:"Alicante",       cc:"C. Valenciana",      lat:38.345, lon:-0.481, players:2,  pairs:1, dist:940 },
-  { city:"Castellón",    province:"Castellón",      cc:"C. Valenciana",      lat:39.987, lon:-0.049, players:1,  pairs:0, dist:870 },
-  // Murcia
-  { city:"Murcia",       province:"Murcia",         cc:"R. de Murcia",       lat:37.983, lon:-1.129, players:2,  pairs:1, dist:1000},
-  { city:"Cartagena",    province:"Murcia",         cc:"R. de Murcia",       lat:37.605, lon:-0.986, players:1,  pairs:0, dist:1030},
-  // Andalucía
-  { city:"Sevilla",      province:"Sevilla",        cc:"Andalucía",          lat:37.388, lon:-5.982, players:3,  pairs:1, dist:830 },
-  { city:"Málaga",       province:"Málaga",         cc:"Andalucía",          lat:36.719, lon:-4.420, players:2,  pairs:1, dist:950 },
-  { city:"Granada",      province:"Granada",        cc:"Andalucía",          lat:37.176, lon:-3.599, players:2,  pairs:1, dist:900 },
-  { city:"Córdoba",      province:"Córdoba",        cc:"Andalucía",          lat:37.888, lon:-4.779, players:1,  pairs:0, dist:780 },
-  { city:"Almería",      province:"Almería",        cc:"Andalucía",          lat:36.834, lon:-2.464, players:1,  pairs:0, dist:1050},
-  // Baleares
-  { city:"Palma",        province:"Baleares",       cc:"Baleares",           lat:39.570, lon:2.654,  players:2,  pairs:1, dist:1200},
-  // Melide itself
-  { city:"Melide",       province:"A Coruña",      cc:"Galicia",           lat:42.914, lon:-8.014,  players:0,  pairs:0, dist:0   },
-];
-
-const MELIDE = { lat: 42.914, lon: -8.014 };
-
-/* ================================================================
-   2. PROJECTION HELPERS
-   ================================================================ */
-
-// Spain bounds (longitude -9.5 to 4.5, latitude 35.5 to 44)
-const SPAIN_BOUNDS = {
-  lonMin: -9.8, lonMax: 4.8,
-  latMin: 35.5, latMax: 44.2
-};
-
-let currentView = 'globe'; // 'globe' | 'spain'
-let globeRotationY = 0;    // radians, animated
-let globeRotationX = 0.3;
-let isDragging = false;
-let lastMouseX = 0, lastMouseY = 0;
-let globeRotSpeed = 0.0003;
-let hoverCity = null;
-let animFrame = null;
-let isTabVisible = true;
-let viewTransition = 0; // 0 = globe, 1 = spain
-let targetViewTransition = 0;
-
-// Convert lat/lon to 2D for Spain flat view
-function projectSpain(lat, lon, W, H) {
-  const px = (lon - SPAIN_BOUNDS.lonMin) / (SPAIN_BOUNDS.lonMax - SPAIN_BOUNDS.lonMin);
-  const py = 1 - (lat - SPAIN_BOUNDS.latMin) / (SPAIN_BOUNDS.latMax - SPAIN_BOUNDS.latMin);
-  const margin = 0.1;
-  const usableW = W * (1 - 2 * margin);
-  const usableH = H * (1 - 2 * margin);
-  return {
-    x: W * margin + px * usableW,
-    y: H * margin + py * usableH
-  };
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
-
-// Convert lat/lon to 3D sphere then project
-function projectGlobe(lat, lon, W, H, rotY, rotX) {
-  const phi   = (90 - lat)  * Math.PI / 180;
-  const theta = (lon + 180) * Math.PI / 180 + rotY;
-
-  const x3 = Math.sin(phi) * Math.cos(theta);
-  const y3 = Math.cos(phi);
-  const z3 = Math.sin(phi) * Math.sin(theta);
-
-  // Rotate around X axis
-  const cosRX = Math.cos(rotX), sinRX = Math.sin(rotX);
-  const y3r =  y3 * cosRX - z3 * sinRX;
-  const z3r =  y3 * sinRX + z3 * cosRX;
-
-  const radius = Math.min(W, H) * 0.36;
-  const cx = W * 0.5, cy = H * 0.5;
-  const fov = 2.5;
-  const scale = fov / (fov + z3r);
-
-  return {
-    x: cx + x3 * radius * scale,
-    y: cy - y3r * radius * scale,
-    z: z3r,
-    visible: z3r > -0.05
-  };
-}
-
-// Interpolate between globe and flat
-function projectPoint(lat, lon, W, H) {
-  const g = projectGlobe(lat, lon, W, H, globeRotationY, globeRotationX);
-  const s = projectSpain(lat, lon, W, H);
-  const t = viewTransition;
-  return {
-    x: g.x * (1 - t) + s.x * t,
-    y: g.y * (1 - t) + s.y * t,
-    visible: t > 0.5 ? true : g.visible
-  };
-}
-
-/* ================================================================
-   3. CANVAS SETUP
-   ================================================================ */
-const canvas = document.getElementById('mapCanvas');
-const ctx    = canvas.getContext('2d');
-let W, H;
-
-function resize() {
-  W = canvas.width  = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener('resize', resize);
-
-/* ================================================================
-   4. PARTICLE SYSTEM
-   ================================================================ */
-const MAX_PARTICLES = 120;
-const particles = [];
-
-class RouteParticle {
-  constructor(origin) {
-    this.origin = origin;
-    this.t = Math.random();
-    this.speed = 0.0008 + Math.random() * 0.001;
-    this.size  = 1.2 + Math.random() * 1.2;
-    this.alpha = 0.4 + Math.random() * 0.6;
-    this.trail = [];
-    this.maxTrail = 6;
-  }
-
-  getPos() {
-    const o = this.origin;
-    const ox = projectPoint(o.lat, o.lon, W, H);
-    const mx = projectPoint(MELIDE.lat, MELIDE.lon, W, H);
-
-    // Bezier control point – arc toward Melide
-    const cx = (ox.x + mx.x) * 0.5 + (mx.y - ox.y) * 0.3;
-    const cy = (ox.y + mx.y) * 0.5 - Math.abs(mx.x - ox.x) * 0.25;
-
-    const tt = this.t;
-    const x  = (1-tt)*(1-tt)*ox.x + 2*(1-tt)*tt*cx + tt*tt*mx.x;
-    const y  = (1-tt)*(1-tt)*ox.y + 2*(1-tt)*tt*cy + tt*tt*mx.y;
-    return { x, y };
-  }
-
-  update() {
-    this.t += this.speed;
-    if (this.t > 1) {
-      this.t = 0;
-      this.trail = [];
-    }
-    const pos = this.getPos();
-    this.trail.push({ ...pos });
-    if (this.trail.length > this.maxTrail) this.trail.shift();
-  }
-
-  draw(ctx) {
-    if (!this.origin._visible) return;
-    const pos = this.getPos();
-
-    // Trail
-    if (this.trail.length > 1) {
-      for (let i = 1; i < this.trail.length; i++) {
-        const a = (i / this.trail.length) * this.alpha * 0.5;
-        ctx.beginPath();
-        ctx.moveTo(this.trail[i-1].x, this.trail[i-1].y);
-        ctx.lineTo(this.trail[i].x,   this.trail[i].y);
-        ctx.strokeStyle = `rgba(201,162,39,${a})`;
-        ctx.lineWidth   = this.size * 0.5;
-        ctx.stroke();
-      }
-    }
-
-    // Head glow
-    const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, this.size * 3);
-    grd.addColorStop(0, `rgba(232,213,160,${this.alpha})`);
-    grd.addColorStop(1, 'rgba(201,162,39,0)');
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, this.size * 3, 0, Math.PI * 2);
-    ctx.fillStyle = grd;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, this.size * 0.8, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,240,180,${this.alpha})`;
-    ctx.fill();
-  }
-}
-
-// Initialise particles
-function initParticles() {
-  particles.length = 0;
-  const origins = PLAYERS_DATA.filter(d => d.city !== 'Melide');
-  let count = 0;
-  while (count < MAX_PARTICLES) {
-    const o = origins[Math.floor(Math.random() * origins.length)];
-    particles.push(new RouteParticle(o));
-    count++;
-  }
-}
-initParticles();
-
-// Background stars
-const STARS = Array.from({ length: 200 }, () => ({
-  x: Math.random(),
-  y: Math.random(),
-  r: 0.4 + Math.random() * 0.8,
-  a: 0.1 + Math.random() * 0.35,
-  blink: Math.random() * Math.PI * 2
-}));
-
-/* ================================================================
-   5. MELIDE PULSE
-   ================================================================ */
-let melideRings = [];
-let melideNextPulse = 0;
-
-function triggerMelidePulse() {
-  melideRings.push({ t: 0, alpha: 0.9 });
-}
-
-/* ================================================================
-   6. DRAW FUNCTIONS
-   ================================================================ */
-
-function drawBackground(now) {
-  // Gradient background
-  const bgGrad = ctx.createRadialGradient(W*0.5, H*0.4, 0, W*0.5, H*0.5, Math.max(W,H)*0.7);
-  bgGrad.addColorStop(0, '#0d1528');
-  bgGrad.addColorStop(0.5, '#070a12');
-  bgGrad.addColorStop(1, '#07080d');
-  ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Blinking stars
-  STARS.forEach(s => {
-    const a = s.a + Math.sin(now * 0.001 + s.blink) * 0.1;
-    ctx.beginPath();
-    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(200,200,240,${Math.max(0,a)})`;
-    ctx.fill();
-  });
-}
-
-function drawGlobeBase() {
-  if (viewTransition > 0.8) return;
-  const t = 1 - viewTransition;
-  const radius = Math.min(W, H) * 0.36;
-  const cx = W * 0.5, cy = H * 0.5;
-
-  // Sphere rim glow
-  const grd = ctx.createRadialGradient(cx, cy, radius*0.7, cx, cy, radius*1.2);
-  grd.addColorStop(0, `rgba(30,58,95,${0.15*t})`);
-  grd.addColorStop(0.7, `rgba(13,21,40,${0.3*t})`);
-  grd.addColorStop(1, 'transparent');
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius*1.2, 0, Math.PI*2);
-  ctx.fillStyle = grd;
-  ctx.fill();
-
-  // Globe circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI*2);
-  const sphereGrd = ctx.createRadialGradient(cx-radius*0.3, cy-radius*0.3, 0, cx, cy, radius);
-  sphereGrd.addColorStop(0, `rgba(26,39,64,${0.9*t})`);
-  sphereGrd.addColorStop(0.6, `rgba(13,21,40,${0.85*t})`);
-  sphereGrd.addColorStop(1, `rgba(7,8,13,${0.9*t})`);
-  ctx.fillStyle = sphereGrd;
-  ctx.fill();
-
-  // Grid lines
-  ctx.save();
-  ctx.globalAlpha = 0.06 * t;
-  ctx.strokeStyle = '#4a7ab5';
-  ctx.lineWidth = 0.6;
-  // Latitude lines
-  for (let lat = -60; lat <= 80; lat += 20) {
-    ctx.beginPath();
-    let first = true;
-    for (let lon = -180; lon <= 180; lon += 4) {
-      const p = projectGlobe(lat, lon, W, H, globeRotationY, globeRotationX);
-      if (!p.visible) { first = true; continue; }
-      if (first) { ctx.moveTo(p.x, p.y); first = false; }
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-  }
-  // Longitude lines
-  for (let lon = -180; lon < 180; lon += 20) {
-    ctx.beginPath();
-    let first = true;
-    for (let lat = -80; lat <= 80; lat += 4) {
-      const p = projectGlobe(lat, lon, W, H, globeRotationY, globeRotationX);
-      if (!p.visible) { first = true; continue; }
-      if (first) { ctx.moveTo(p.x, p.y); first = false; }
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawRoutes(hoverIdx) {
-  const origins = PLAYERS_DATA.filter(d => d.city !== 'Melide');
-  const melidePos = projectPoint(MELIDE.lat, MELIDE.lon, W, H);
-
-  origins.forEach((o, i) => {
-    const oPos = projectPoint(o.lat, o.lon, W, H);
-    if (!oPos.visible) { o._visible = false; return; }
-    o._visible = true;
-
-    const isHover   = hoverIdx === i;
-    const baseAlpha = isHover ? 0.55 : 0.12 + Math.min(o.players, 12) * 0.015;
-    const lineW     = isHover ? 1.8  : 0.8;
-
-    // Control point for bezier arc
-    const cpX = (oPos.x + melidePos.x) * 0.5 + (melidePos.y - oPos.y) * 0.3;
-    const cpY = (oPos.y + melidePos.y) * 0.5 - Math.abs(melidePos.x - oPos.x) * 0.25;
-
-    // Glow pass
-    ctx.save();
-    ctx.globalAlpha = baseAlpha * 0.5;
-    ctx.strokeStyle = isHover ? '#e8d5a0' : '#c9a227';
-    ctx.lineWidth   = lineW * 3;
-    ctx.shadowBlur  = isHover ? 16 : 8;
-    ctx.shadowColor = '#c9a227';
-    ctx.filter = 'blur(2px)';
-    ctx.beginPath();
-    ctx.moveTo(oPos.x, oPos.y);
-    ctx.quadraticCurveTo(cpX, cpY, melidePos.x, melidePos.y);
-    ctx.stroke();
-    ctx.restore();
-
-    // Dashed route line (Camino path look)
-    ctx.save();
-    ctx.globalAlpha = baseAlpha;
-    ctx.strokeStyle = isHover ? '#e8d5a0' : '#c9a227';
-    ctx.lineWidth   = lineW;
-    ctx.setLineDash([4, 6]);
-    ctx.lineDashOffset = -(Date.now() * 0.015 % 10);
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(oPos.x, oPos.y);
-    ctx.quadraticCurveTo(cpX, cpY, melidePos.x, melidePos.y);
-    ctx.stroke();
-    ctx.restore();
-  });
-}
-
-function drawCityDots(hoverIdx) {
-  const origins = PLAYERS_DATA.filter(d => d.city !== 'Melide');
-  origins.forEach((o, i) => {
-    const pos = projectPoint(o.lat, o.lon, W, H);
-    if (!pos.visible) return;
-
-    const isHover = hoverIdx === i;
-    const size    = isHover ? 5 : 2.5 + Math.min(o.players, 12) * 0.18;
-    const alpha   = isHover ? 1.0 : 0.65;
-
-    // Outer glow
-    if (isHover) {
-      const grd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, size * 5);
-      grd.addColorStop(0, 'rgba(201,162,39,0.3)');
-      grd.addColorStop(1, 'transparent');
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, size * 5, 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-    }
-
-    // Ring
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, size + 2, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(201,162,39,${alpha * 0.4})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Dot
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, size, 0, Math.PI * 2);
-    ctx.fillStyle = isHover
-      ? 'rgba(232,213,160,1)'
-      : `rgba(201,162,39,${alpha})`;
-    ctx.shadowBlur  = isHover ? 10 : 4;
-    ctx.shadowColor = '#c9a227';
-    ctx.fill();
-    ctx.shadowBlur = 0;
-  });
-}
-
-function drawMelide(now) {
-  const pos = projectPoint(MELIDE.lat, MELIDE.lon, W, H);
-
-  // Pulse rings
-  melideRings = melideRings.filter(r => r.t < 1);
-  melideRings.forEach(r => {
-    const maxR = Math.min(W, H) * 0.15;
-    const rr = r.t * maxR;
-    const a  = r.alpha * (1 - r.t) * 0.5;
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, rr, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(201,162,39,${a})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    r.t += 0.008;
-  });
-
-  // Trigger new pulse
-  if (now > melideNextPulse) {
-    triggerMelidePulse();
-    melideNextPulse = now + 4000;
-  }
-
-  // Outer glow
-  const outerGrd = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 28);
-  outerGrd.addColorStop(0, 'rgba(201,162,39,0.35)');
-  outerGrd.addColorStop(0.4, 'rgba(201,162,39,0.15)');
-  outerGrd.addColorStop(1, 'transparent');
-  ctx.beginPath();
-  ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2);
-  ctx.fillStyle = outerGrd;
-  ctx.fill();
-
-  // Red accent under gold
-  ctx.beginPath();
-  ctx.arc(pos.x, pos.y, 7, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(139,26,26,0.6)';
-  ctx.fill();
-
-  // Gold marker
-  ctx.beginPath();
-  ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
-  ctx.fillStyle = '#e8d5a0';
-  ctx.shadowBlur  = 16;
-  ctx.shadowColor = '#c9a227';
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // Cross marker
-  ctx.strokeStyle = '#c9a227';
-  ctx.lineWidth   = 1;
-  ctx.beginPath();
-  ctx.moveTo(pos.x, pos.y - 12); ctx.lineTo(pos.x, pos.y - 7);
-  ctx.moveTo(pos.x - 5, pos.y - 10); ctx.lineTo(pos.x + 5, pos.y - 10);
-  ctx.stroke();
-
-  // Update HTML label and shell position
-  const label = document.getElementById('melideLabel');
-  label.style.left = pos.x + 'px';
-  label.style.top  = pos.y + 'px';
-  label.classList.add('visible');
-
-  const shell = document.getElementById('shellIcon');
-  shell.style.left = (pos.x + 14) + 'px';
-  shell.style.top  = (pos.y - 30) + 'px';
-  shell.style.position = 'absolute';
-}
-
-/* ================================================================
-   7. HOVER DETECTION
-   ================================================================ */
-let mouseX = -999, mouseY = -999;
-let currentHoverIdx = -1;
-
-canvas.addEventListener('mousemove', e => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-
-  if (isDragging) {
-    const dx = e.clientX - lastMouseX;
-    const dy = e.clientY - lastMouseY;
-    globeRotationY -= dx * 0.005;
-    globeRotationX -= dy * 0.005;
-    globeRotationX  = Math.max(-0.8, Math.min(0.8, globeRotationX));
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-  }
-});
-
-canvas.addEventListener('mousedown', e => {
-  isDragging   = true;
-  lastMouseX   = e.clientX;
-  lastMouseY   = e.clientY;
-  globeRotSpeed = 0;
-});
-
-canvas.addEventListener('mouseup', () => { isDragging = false; });
-canvas.addEventListener('mouseleave', () => {
-  isDragging = false;
-  mouseX = -999; mouseY = -999;
-});
-
-// Touch support
-canvas.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  isDragging   = true;
-  lastMouseX   = t.clientX;
-  lastMouseY   = t.clientY;
-  globeRotSpeed = 0;
-}, { passive: true });
-
-canvas.addEventListener('touchmove', e => {
-  if (!isDragging) return;
-  const t = e.touches[0];
-  const dx = t.clientX - lastMouseX;
-  const dy = t.clientY - lastMouseY;
-  globeRotationY -= dx * 0.005;
-  globeRotationX -= dy * 0.005;
-  globeRotationX = Math.max(-0.8, Math.min(0.8, globeRotationX));
-  lastMouseX = t.clientX;
-  lastMouseY = t.clientY;
-}, { passive: true });
-
-canvas.addEventListener('touchend', () => { isDragging = false; });
-
-// Click to show tooltip
-canvas.addEventListener('click', e => {
-  const idx = getHoverCity(e.clientX, e.clientY);
-  if (idx >= 0) showTooltip(idx, e.clientX, e.clientY);
-  else hideTooltip();
-});
-
-function getHoverCity(mx, my) {
-  const origins = PLAYERS_DATA.filter(d => d.city !== 'Melide');
-  let best = -1, bestDist = 18;
-  origins.forEach((o, i) => {
-    const p = projectPoint(o.lat, o.lon, W, H);
-    if (!p.visible) return;
-    const d = Math.hypot(p.x - mx, p.y - my);
-    if (d < bestDist) { bestDist = d; best = i; }
-  });
-  return best;
-}
-
-const tooltip = document.getElementById('tooltip');
-function showTooltip(idx, mx, my) {
-  const origins = PLAYERS_DATA.filter(d => d.city !== 'Melide');
-  const o = origins[idx];
-  document.getElementById('ttCity').textContent    = o.city;
-  document.getElementById('ttProv').textContent    = o.province + ' · ' + o.cc;
-  document.getElementById('ttPlayers').textContent = o.players;
-  document.getElementById('ttPairs').textContent   = o.pairs;
-  document.getElementById('ttDist').textContent    = o.dist + ' km';
-  tooltip.style.display = 'block';
-  let tx = mx + 16, ty = my - 10;
-  if (tx + 180 > W) tx = mx - 196;
-  if (ty + 160 > H) ty = my - 170;
-  tooltip.style.left = tx + 'px';
-  tooltip.style.top  = ty + 'px';
-}
-
-function hideTooltip() { tooltip.style.display = 'none'; }
-
-/* ================================================================
-   8. MAIN ANIMATION LOOP
-   ================================================================ */
-function loop(now) {
-  if (!isTabVisible) { animFrame = requestAnimationFrame(loop); return; }
-
-  // Auto-rotate globe
-  if (!isDragging && currentView === 'globe') {
-    globeRotationY += globeRotSpeed;
-    globeRotSpeed   = Math.min(globeRotSpeed + 0.00001, 0.0003);
-  }
-
-  // Smooth view transition
-  const tSpeed = 0.04;
-  viewTransition += (targetViewTransition - viewTransition) * tSpeed;
-
-  // Clear
-  ctx.clearRect(0, 0, W, H);
-  drawBackground(now);
-  drawGlobeBase();
-
-  // Hover detection
-  const hoverIdx = getHoverCity(mouseX, mouseY);
-  if (hoverIdx !== currentHoverIdx) {
-    currentHoverIdx = hoverIdx;
-    canvas.style.cursor = hoverIdx >= 0 ? 'pointer' : (isDragging ? 'grabbing' : 'grab');
-  }
-
-  // Mark visibility
-  PLAYERS_DATA.filter(d => d.city !== 'Melide').forEach(o => {
-    const p = projectPoint(o.lat, o.lon, W, H);
-    o._visible = p.visible;
-  });
-
-  drawRoutes(hoverIdx);
-  particles.forEach(p => { p.update(); p.draw(ctx); });
-  drawCityDots(hoverIdx);
-  drawMelide(now);
-
-  // Hover tooltip tracking
-  if (hoverIdx >= 0) {
-    showTooltip(hoverIdx, mouseX, mouseY);
-  } else {
-    hideTooltip();
-  }
-
-  animFrame = requestAnimationFrame(loop);
-}
-
-/* ================================================================
-   9. UI: STATS COUNTERS
-   ================================================================ */
-function animateCounter(el, target, suffix, duration = 1500) {
-  const start    = 0;
-  const startTs  = performance.now();
-  function tick(now) {
-    const pct = Math.min((now - startTs) / duration, 1);
-    const ease = 1 - Math.pow(1 - pct, 3);
-    const val  = Math.round(start + (target - start) * ease);
-    el.textContent = val.toLocaleString('es') + (suffix || '');
-    if (pct < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-function initStats() {
-  setTimeout(() => {
-    animateCounter(document.getElementById('statPlayers'),   STATS.players,   '',  1800);
-    animateCounter(document.getElementById('statPairs'),     STATS.pairs,     '',  1800);
-    animateCounter(document.getElementById('statProvinces'), STATS.provinces, '',  1500);
-    animateCounter(document.getElementById('statCCAA'),      STATS.ccaa,      '',  1500);
-    animateCounter(document.getElementById('statKm'),        STATS.km,        '',  2200);
-  }, 1200);
-}
-
-/* ================================================================
-   10. UI: LATEST REGISTRATIONS
-   ================================================================ */
-let regIdx = 0;
-const regList = document.getElementById('regList');
-
-function addReg() {
-  const r = RECENT_REGS[regIdx % RECENT_REGS.length];
-  regIdx++;
-
-  const div = document.createElement('div');
-  div.className = 'reg-item';
-  div.innerHTML = `<div class="reg-dot"></div><span class="reg-name">${r.name}</span><span class="reg-place">&nbsp;·&nbsp;${r.place}</span>`;
-  regList.insertBefore(div, regList.firstChild);
-
-  // Remove if too many
-  while (regList.children.length > 6) {
-    regList.removeChild(regList.lastChild);
-  }
-}
-
-function initRegs() {
-  RECENT_REGS.slice(0, 5).forEach((r, i) => {
-    setTimeout(() => addReg(), i * 200 + 1000);
-  });
-  // Simulate new arrivals
-  setInterval(() => addReg(), 6000 + Math.random() * 4000);
-}
-
-/* ================================================================
-   11. UI: TOP ORIGINS
-   ================================================================ */
-function initOrigins() {
-  const el = document.getElementById('originsList');
-  el.innerHTML = '';
-  TOP_ORIGINS.forEach((o, i) => {
-    const div = document.createElement('div');
-    div.className = 'origin-item';
-    div.innerHTML = `
-      <div class="origin-row">
-        <span><span class="origin-rank">${i+1}.</span><span class="origin-name">${o.name}</span></span>
-        <span class="origin-pct">${o.pct}%</span>
-      </div>
-      <div class="origin-bar">
-        <div class="origin-fill" style="width:0%" data-pct="${o.pct}"></div>
-      </div>`;
-    el.appendChild(div);
-  });
-
-  // Animate bars
-  setTimeout(() => {
-    el.querySelectorAll('.origin-fill').forEach(bar => {
-      bar.style.width = bar.dataset.pct + '%';
-    });
-  }, 1500);
-}
-
-/* ================================================================
-   12. VIEW TOGGLE
-   ================================================================ */
-function setView(v) {
-  currentView = v;
-  targetViewTransition = v === 'spain' ? 1 : 0;
-  document.getElementById('btnGlobe').classList.toggle('active', v === 'globe');
-  document.getElementById('btnSpain').classList.toggle('active', v === 'spain');
-  if (v === 'globe') globeRotSpeed = 0;
-}
-window.setView = setView;
-
-/* ================================================================
-   13. VISIBILITY API
-   ================================================================ */
-document.addEventListener('visibilitychange', () => {
-  isTabVisible = !document.hidden;
-});
-
-/* ================================================================
-   14. BOOT
-   ================================================================ */
-function boot() {
-  initStats();
-  initRegs();
-  initOrigins();
-
-  // Hide loader
-  setTimeout(() => {
-    const loader = document.getElementById('loader');
-    loader.classList.add('fade');
-    setTimeout(() => loader.remove(), 900);
-  }, 1600);
-
-  // Start loop
-  requestAnimationFrame(loop);
-}
-
-// Wait for fonts
-document.fonts.ready.then(boot);
-
 </script>
 </body>
 </html>
