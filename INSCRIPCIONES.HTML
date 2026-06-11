@@ -87,6 +87,9 @@
   .equipo-nombre { font-weight: 700; font-size: 0.95rem; }
   .equipo-jugadores { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
   .equipo-zona { font-size: 0.75rem; color: var(--text-dim); }
+  .mod-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .mod-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 0.72rem; }
+  .mod-tag { color: var(--text-dim); font-weight: 700; letter-spacing: 0.04em; }
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
   .error-box { background: rgba(245,0,87,0.08); border: 1px solid rgba(245,0,87,0.3); border-radius: 12px; padding: 20px; margin: 10px 0; color: #ff8aa8; font-size: 0.85rem; word-break: break-word; }
 
@@ -285,6 +288,10 @@
       <select id="filter-part-cat" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="">Todas las categorías</option>
         <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+      </select>
+      <select id="filter-part-mod" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
+        <option value="">Ambas modalidades</option>
+        <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option>
       </select>
       <select id="sort-part" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="cat">Ordenar por categoría</option><option value="fecha">Ordenar por fecha</option><option value="alfa">Ordenar alfabético</option>
@@ -632,13 +639,15 @@ function loadParticipantes() {
 
       var zonas = rows.map(function(r){return r[6];}).filter(Boolean);
       var zonasUnicas = zonas.filter(function(v,i){ return zonas.indexOf(v)===i; });
-      var galicia = rows.filter(function(r){ return GALICIA.indexOf(r[6])>=0; }).length;
+      var zonaCount = {};
+      rows.forEach(function(r){ if(r[6]){ zonaCount[r[6]] = (zonaCount[r[6]]||0)+1; } });
+      var zonaTop = '—', zonaTopN = 0;
+      Object.keys(zonaCount).forEach(function(z){ if(zonaCount[z]>zonaTopN){ zonaTopN=zonaCount[z]; zonaTop=z; } });
       var statsRow = document.getElementById('part-stats-row');
       statsRow.innerHTML =
         '<div class="stats-box"><div class="slabel">Total equipos</div><div class="snum" style="color:#7cb3ff;">'+rows.length+'</div></div>' +
         '<div class="stats-box"><div class="slabel">Zonas</div><div class="snum" style="color:#ffc107;">'+zonasUnicas.length+'</div></div>' +
-        '<div class="stats-box"><div class="slabel">De Galicia</div><div class="snum" style="color:#00c853;">'+galicia+'</div></div>' +
-        '<div class="stats-box"><div class="slabel">De fuera</div><div class="snum" style="color:#f50057;">'+(rows.length-galicia)+'</div></div>' +
+        '<div class="stats-box"><div class="slabel">Zona con más parejas</div><div class="snum" style="color:#00c853;font-size:1.3rem;">📍 '+zonaTop+(zonaTopN>1?' <span style="color:#7a8fa8;font-size:0.9rem;">('+zonaTopN+')</span>':'')+'</div></div>' +
         CATS.map(function(cat){ var n=rows.filter(function(r){return r[11]===cat||r[12]===cat;}).length; return '<div class="stats-box '+cat.toLowerCase()+'"><div class="slabel">'+cat+'</div><div class="snum">'+n+'</div></div>'; }).join('');
 
       renderParticipantes(rows);
@@ -652,15 +661,26 @@ function loadParticipantes() {
 function renderParticipantes(rows) {
   if (!rows) return;
   var catF = (document.getElementById('filter-part-cat')||{}).value || '';
+  var modF = (document.getElementById('filter-part-mod')||{}).value || '';
   var sort  = (document.getElementById('sort-part')||{}).value || 'cat';
-  var filtered = rows.filter(function(r){ return !catF || r[11]===catF || r[12]===catF; });
+
+  // Filtrar por modalidad: 'mov' => tiene cat en movimiento (r[11]); 'par' => tiene cat en parado (r[12])
+  function pasaMod(r){ return !modF || (modF==='mov' && r[11]) || (modF==='par' && r[12]); }
+  // Comprobar si un equipo está en una categoría, según la modalidad activa
+  function tieneCat(r, cat){
+    if (modF==='mov') return r[11]===cat;
+    if (modF==='par') return r[12]===cat;
+    return r[11]===cat || r[12]===cat;
+  }
+
+  var filtered = rows.filter(function(r){ return pasaMod(r) && (!catF || tieneCat(r, catF)); });
   if (sort==='alfa')  filtered.sort(function(a,b){ return (a[1]||'').localeCompare(b[1]||''); });
   if (sort==='fecha') filtered.sort(function(a,b){ return (a[0]||'').localeCompare(b[0]||''); });
 
   var html = '';
   if (sort==='cat' && !catF) {
     CATS.forEach(function(cat){
-      var eq = filtered.filter(function(r){ return r[11]===cat || r[12]===cat; });
+      var eq = filtered.filter(function(r){ return tieneCat(r, cat); });
       if (!eq.length) return;
       html += '<div class="cat-section"><div class="cat-title '+cat.toLowerCase()+'">'+CAT_EMOJI[cat]+' '+cat.toUpperCase()+' — '+eq.length+' equipo'+(eq.length>1?'s':'')+'</div>';
       eq.forEach(function(r,i){ html += equipoCard(r, i+1); });
@@ -669,11 +689,14 @@ function renderParticipantes(rows) {
   } else {
     filtered.forEach(function(r,i){ html += equipoCard(r, i+1); });
   }
-  document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes inscritos todavía</p></div>';
+  document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes para ese filtro</p></div>';
 }
 
 function equipoCard(r, n) {
-  return '<div class="equipo-card"><div class="equipo-num">'+String(n).padStart(2,'0')+'</div><div class="equipo-info"><div class="equipo-nombre">'+(r[1]||'')+'</div><div class="equipo-jugadores">'+(r[2]||'')+' · '+(r[4]||'')+'</div><div class="equipo-zona">📍 '+(r[6]||'')+'</div></div></div>';
+  var badges = '';
+  if (r[11]) badges += '<span class="mod-badge"><span class="mod-tag">🔄 Movimiento</span> <b style="color:'+(CAT_COLORS[r[11]]||'#e8edf5')+'">'+r[11]+'</b></span>';
+  if (r[12]) badges += '<span class="mod-badge"><span class="mod-tag">✋ Parado</span> <b style="color:'+(CAT_COLORS[r[12]]||'#e8edf5')+'">'+r[12]+'</b></span>';
+  return '<div class="equipo-card"><div class="equipo-num">'+String(n).padStart(2,'0')+'</div><div class="equipo-info"><div class="equipo-nombre">'+(r[1]||'')+'</div><div class="equipo-jugadores">'+(r[2]||'')+' · '+(r[4]||'')+'</div><div class="equipo-zona">📍 '+(r[6]||'')+'</div>'+(badges?'<div class="mod-badges">'+badges+'</div>':'')+'</div></div>';
 }
 
 function compartir() {
