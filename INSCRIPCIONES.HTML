@@ -742,6 +742,27 @@ function renderStats() {
   document.getElementById('stats-grid').innerHTML = html;
 }
 
+// Devuelve un objeto {telefono: true} solo con los teléfonos que aparecen en PAREJAS DISTINTAS.
+// Si J1 y J2 de la misma pareja comparten número, NO se considera duplicado.
+function telefonosDuplicados() {
+  var porTel = {}; // telefono normalizado -> lista de índices de fila (parejas) distintas
+  allData.forEach(function(r, idx){
+    var telsFila = [];
+    [r[7], r[8]].forEach(function(t){
+      t = (t||'').toString().replace(/\s/g,'');
+      if (!t) return;
+      if (telsFila.indexOf(t) === -1) telsFila.push(t); // único dentro de la misma pareja
+    });
+    telsFila.forEach(function(t){
+      if (!porTel[t]) porTel[t] = [];
+      if (porTel[t].indexOf(idx) === -1) porTel[t].push(idx);
+    });
+  });
+  var dup = {};
+  Object.keys(porTel).forEach(function(t){ if (porTel[t].length > 1) dup[t] = true; });
+  return dup;
+}
+
 function renderTable() {
   var q  = (document.getElementById('search-admin').value||'').toLowerCase();
   var cf = document.getElementById('filter-cat').value;
@@ -755,12 +776,13 @@ function renderTable() {
   var tbody = document.getElementById('table-body');
   if (!filtered.length) { tbody.innerHTML=''; document.getElementById('empty-state').style.display='block'; return; }
   document.getElementById('empty-state').style.display = 'none';
+  var dupSet = telefonosDuplicados();
   tbody.innerHTML = filtered.map(function(r){
     var ri = allData.indexOf(r);
     var p1 = r[3]==='Si', p2 = r[5]==='Si';
-    var t1 = r[7]||'', t2 = r[8]||'';
-    var d1 = allData.filter(function(x){ return (x[7]||'')===t1 && t1!==''; }).length > 1;
-    var d2 = allData.filter(function(x){ return (x[8]||'')===t2 && t2!==''; }).length > 1;
+    var t1 = (r[7]||'').toString(), t2 = (r[8]||'').toString();
+    var d1 = t1.replace(/\s/g,'') !== '' && dupSet[t1.replace(/\s/g,'')];
+    var d2 = t2.replace(/\s/g,'') !== '' && dupSet[t2.replace(/\s/g,'')];
     var cc = function(c){ return (c||'').toLowerCase(); };
     return '<tr>' +
       '<td style="color:var(--text-dim);font-weight:700">'+(ri+1)+'</td>' +
@@ -847,19 +869,27 @@ function eliminarInscrito(idx) {
 }
 
 function checkDuplicados() {
-  var tels = {};
-  allData.forEach(function(r){
-    [r[7], r[8]].forEach(function(tel){
-      if (!tel) return;
-      if (!tels[tel]) tels[tel] = [];
-      tels[tel].push(r[1]);
+  var porTel = {}; // telefono -> lista de nombres de equipo (parejas distintas)
+  allData.forEach(function(r, idx){
+    var telsFila = [];
+    [r[7], r[8]].forEach(function(t){
+      var tn = (t||'').toString().replace(/\s/g,'');
+      if (!tn) return;
+      if (telsFila.indexOf(tn) === -1) telsFila.push(tn);
+    });
+    telsFila.forEach(function(tn){
+      if (!porTel[tn]) porTel[tn] = { idxs: [], nombres: [] };
+      if (porTel[tn].idxs.indexOf(idx) === -1) {
+        porTel[tn].idxs.push(idx);
+        porTel[tn].nombres.push(r[1]);
+      }
     });
   });
-  var dups = Object.keys(tels).filter(function(k){ return tels[k].length>1; });
+  var dups = Object.keys(porTel).filter(function(k){ return porTel[k].idxs.length > 1; });
   var banner = document.getElementById('duplicados-banner');
   if (!dups.length) { banner.style.display='none'; return; }
   banner.style.display = 'block';
-  document.getElementById('duplicados-lista').innerHTML = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+tels[tel].join(' · '); }).join('<br>');
+  document.getElementById('duplicados-lista').innerHTML = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+porTel[tel].nombres.join(' · '); }).join('<br>');
 }
 
 function toggleHistorial() {
