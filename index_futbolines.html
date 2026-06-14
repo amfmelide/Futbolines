@@ -263,10 +263,6 @@
   #install-banner .btn-dismiss{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.75rem;padding:7px 10px;border-radius:8px;cursor:pointer;}
 
 
-  /* Setup screen */
-  .mesa-preset{width:72px;height:72px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Bebas Neue',system-ui,sans-serif;font-size:1.8rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
-  .mesa-preset:hover{background:var(--accent);border-color:var(--accent);transform:scale(1.05);}
-  .mesa-preset.selected{background:var(--accent);border-color:var(--accent);box-shadow:0 0 16px rgba(21,101,192,.5);}
   /* Disabled card */
   .card.desactivada{opacity:.4;border-color:rgba(255,255,255,.1) !important;animation:none !important;filter:grayscale(1);}
   .card.desactivada .toggle-btn{pointer-events:none;opacity:.5;}
@@ -293,40 +289,6 @@
 <body>
 
 <!-- ── SETUP SCREEN ── -->
-<div id="setup-screen" style="position:fixed;inset:0;z-index:2000;background:#070b14;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;">
-  <div style="font-size:3rem;">⚽</div>
-  <h2 style="font-family:'Bebas Neue',system-ui,sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#fff;">CONFIGURAR EVENTO</h2>
-  <p style="color:#7a8fa8;font-size:.9rem;">¿Cuántas mesas de futbolín hay disponibles?</p>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:400px;">
-    <button class="mesa-preset" onclick="selectMesas(4)">4</button>
-    <button class="mesa-preset" onclick="selectMesas(6)">6</button>
-    <button class="mesa-preset" onclick="selectMesas(8)">8</button>
-    <button class="mesa-preset" onclick="selectMesas(10)">10</button>
-    <button class="mesa-preset" onclick="selectMesas(12)">12</button>
-    <button class="mesa-preset" onclick="selectMesas(16)">16</button>
-    <button class="mesa-preset" onclick="selectMesas(20)">20</button>
-    <button class="mesa-preset" onclick="selectMesas(24)">24</button>
-    <button class="mesa-preset" onclick="selectMesas(30)">30</button>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:10px;width:300px;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="color:#7a8fa8;font-size:.85rem;">O introduce un número:</span>
-      <input id="custom-mesas" type="number" min="1" max="60" value="30"
-        style="background:#1a2236;border:1px solid #1e2d45;color:#e8edf5;font-family:'Bebas Neue',sans-serif;font-size:1.6rem;width:80px;text-align:center;border-radius:10px;padding:8px;outline:none;"
-        onkeydown="if(event.key==='Enter')document.getElementById('setup-pass').focus()">
-    </div>
-    <input id="setup-pass" type="password" placeholder="🔑 Contraseña de acceso..."
-      style="background:#1a2236;border:1px solid #1e2d45;border-radius:10px;color:#e8edf5;font-family:'Barlow',sans-serif;font-size:1rem;padding:12px 16px;outline:none;width:100%;text-align:center;"
-      onkeydown="if(event.key==='Enter')confirmMesas()">
-    <div id="setup-error" style="color:#f50057;font-size:.82rem;min-height:18px;text-align:center;font-weight:700;"></div>
-    <button onclick="confirmMesas()"
-      style="background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;color:#fff;font-family:'Barlow',sans-serif;font-weight:800;font-size:.9rem;padding:14px;border-radius:10px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;width:100%;">
-      🔓 Acceder al panel
-    </button>
-  </div>
-  <p style="color:#7a8fa8;font-size:.75rem;text-align:center;max-width:320px;line-height:1.5;">Puedes desactivar mesas individuales más adelante<br>si alguna se estropea durante el evento</p>
-</div>
-
 <!-- ── LOCK SCREEN ── -->
 <div id="lock-screen">
   <div class="lock-icon">🔒</div>
@@ -352,7 +314,10 @@
 <header>
   <div class="header-top">
     <div class="header-icon">⚽</div>
-    <div><h1>Control de Futbolines</h1><p class="subtitle">Panel de gestión · Evento en vivo</p></div>
+    <div><h1>Control de Futbolines</h1><input id="event-name" value="Panel de gestión · Evento en vivo"
+      onchange="saveState();showToast('✏ Nombre del evento guardado')"
+      title="Haz clic para editar el nombre del evento"
+      style="background:transparent;border:none;border-bottom:1px dashed rgba(122,143,168,.35);outline:none;color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;text-align:center;width:300px;max-width:90vw;cursor:text;padding:2px;"></div>
     <button class="btn-hdr" id="btn-toggle-stats" onclick="toggleStats()">📊 Estadísticas</button>
     <button class="btn-hdr" onclick="openSettings()">⚙ Ajustes</button>
     <button class="btn-hdr" onclick="lockApp()">🔒 Bloquear</button>
@@ -380,8 +345,23 @@
   <input class="search-box" type="text" id="search" placeholder="🔍 Buscar mesa..." oninput="applyFilters()">
   <div class="time-control">
     <label>⏱ Límite</label>
-    <input type="number" id="time-limit" value="10" min="1" max="99" onchange="timeLimitMin=parseInt(this.value)||10">
+    <input type="number" id="time-limit" value="10" min="1" max="99" onchange="timeLimitMin=parseInt(this.value)||10;saveState()">
     <span>min</span>
+  </div>
+  <div class="time-control">
+    <label>🎯 Mesas</label>
+    <select id="mesas-select" onchange="cambiarMesas(parseInt(this.value))"
+      style="background:transparent;border:none;outline:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1.3rem;width:52px;text-align:center;cursor:pointer;">
+      <option value="4">4</option>
+      <option value="6">6</option>
+      <option value="8">8</option>
+      <option value="10">10</option>
+      <option value="12">12</option>
+      <option value="16">16</option>
+      <option value="20">20</option>
+      <option value="24">24</option>
+      <option value="30" selected>30</option>
+    </select>
   </div>
   <button class="btn-stats" onclick="clearHistory()">🗑 Limpiar historial</button>
   <button class="btn-reset" onclick="resetAll()">🔄 Liberar todos</button>
@@ -555,6 +535,7 @@ function savePin() {
   if (nw.length < 4) {err.textContent='❌ La contraseña debe tener al menos 4 caracteres.';return;}
   if (nw!==cnf)             {err.textContent='❌ Los PINs no coinciden.';return;}
   PIN=nw; err.style.color='var(--libre)'; err.textContent='✅ PIN actualizado.';
+  saveState();
   setTimeout(closeSettings,1200); showToast('✅ PIN actualizado');
 }
 
@@ -586,7 +567,7 @@ function toggle(id) {
     s.libre=false; s.time=new Date(); s.alerted=false;
     // Historial
     history.unshift({mesa:id,name:s.name,cat:s.cat,action:'ocupado',timestamp:new Date(),duration:null});
-    renderCard(id); updateCounters(); updateStats();
+    renderCard(id); updateCounters(); updateStats(); saveState();
     const catTag=s.cat!=='none'?` [${CATS[s.cat].emoji} ${CATS[s.cat].label}]`:'';
     showToast(`🔴 ${s.name} OCUPADO${catTag}`);
     return;
@@ -611,7 +592,7 @@ function toggle(id) {
       void cardEl.offsetWidth;
       cardEl.className='card libre';
     }
-    renderCard(id); updateCounters(); updateStats();
+    renderCard(id); updateCounters(); updateStats(); saveState();
     showToast(`✅ ${s.name} LIBRE — partida ${fmtTimeShort(duration)}`);
     return;
   }
@@ -644,8 +625,9 @@ function changeCategory(id,val){
   card.querySelector('.cat-stripe').className=`cat-stripe ${val}`;
   card.querySelector('.cat-select').className=`cat-select ${val}`;
   applyFilters();
+  saveState();
 }
-function changeNote(id,val){state[id-1].note=val;}
+function changeNote(id,val){state[id-1].note=val;saveState();}
 
 // ── RENDER CARD ──
 function renderCard(id){
@@ -657,7 +639,11 @@ function renderCard(id){
   const desbtn=card.querySelector('.btn-desactivar');
   if (s.desactivada) {
     card.className='card desactivada';
-    if (overlay) overlay.style.display='flex';
+    if (overlay) {
+      overlay.style.display='flex';
+      overlay.style.flexDirection='column';
+      overlay.innerHTML = '🚫 DESACTIVADA' + (s.motivo ? `<span style="font-size:.72rem;color:rgba(255,255,255,.45);font-family:'Barlow',sans-serif;letter-spacing:.04em;margin-top:4px;text-transform:none;">📝 ${s.motivo}</span>` : '');
+    }
     if (desbtn) { desbtn.textContent='✅'; desbtn.className='btn-reactivar'; desbtn.title='Reactivar mesa'; }
     return;
   } else {
@@ -703,7 +689,7 @@ function renderCard(id){
     timerEl.textContent=fmtTime(elapsed);
     barFill.style.background=pct<60?'var(--libre)':pct<90?'var(--gold)':'var(--warning)';
     barFill.style.width=pct+'%';
-    if (elapsed>=limitSec&&!s.alerted){s.alerted=true;showToast(`⚠ ${s.name} — ¡Tiempo superado!`,true);}
+    if (elapsed>=limitSec&&!s.alerted){s.alerted=true;playAlert();showToast(`⚠ ${s.name} — ¡Tiempo superado!`,true);}
   } else {
     timerEl.textContent='';
     barFill.style.width='0%';
@@ -811,7 +797,7 @@ function clearHistory(){
   history.length=0;
   state.forEach(s=>{s.partidas=0;});
   for (let i=1;i<=TOTAL;i++) renderCard(i);
-  updateCounters(); updateStats();
+  updateCounters(); updateStats(); saveState();
   showToast('🗑 Historial limpiado');
 }
 
@@ -839,52 +825,107 @@ function applyFilters(){
 
 // ── SETUP MESAS ──
 let TOTAL_ACTIVO = 30;
-let selectedMesas = 30;
 
-function selectMesas(n) {
-  selectedMesas = n;
-  document.querySelectorAll('.mesa-preset').forEach(b => b.classList.remove('selected'));
-  document.querySelectorAll('.mesa-preset').forEach(b => { if (parseInt(b.textContent) === n) b.classList.add('selected'); });
-  document.getElementById('custom-mesas').value = n;
-}
 
-const SETUP_PASS = 'amfmelidegestion';
 
-function confirmMesas() {
-  const passEl = document.getElementById('setup-pass');
-  const errEl  = document.getElementById('setup-error');
-  if (passEl && passEl.value !== SETUP_PASS) {
-    errEl.textContent = '❌ Contraseña incorrecta';
-    passEl.value = '';
-    passEl.focus();
-    return;
-  }
-  if (errEl) errEl.textContent = '';
-  const n = parseInt(document.getElementById('custom-mesas').value) || 30;
+function cambiarMesas(n) {
   TOTAL_ACTIVO = Math.max(1, Math.min(60, n));
   for (let i = 1; i <= TOTAL; i++) {
     state[i-1].visible = i <= TOTAL_ACTIVO;
   }
-  document.getElementById('setup-screen').style.display = 'none';
   document.querySelector('.score-card.total .score-number').textContent = TOTAL_ACTIVO;
+  applyFilters();
+  updateCounters();
+  saveState();
+  showToast(`🎯 Mostrando ${TOTAL_ACTIVO} mesas`);
 }
 
 // ── DESACTIVAR / REACTIVAR MESA ──
 function toggleDesactivar(id) {
   const s = state[id-1];
   if (!s.desactivada) {
-    if (!confirm(`¿Desactivar ${s.name}? No se podrá usar hasta reactivarla.`)) return;
-    // Free it first if occupied
-    if (!s.libre) {
-      s.libre = true; s.time = null; s.alerted = false;
-    }
+    const motivo = prompt(`¿Por qué desactivas ${s.name}?\n(ej: mango roto, bola perdida, tapete suelto)`, '');
+    if (motivo === null) return; // canceló
+    if (!s.libre) { s.libre = true; s.time = null; s.alerted = false; }
     s.desactivada = true;
+    s.motivo = motivo.trim();
   } else {
     s.desactivada = false;
+    s.motivo = '';
   }
   renderCard(id);
   updateCounters();
-  showToast(s.desactivada ? `🚫 ${s.name} desactivada` : `✅ ${s.name} reactivada`);
+  saveState();
+  showToast(s.desactivada ? `🚫 ${s.name} desactivada${s.motivo ? ' — ' + s.motivo : ''}` : `✅ ${s.name} reactivada`);
+}
+
+
+// ── SONIDO DE ALERTA ──
+function playAlert() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'square';
+    o.frequency.value = 880;
+    // patrón bip-bip-bip
+    g.gain.setValueAtTime(0.25, ctx.currentTime);
+    g.gain.setValueAtTime(0, ctx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.25, ctx.currentTime + 0.3);
+    g.gain.setValueAtTime(0, ctx.currentTime + 0.45);
+    g.gain.setValueAtTime(0.25, ctx.currentTime + 0.6);
+    g.gain.setValueAtTime(0, ctx.currentTime + 0.75);
+    o.start();
+    o.stop(ctx.currentTime + 0.8);
+  } catch(e) {}
+}
+
+// ── PERSISTENCIA (localStorage) ──
+const STORAGE_KEY = 'amf_futbolines_v4';
+
+function saveState() {
+  try {
+    const data = {
+      state: state.map(s => ({...s, time: s.time ? s.time.getTime() : null})),
+      history: history.slice(0, 200).map(h => ({...h, timestamp: h.timestamp.getTime()})),
+      timeLimitMin,
+      TOTAL_ACTIVO,
+      eventName: (document.getElementById('event-name')||{}).value || '',
+      PIN
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.state) d.state.forEach((s, i) => {
+      if (state[i]) Object.assign(state[i], {...s, time: s.time ? new Date(s.time) : null});
+    });
+    if (d.history) {
+      history.length = 0;
+      d.history.forEach(h => history.push({...h, timestamp: new Date(h.timestamp)}));
+    }
+    if (d.timeLimitMin) {
+      timeLimitMin = d.timeLimitMin;
+      const tl = document.getElementById('time-limit');
+      if (tl) tl.value = timeLimitMin;
+    }
+    if (d.TOTAL_ACTIVO) {
+      TOTAL_ACTIVO = d.TOTAL_ACTIVO;
+      const sel = document.getElementById('mesas-select');
+      if (sel) sel.value = String(TOTAL_ACTIVO);
+    }
+    if (d.eventName) {
+      const en = document.getElementById('event-name');
+      if (en) en.value = d.eventName;
+    }
+    if (d.PIN) PIN = d.PIN;
+  } catch(e) {}
 }
 
 // ── BUILD GRID ──
@@ -902,7 +943,7 @@ function buildGrid(){
       <div class="card-top">
         <div class="card-num">${String(i).padStart(2,'0')}</div>
         <div style="flex:1"><input class="card-name-input" value="${s.name}"
-          onclick="event.stopPropagation()" onchange="state[${i-1}].name=this.value"
+          onclick="event.stopPropagation()" onchange="state[${i-1}].name=this.value;saveState()"
           placeholder="Nombre de la mesa"></div>
         <div class="card-badges">
           <div class="count-badge">⚽ 0</div>
@@ -927,7 +968,7 @@ function resetAll(){
   Object.keys(pendingRelease).forEach(id=>{clearInterval(pendingRelease[id].timer);delete pendingRelease[id];});
   state.forEach(s=>{s.libre=true;s.time=null;s.alerted=false;});
   for (let i=1;i<=TOTAL;i++) renderCard(i);
-  updateCounters(); updateStats();
+  updateCounters(); updateStats(); saveState();
   showToast('✅ Todos los futbolines liberados');
 }
 
@@ -988,7 +1029,11 @@ self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r
   navigator.serviceWorker.register(swUrl).catch(()=>{});
 }
 
+loadState();
 buildGrid();
+for (let i=1;i<=TOTAL;i++) renderCard(i);
+applyFilters();
+document.querySelector('.score-card.total .score-number').textContent = TOTAL_ACTIVO;
 updateCounters();
 updateStats();
 </script>
