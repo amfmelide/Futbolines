@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteo en directo · AMF</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e1a; --surface:#111827; --surface2:#1a2236; --border:#1e2d45;
+    --text:#e8edf5; --dim:#7a8fa8; --gold:#ffc107; --blue:#1565c0; --pink:#f50057;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Barlow',sans-serif; color:var(--text); min-height:100vh;
+    background:radial-gradient(1100px 700px at 50% -5%, #16213c 0%, #0c1122 55%, var(--bg) 100%);
+    display:flex; flex-direction:column; align-items:center; padding:28px 18px 40px; overflow-x:hidden;
+  }
+  .mark{font-family:'Permanent Marker',cursive; font-size:2.2rem; color:#fff; text-shadow:0 0 26px rgba(21,101,192,.6); line-height:1}
+  .eyebrow{font-size:.72rem; letter-spacing:.28em; text-transform:uppercase; color:var(--dim); margin-top:6px}
+  .topbar{text-align:center; margin-bottom:26px}
+
+  /* ---- Config ---- */
+  .config{width:100%; max-width:520px; background:rgba(17,24,39,.7); border:1px solid var(--border);
+    border-radius:20px; padding:26px 24px; backdrop-filter:blur(8px)}
+  .config h2{font-family:'Bebas Neue'; font-weight:400; font-size:1.9rem; letter-spacing:.03em; margin-bottom:4px}
+  .config p.sub{font-size:.85rem; color:var(--dim); margin-bottom:20px}
+  label{display:block; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); margin:14px 0 6px; font-weight:700}
+  input[type=number], input[type=text]{width:100%; background:#0c1122; border:1px solid var(--border); border-radius:11px;
+    padding:13px 14px; color:var(--text); font-family:'Barlow'; font-size:1rem; outline:none; transition:border .15s}
+  input:focus{border-color:var(--gold)}
+  .num-big input{font-family:'Bebas Neue'; font-size:1.8rem; text-align:center; letter-spacing:.05em; color:var(--gold)}
+  .prize-inputs{display:grid; gap:10px; margin-top:4px}
+  .prize-inputs .row{display:flex; align-items:center; gap:10px}
+  .prize-inputs .pn{font-family:'Bebas Neue'; font-size:1.3rem; color:var(--gold); width:26px; flex:none; text-align:center}
+  .btn{font-family:'Barlow'; font-weight:800; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+    border:none; border-radius:12px; padding:15px; font-size:.95rem; width:100%; transition:transform .12s, box-shadow .2s}
+  .btn.gold{background:linear-gradient(135deg,#ffd54f,#ffb300); color:#3a2b00; box-shadow:0 10px 30px rgba(255,193,7,.25)}
+  .btn.gold:hover{transform:translateY(-2px)}
+  .btn.gold:active{transform:translateY(0)}
+  .btn.ghost{background:transparent; border:1px solid var(--border); color:var(--dim)}
+  .btn.ghost:hover{border-color:var(--gold); color:var(--gold)}
+  .cfg-actions{margin-top:22px}
+  .err{color:var(--pink); font-size:.82rem; font-weight:700; min-height:20px; margin-top:10px; text-align:center}
+
+  /* ---- Stage ---- */
+  .stage{display:none; width:100%; max-width:820px; flex-direction:column; align-items:center}
+  .stage.show{display:flex}
+  .range-tag{font-size:.8rem; color:var(--dim); letter-spacing:.06em; margin-bottom:8px}
+  .range-tag b{color:var(--gold); font-family:'Bebas Neue'; font-size:1.1rem; letter-spacing:.04em}
+  .prize-now{font-family:'Bebas Neue'; font-weight:400; font-size:clamp(1.6rem,5vw,2.8rem); letter-spacing:.04em;
+    text-align:center; line-height:1; min-height:1.1em}
+  .prize-now .small{display:block; font-size:.5em; color:var(--dim); letter-spacing:.16em; text-transform:uppercase}
+
+  .bombo-wrap{position:relative; margin:14px 0 22px; width:100%; display:flex; justify-content:center}
+  .bombo{font-family:'Bebas Neue'; font-weight:400; font-size:clamp(96px,26vw,280px); line-height:.9;
+    color:var(--gold); text-shadow:0 0 60px rgba(255,193,7,.45), 0 0 120px rgba(255,193,7,.18);
+    letter-spacing:.02em; min-width:2.4ch; text-align:center; font-variant-numeric:tabular-nums;
+    padding:6px 30px; border-radius:24px; border:2px solid rgba(255,193,7,.16); background:rgba(255,193,7,.03);
+    transition:transform .18s}
+  .bombo.pop{transform:scale(1.06)}
+  .bombo.idle{color:#3a4a68; text-shadow:none; border-color:var(--border)}
+
+  .btn-draw{font-family:'Bebas Neue'; font-weight:400; letter-spacing:.06em; font-size:1.9rem;
+    background:linear-gradient(135deg,#ffd54f,#ffb300); color:#3a2b00; border:none; border-radius:16px;
+    padding:16px 46px; cursor:pointer; box-shadow:0 12px 34px rgba(255,193,7,.3); transition:transform .12s, filter .2s}
+  .btn-draw:hover{transform:translateY(-2px)}
+  .btn-draw:disabled{filter:grayscale(.6) brightness(.7); cursor:default; transform:none; box-shadow:none}
+
+  .prizes{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; width:100%; margin-top:30px}
+  @media(max-width:640px){.prizes{grid-template-columns:repeat(2,1fr)}}
+  .pcard{background:rgba(17,24,39,.7); border:1px solid var(--border); border-radius:16px; padding:16px 12px;
+    text-align:center; position:relative; transition:border-color .25s, box-shadow .25s, transform .25s}
+  .pcard .idx{font-family:'Bebas Neue'; font-size:.95rem; color:var(--dim); letter-spacing:.1em}
+  .pcard .name{font-size:.82rem; font-weight:700; line-height:1.25; margin:5px 0 10px; min-height:2.4em;
+    display:flex; align-items:center; justify-content:center}
+  .pcard .num{font-family:'Bebas Neue'; font-size:2.6rem; line-height:1; color:#33415e}
+  .pcard.done{border-color:rgba(255,193,7,.5); box-shadow:0 10px 30px rgba(255,193,7,.14)}
+  .pcard.done .num{color:var(--gold); text-shadow:0 0 22px rgba(255,193,7,.4)}
+  .pcard.next{border-color:var(--gold); animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,193,7,.0)}50%{box-shadow:0 0 0 4px rgba(255,193,7,.16)}}
+
+  .stage-actions{margin-top:26px; display:flex; gap:12px; flex-wrap:wrap; justify-content:center}
+  .stage-actions .btn{width:auto; padding:12px 22px}
+  footer{margin-top:34px; font-size:.72rem; color:var(--dim); letter-spacing:.08em; text-align:center}
+  #confetti{position:fixed; inset:0; pointer-events:none; z-index:50}
+  @media (prefers-reduced-motion: reduce){ .pcard.next{animation:none} }
+
+  /* ---- Puerta privada ---- */
+  #gate{position:fixed; inset:0; z-index:1000; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; padding:24px}
+  #gate.hidden{display:none}
+  .gate-box{width:100%; max-width:360px; background:rgba(17,24,39,.72); border:1px solid var(--border);
+    border-radius:20px; padding:36px 28px; text-align:center; backdrop-filter:blur(8px)}
+  .gate-box .mark{font-family:'Permanent Marker',cursive; font-size:2.4rem; color:#fff;
+    text-shadow:0 0 26px rgba(21,101,192,.6); margin-bottom:12px}
+  .gate-title{font-family:'Bebas Neue'; font-weight:400; font-size:1.7rem; letter-spacing:.05em; color:var(--gold)}
+  .gate-sub{font-size:.85rem; color:var(--dim); margin:6px 0 22px}
+  #gate input{width:100%; background:#0c1122; border:1px solid var(--border); border-radius:11px; padding:14px;
+    color:var(--text); font-family:'Barlow'; font-size:1rem; outline:none; text-align:center; letter-spacing:.08em}
+  #gate input:focus{border-color:var(--gold)}
+  #gate button{margin-top:14px; width:100%; font-family:'Barlow'; font-weight:800; letter-spacing:.08em;
+    text-transform:uppercase; border:none; border-radius:12px; padding:14px; font-size:.9rem; cursor:pointer;
+    background:linear-gradient(135deg,#ffd54f,#ffb300); color:#3a2b00}
+  .gate-err{color:var(--pink); font-size:.82rem; font-weight:700; min-height:20px; margin-top:12px}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="gate-box">
+    <div class="mark">amf</div>
+    <div class="gate-title">Acceso restringido</div>
+    <div class="gate-sub">Sorteo privado · introduce la contraseña</div>
+    <input id="gatePass" type="password" placeholder="Contraseña" autocomplete="off">
+    <button id="gateBtn">Entrar</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+<canvas id="confetti"></canvas>
+
+<div class="topbar">
+  <div class="mark">amf</div>
+  <div class="eyebrow">IV Máster de Melide · Sorteo en directo</div>
+</div>
+
+<!-- CONFIG -->
+<div class="config" id="config">
+  <h2>Preparar el sorteo</h2>
+  <p class="sub">Cuenta las rifas vendidas e indica hasta qué número llega. Luego edita los premios si hace falta.</p>
+
+  <label for="total">Números en el bombo (según rifas vendidas)</label>
+  <div class="num-big"><input type="number" id="total" min="4" value="250" inputmode="numeric"></div>
+
+  <label>Premios</label>
+  <div class="prize-inputs" id="prizeInputs"></div>
+
+  <div class="cfg-actions"><button class="btn gold" id="startBtn">Comenzar sorteo</button></div>
+  <div class="err" id="cfgErr"></div>
+</div>
+
+<!-- STAGE -->
+<div class="stage" id="stage">
+  <div class="range-tag">Sorteando entre los números <b id="rangeTxt">1–250</b></div>
+  <div class="prize-now" id="prizeNow"></div>
+  <div class="bombo-wrap"><div class="bombo idle" id="bombo">—</div></div>
+  <button class="btn-draw" id="drawBtn">Sortear premio 1</button>
+
+  <div class="prizes" id="prizes"></div>
+
+  <div class="stage-actions">
+    <button class="btn ghost" id="editBtn">Editar configuración</button>
+    <button class="btn ghost" id="resetBtn">Reiniciar sorteo</button>
+  </div>
+</div>
+
+<footer>Asociación Melide Futbolín</footer>
+
+<script>
+const PREMIOS_DEFAULT = ["PlayStation 5","Tatuaje en Bunker Tattoo","Regalo Tienda Cultura Urbana","Regalo Bodegas Mejuto"];
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let state = { total:250, premios:[], drawn:new Set(), order:[], step:0, rolling:false };
+
+/* ---- Config UI ---- */
+function buildPrizeInputs(){
+  document.getElementById('prizeInputs').innerHTML = PREMIOS_DEFAULT.map((p,i)=>
+    `<div class="row"><span class="pn">${i+1}</span>
+     <input type="text" class="pin" data-i="${i}" value="${p}" maxlength="42"></div>`).join('');
+}
+buildPrizeInputs();
+
+document.getElementById('startBtn').onclick = ()=>{
+  const total = parseInt(document.getElementById('total').value,10);
+  const err = document.getElementById('cfgErr');
+  if(isNaN(total) || total < 4){ err.textContent = 'Pon un número total de al menos 4 (uno por premio).'; return; }
+  err.textContent='';
+  state.total = total;
+  state.premios = [...document.querySelectorAll('.pin')].map(inp=>({name:inp.value.trim()||'Premio', number:null}));
+  state.drawn = new Set(); state.step = 0; state.rolling=false;
+  state.order = state.premios.map((_,i)=>i).reverse();
+  document.getElementById('config').style.display='none';
+  document.getElementById('stage').classList.add('show');
+  document.getElementById('rangeTxt').textContent = `1–${total}`;
+  renderPrizes(); updateStage();
+};
+
+document.getElementById('editBtn').onclick = ()=>{
+  document.getElementById('stage').classList.remove('show');
+  document.getElementById('config').style.display='block';
+};
+document.getElementById('resetBtn').onclick = ()=>{
+  state.premios.forEach(p=>p.number=null); state.drawn=new Set(); state.step=0; state.rolling=false;
+  setBombo('—', 'idle'); renderPrizes(); updateStage();
+};
+
+/* ---- Stage ---- */
+function renderPrizes(){
+  const cur = state.step < state.order.length ? state.order[state.step] : -1;
+  document.getElementById('prizes').innerHTML = state.premios.map((p,i)=>{
+    const cls = p.number!=null ? 'done' : (i===cur ? 'next' : '');
+    return `<div class="pcard ${cls}"><div class="idx">Premio ${i+1}</div>
+      <div class="name">${escapeHtml(p.name)}</div>
+      <div class="num">${p.number!=null? p.number : '—'}</div></div>`;
+  }).join('');
+}
+function updateStage(){
+  const done = state.step >= state.premios.length;
+  const btn = document.getElementById('drawBtn');
+  const now = document.getElementById('prizeNow');
+  if(done){
+    btn.disabled = true; btn.textContent = 'Sorteo completo';
+    now.innerHTML = `<span class="small">Ganadores</span>¡Sorteo completo!`;
+  }else{
+    const ci = state.order[state.step];
+    const p = state.premios[ci];
+    btn.disabled = state.rolling;
+    btn.textContent = `Sortear premio ${ci+1}`;
+    now.innerHTML = `<span class="small">Premio ${ci+1}</span>${escapeHtml(p.name)}`;
+  }
+}
+function setBombo(txt, mode){
+  const b = document.getElementById('bombo');
+  b.textContent = txt;
+  b.classList.toggle('idle', mode==='idle');
+}
+
+function randomInt(max){ // 1..max, crypto for fairness
+  const u = new Uint32Array(1);
+  const limit = Math.floor(0xFFFFFFFF / max) * max;
+  let x; do{ crypto.getRandomValues(u); x=u[0]; }while(x>=limit);
+  return (x % max) + 1;
+}
+function pickUnique(){
+  let n; do{ n = randomInt(state.total); }while(state.drawn.has(n));
+  return n;
+}
+
+document.getElementById('drawBtn').onclick = ()=>{
+  if(state.rolling || state.step>=state.premios.length) return;
+  const ci = state.order[state.step];
+  const target = pickUnique();
+  state.rolling = true; updateStage();
+  animateRoll(target, ()=>{
+    state.drawn.add(target);
+    state.premios[ci].number = target;
+    state.step++; state.rolling=false;
+    renderPrizes(); updateStage();
+  });
+};
+
+function animateRoll(target, done){
+  const b = document.getElementById('bombo');
+  b.classList.remove('idle');
+  if(reduced){ setBombo(target); pop(b); burst(); done(); return; }
+  const dur = 2700, t0 = performance.now();
+  let nextFlip = 0, gap = 45;
+  function tick(now){
+    const e = now - t0, p = Math.min(1, e/dur);
+    if(p>=1){ setBombo(target); pop(b); burst(); done(); return; }
+    if(e>=nextFlip){ b.textContent = randomInt(state.total); gap = 45 + 300*p*p; nextFlip = e + gap; }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function pop(b){ b.classList.add('pop'); setTimeout(()=>b.classList.remove('pop'), 220); }
+function escapeHtml(s){ return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---- Confetti ---- */
+const cv = document.getElementById('confetti'), cx = cv.getContext('2d');
+let parts = [], raf=null;
+function resize(){ cv.width=innerWidth; cv.height=innerHeight; }
+resize(); addEventListener('resize', resize);
+function burst(){
+  if(reduced) return;
+  const colors=['#ffc107','#ffffff','#1565c0','#f50057','#ffd54f'];
+  const cxp=innerWidth/2, cyp=innerHeight*0.34;
+  for(let i=0;i<140;i++){
+    const a=Math.random()*Math.PI*2, sp=4+Math.random()*9;
+    parts.push({x:cxp,y:cyp,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,
+      g:.16+Math.random()*.12, s:5+Math.random()*7, rot:Math.random()*6.28,
+      vr:(Math.random()-.5)*.4, c:colors[i%colors.length], life:0, max:90+Math.random()*40});
+  }
+  if(!raf) raf=requestAnimationFrame(step);
+}
+function step(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{ p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life++; });
+  parts = parts.filter(p=>p.life<p.max && p.y<cv.height+40);
+  parts.forEach(p=>{
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.rot);
+    cx.globalAlpha = Math.max(0, 1 - p.life/p.max);
+    cx.fillStyle=p.c; cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.6); cx.restore();
+  });
+  if(parts.length){ raf=requestAnimationFrame(step); } else { cx.clearRect(0,0,cv.width,cv.height); raf=null; }
+}
+
+/* keyboard: Enter/Espacio para sortear */
+addEventListener('keydown', e=>{
+  if((e.key==='Enter'||e.key===' ') && document.getElementById('stage').classList.contains('show')){
+    e.preventDefault(); document.getElementById('drawBtn').click();
+  }
+});
+
+/* ---- Puerta privada (contraseña para abrir el sorteo) ---- */
+const CLAVE_SORTEO = "amf-sorteo-2026";   // <-- cambia aquí la contraseña
+(function(){
+  const gate=document.getElementById('gate'), gp=document.getElementById('gatePass'),
+        gb=document.getElementById('gateBtn'), ge=document.getElementById('gateErr');
+  function entrar(){
+    if(gp.value===CLAVE_SORTEO){ gate.classList.add('hidden'); }
+    else { ge.textContent='Contraseña incorrecta'; gp.value=''; gp.focus(); }
+  }
+  gb.onclick=entrar;
+  gp.addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
+  gp.focus();
+})();
+</script>
+</body>
+</html>
