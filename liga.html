@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liga Melide 2026 · AMF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --field:#0e4034; --field-2:#0a2e24; --panel:#123f33;
+    --chalk:#eef3ec; --muted:#9db6a9; --line:rgba(238,243,236,.14);
+    --rojo:#e24a3d; --rojo-soft:rgba(226,74,61,.15);
+    --azul:#2f83d1; --azul-soft:rgba(47,131,209,.15);
+    --oro:#f2c14e; --ok:#5dc48d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 600px at 50% -10%, #16513f 0%, var(--field) 45%, var(--field-2) 100%);
+    color:var(--chalk);font-family:'Inter',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:22px 16px 60px}
+  a{color:inherit}
+  header{border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    background:linear-gradient(180deg,#134534,#0f3a2d);position:relative;margin-bottom:14px}
+  header::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent calc(50% - 1px),var(--line) 50%,transparent calc(50% + 1px)),
+    radial-gradient(circle at 50% 50%, transparent 44px, var(--line) 45px, transparent 46px);opacity:.7}
+  .head-inner{padding:24px 22px;position:relative}
+  .eyebrow{font-size:12px;letter-spacing:.28em;color:var(--muted);text-transform:uppercase;font-weight:600}
+  h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:clamp(38px,8vw,60px);line-height:.92;letter-spacing:.5px;margin:6px 0 10px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;background:rgba(238,243,236,.08);border:1px solid var(--line)}
+  .chip b{font-family:'Bebas Neue';font-size:16px;font-weight:400;margin-right:2px}
+  .adminbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:16px;background:rgba(10,46,36,.5)}
+  .adminbar .msg{font-size:12.5px;color:var(--muted)}
+  .adminbar .right{display:flex;align-items:center;gap:8px}
+  .btn{font-family:'Inter';font-weight:600;font-size:13px;border:1px solid var(--line);background:transparent;
+    color:var(--chalk);padding:8px 13px;border-radius:9px;cursor:pointer;transition:.15s}
+  .btn:hover{background:rgba(238,243,236,.08)}
+  .btn.gold{background:var(--oro);color:#3a2c00;border-color:var(--oro)}
+  input.pass{font-family:'Inter';font-size:13px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(0,0,0,.2);color:var(--chalk);width:150px}
+  .badge{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;letter-spacing:.04em}
+  .badge.edit{background:rgba(242,193,78,.16);color:var(--oro);border:1px solid rgba(242,193,78,.4)}
+  .save-state{font-size:12px;color:var(--muted);min-width:74px;text-align:right}
+  .save-state.ok{color:var(--ok)} .save-state.err{color:var(--rojo)}
+  nav.tabs{display:flex;gap:6px;margin:0 0 18px;background:rgba(10,46,36,.6);padding:6px;border-radius:12px;border:1px solid var(--line)}
+  nav.tabs button{flex:1;padding:11px 8px;border:0;border-radius:8px;cursor:pointer;background:transparent;color:var(--muted);font-weight:600;font-size:14px}
+  nav.tabs button[aria-selected="true"]{background:var(--chalk);color:var(--field-2)}
+  .view{display:none}.view.active{display:block}
+  .groups{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.groups{grid-template-columns:1fr}}
+  .gcard{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+  .gcard .gh{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-family:'Bebas Neue';font-size:24px;letter-spacing:.5px}
+  .gcard.a .gh{background:var(--rojo-soft);border-bottom:2px solid var(--rojo)}
+  .gcard.b .gh{background:var(--azul-soft);border-bottom:2px solid var(--azul)}
+  .gh small{font-family:'Inter';font-size:12px;font-weight:600;color:var(--muted)}
+  .team{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--line);font-size:14.5px}
+  .team:first-of-type{border-top:0}
+  .rod{width:7px;height:22px;border-radius:3px;flex:none}
+  .a .rod{background:var(--rojo)}.b .rod{background:var(--azul)}
+  .tname{font-weight:500;flex:1}
+  .star{color:var(--oro);font-size:13px}
+  .subtabs{display:flex;gap:8px;margin-bottom:16px}
+  .subtabs button{padding:9px 16px;border-radius:10px;border:1px solid var(--line);cursor:pointer;background:transparent;color:var(--muted);font-weight:600;font-size:14px}
+  .subtabs button.on.a{background:var(--rojo);border-color:var(--rojo);color:#fff}
+  .subtabs button.on.b{background:var(--azul);border-color:var(--azul);color:#fff}
+  .leg-label{font-family:'Bebas Neue';font-size:15px;letter-spacing:.18em;color:var(--muted);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .leg-label::after{content:"";flex:1;height:1px;background:var(--line)}
+  .jornada{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden;background:rgba(10,46,36,.35)}
+  .jh{padding:9px 14px;font-family:'Bebas Neue';font-size:19px;letter-spacing:.5px;background:rgba(238,243,236,.05);display:flex;justify-content:space-between;align-items:center}
+  .jh span{font-family:'Inter';font-size:11px;font-weight:600;color:var(--muted)}
+  .match{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line);font-size:14px}
+  .match .h{text-align:right}.match .aw{text-align:left}
+  .mstar{color:var(--oro);font-size:11px}
+  .score{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:8px;padding:3px 6px}
+  .score em{color:var(--muted);font-style:normal;font-weight:700}
+  .sc{width:26px;height:26px;text-align:center;border:0;border-radius:5px;background:transparent;color:var(--chalk);font-weight:700;font-size:15px;font-family:'Bebas Neue';-moz-appearance:textfield}
+  .sc::-webkit-outer-spin-button,.sc::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .sc:not(:disabled){background:rgba(242,193,78,.12);outline:1px solid rgba(242,193,78,.35)}
+  .sc:disabled{cursor:default}
+  .bye{padding:9px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);font-style:italic}
+  .foot{margin-top:20px;font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="head-inner">
+    <div class="eyebrow">AMF · Melide · Futbolín</div>
+    <h1>Liga Melide 2026</h1>
+    <div class="chips">
+      <span class="chip"><b>19</b> parejas</span>
+      <span class="chip"><b>2</b> grupos</span>
+      <span class="chip">Ida y vuelta</span>
+    </div>
+  </div></header>
+
+  <div class="adminbar">
+    <span class="msg" id="adminMsg">Resultados en tiempo real. Los actualiza la organización.</span>
+    <div class="right" id="adminCtrls"><button class="btn" id="loginBtn">🔒 Acceso admin</button></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-view="grupos">Grupos</button>
+    <button role="tab" aria-selected="false" data-view="calendario">Calendario</button>
+  </nav>
+
+  <section id="grupos" class="view active"><div class="groups" id="groupsWrap"></div></section>
+  <section id="calendario" class="view">
+    <div class="subtabs" id="subtabs">
+      <button class="on a" data-g="A">Grupo A</button>
+      <button class="b" data-g="B">Grupo B</button>
+    </div>
+    <div id="calWrap"></div>
+  </section>
+
+  <p class="foot">Asociación Melide Futbolín · <a href="https://amfmelide.es">amfmelide.es</a></p>
+</div>
+
+<script>
+/* Configuración de la liga (ya rellenada) */
+const CONFIG = {
+  URL:    "https://axjanluawnatwqmwwbgd.supabase.co",
+  ANON:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4amFubHVhd25hdHdxbXd3YmdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTc1NzIsImV4cCI6MjA5Mzk5MzU3Mn0.jwn_kQkm85j7dYh2JUm74P_x_5KfdbC8pZBcV1WJ9pE",
+  CODIGO: "liga-melide-2026"
+};
+const REST = CONFIG.URL + "/rest/v1/liga_publica";
+const FUNC = CONFIG.URL + "/functions/v1/guardar-liga";
+
+const equipos = [
+  {id:1, nombre:'Ivan Mateo Seo',    elite:true },
+  {id:2, nombre:'Cesar-Xoel',        elite:false},
+  {id:3, nombre:'Xoaniñas',          elite:false},
+  {id:4, nombre:'Peti-Nati',         elite:false},
+  {id:5, nombre:'Juan-Carolo',       elite:false},
+  {id:6, nombre:'Oscar-Yeray',       elite:true },
+  {id:7, nombre:'Iker-Lucas',        elite:false},
+  {id:8, nombre:'Carril-Javi',       elite:true },
+  {id:9, nombre:'Gomez-Carioca',     elite:true },
+  {id:10,nombre:'Teixeira-Granja',   elite:true },
+  {id:11,nombre:'Xandre-Costo',      elite:true },
+  {id:12,nombre:'Ayude-Marcos',      elite:false},
+  {id:13,nombre:'Quevedo-Javito',    elite:true },
+  {id:14,nombre:'Ivan-Malova-Jacobo',elite:false},
+  {id:15,nombre:'Lois-Blanco',       elite:true },
+  {id:16,nombre:'Miguez-Suso',       elite:true },
+  {id:17,nombre:'Pepe Maconha',      elite:false},
+  {id:18,nombre:'Manolo-Messi',      elite:true },
+  {id:19,nombre:'Lucia-Lorena',      elite:false},
+];
+const byId = id => equipos.find(e=>e.id===id);
+const grupos = { A:[1,6,15,9,10, 2,3,4,5,7], B:[11,13,8,16,18, 12,14,17,19] };
+
+let resultados = {};
+let admin = false, adminPass = null, saveTimer = null;
+
+function calendario(ids){
+  let teams = ids.map(byId);
+  if(teams.length%2) teams.push({id:'BYE',nombre:'Descansa',bye:true});
+  const m=teams.length, rounds=m-1, half=m/2;
+  const fixed=teams[0]; let rot=teams.slice(1); const ida=[];
+  for(let r=0;r<rounds;r++){
+    const arr=[fixed,...rot], ms=[];
+    for(let i=0;i<half;i++){ let h=arr[i],a=arr[m-1-i]; if(r%2)[h,a]=[a,h]; ms.push({home:h,away:a}); }
+    ida.push(ms); rot.unshift(rot.pop());
+  }
+  const vuelta=ida.map(js=>js.map(x=>({home:x.away,away:x.home})));
+  return [...ida,...vuelta];
+}
+
+async function sbGet(){
+  try{
+    const u=`${REST}?codigo=eq.${encodeURIComponent(CONFIG.CODIGO)}&select=datos`;
+    const r=await fetch(u,{headers:{apikey:CONFIG.ANON,Authorization:'Bearer '+CONFIG.ANON}});
+    const rows=await r.json();
+    if(rows&&rows[0]&&rows[0].datos&&typeof rows[0].datos==='object') return rows[0].datos;
+  }catch(e){ console.warn('sbGet',e); }
+  return {};
+}
+async function callFunc(body){
+  try{
+    const r=await fetch(FUNC,{method:'POST',headers:{
+      'Content-Type':'application/json',apikey:CONFIG.ANON,Authorization:'Bearer '+CONFIG.ANON
+    },body:JSON.stringify(body)});
+    let j={}; try{ j=await r.json(); }catch(e){}
+    return {ok:r.ok&&j.ok===true,status:r.status};
+  }catch(e){ return {ok:false,status:0}; }
+}
+function setSave(t,c){ const el=document.getElementById('saveState'); if(el){el.textContent=t; el.className='save-state '+(c||'');} }
+function queueSave(){
+  if(!admin) return;
+  setSave('Guardando…','');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    const res=await callFunc({action:'guardar',pass:adminPass,codigo:CONFIG.CODIGO,datos:resultados});
+    setSave(res.ok?'Guardado ✓':'Error al guardar', res.ok?'ok':'err');
+  },600);
+}
+
+function star(t){return t.elite?' <span class="mstar">★</span>':''}
+function renderGrupos(){
+  document.getElementById('groupsWrap').innerHTML=['A','B'].map(g=>{
+    const cls=g==='A'?'a':'b';
+    const rows=grupos[g].map(id=>{const t=byId(id);
+      return `<div class="team"><span class="rod"></span><span class="tname">${t.nombre}</span>${t.elite?'<span class="star">★</span>':''}</div>`;
+    }).join('');
+    return `<div class="gcard ${cls}"><div class="gh">Grupo ${g}<small>${grupos[g].length} parejas · 5 elite</small></div>${rows}</div>`;
+  }).join('');
+}
+function scoreCell(g,h,a){
+  const k=`${g}-${h.id}-${a.id}`; const r=resultados[k]||{};
+  const dl=admin?'':'disabled';
+  const vl=(r.l===0||r.l)?r.l:''; const vv=(r.v===0||r.v)?r.v:'';
+  return `<span class="score">
+    <input class="sc" type="number" min="0" max="2" inputmode="numeric" data-k="${k}" data-s="l" value="${vl}" ${dl}>
+    <em>-</em>
+    <input class="sc" type="number" min="0" max="2" inputmode="numeric" data-k="${k}" data-s="v" value="${vv}" ${dl}></span>`;
+}
+function renderJornada(g,ms,n){
+  const rows=ms.map(x=>{
+    if(x.home.bye||x.away.bye){const real=x.home.bye?x.away:x.home;return `<div class="bye">Descansa: ${real.nombre}</div>`;}
+    return `<div class="match"><span class="h">${x.home.nombre}${star(x.home)}</span>${scoreCell(g,x.home,x.away)}<span class="aw">${star(x.away)}${x.away.nombre}</span></div>`;
+  }).join('');
+  const jug=ms.filter(x=>!x.home.bye&&!x.away.bye).length;
+  return `<div class="jornada"><div class="jh">Jornada ${n}<span>${jug} partidos</span></div>${rows}</div>`;
+}
+function renderCalendario(g){
+  const js=calendario(grupos[g]); const half=js.length/2; let html=`<div class="leg-label">Ida</div>`;
+  js.forEach((j,i)=>{ if(i===half) html+=`<div class="leg-label">Vuelta</div>`; html+=renderJornada(g,j,i+1); });
+  document.getElementById('calWrap').innerHTML=html;
+}
+function rerenderScores(){ const a=document.querySelector('#subtabs button.on'); renderCalendario(a?a.dataset.g:'A'); }
+
+function showLogin(){
+  document.getElementById('adminCtrls').innerHTML=
+    `<input class="pass" id="passIn" type="password" placeholder="Contraseña" autocomplete="off">
+     <button class="btn gold" id="okBtn">Entrar</button>
+     <button class="btn" id="cancelBtn">Cancelar</button>`;
+  const pin=document.getElementById('passIn'); pin.focus();
+  const go=async()=>{
+    const okBtn=document.getElementById('okBtn'); okBtn.textContent='…';
+    const res=await callFunc({action:'verificar',pass:pin.value});
+    if(res.ok){ adminPass=pin.value; admin=true; enterAdmin(); }
+    else { pin.value=''; pin.placeholder='Incorrecta'; okBtn.textContent='Entrar'; }
+  };
+  document.getElementById('okBtn').onclick=go;
+  pin.onkeydown=e=>{ if(e.key==='Enter') go(); };
+  document.getElementById('cancelBtn').onclick=renderAdminBar;
+}
+function enterAdmin(){
+  document.getElementById('adminMsg').textContent='Modo edición: escribe el marcador de cada partido (se guarda solo).';
+  document.getElementById('adminCtrls').innerHTML=
+    `<span class="save-state" id="saveState"></span><span class="badge edit">✎ Editando</span><button class="btn" id="exitBtn">Salir</button>`;
+  document.getElementById('exitBtn').onclick=()=>{ admin=false; adminPass=null; renderAdminBar(); rerenderScores(); };
+  rerenderScores();
+}
+function renderAdminBar(){
+  document.getElementById('adminMsg').textContent='Resultados en tiempo real. Los actualiza la organización.';
+  document.getElementById('adminCtrls').innerHTML=`<button class="btn" id="loginBtn">🔒 Acceso admin</button>`;
+  document.getElementById('loginBtn').onclick=showLogin;
+}
+
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-selected','false'));
+  b.setAttribute('aria-selected','true');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(b.dataset.view).classList.add('active');
+});
+document.querySelectorAll('#subtabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#subtabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); renderCalendario(b.dataset.g);
+});
+document.addEventListener('input',e=>{
+  const el=e.target; if(!el.classList||!el.classList.contains('sc')) return;
+  if(!admin){ el.value=''; return; }
+  let n=parseInt(el.value,10);
+  if(isNaN(n)) n=undefined; else { n=Math.max(0,Math.min(2,n)); el.value=n; }
+  const k=el.dataset.k,s=el.dataset.s; resultados[k]=resultados[k]||{};
+  if(n===undefined) delete resultados[k][s]; else resultados[k][s]=n;
+  if(resultados[k].l===undefined&&resultados[k].v===undefined) delete resultados[k];
+  queueSave();
+});
+document.getElementById('loginBtn').onclick=showLogin;
+
+(async function(){
+  renderGrupos(); renderCalendario('A');
+  const data=await sbGet();
+  if(data&&Object.keys(data).length){ resultados=data; renderCalendario('A'); }
+})();
+</script>
+</body>
+</html>
