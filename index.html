@@ -152,6 +152,20 @@
     white-space: nowrap; z-index: 9999; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
   #toast-main.show { transform: translateX(-50%) translateY(0); }
+  /* Banner patrocinadores */
+  .patro-banner{ display:flex; align-items:center; justify-content:space-between; gap:20px;
+    width:100%; margin-top:22px; text-decoration:none; color:var(--text); position:relative; z-index:2;
+    background:linear-gradient(135deg, rgba(255,193,7,.15), rgba(21,101,192,.10));
+    border:1px solid rgba(255,193,7,.4); border-radius:16px; padding:22px 28px;
+    overflow:hidden; transition:all .25s; backdrop-filter:blur(10px); }
+  .patro-banner::before{ content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg, transparent, rgba(255,255,255,.03)); pointer-events:none; }
+  .patro-banner:hover{ transform:translateY(-3px); border-color:var(--gold); box-shadow:0 16px 40px rgba(255,193,7,.18); }
+  .pb-kicker{ font-size:.7rem; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); font-weight:800; }
+  .pb-title{ font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:.05em; color:#fff; line-height:1; margin-top:5px; }
+  .pb-sub{ font-size:.82rem; color:var(--text-dim); margin-top:7px; }
+  .pb-arrow{ font-family:'Bebas Neue',sans-serif; font-size:2.6rem; color:var(--gold); flex:none; line-height:1; }
+  @media(max-width:520px){ .pb-title{font-size:1.6rem} .pb-sub{font-size:.74rem} .patro-banner{padding:18px 20px} }
 </style>
 </head>
 <body>
@@ -208,6 +222,16 @@
       <div class="card-desc">Reglamento y estatutos oficiales</div>
     </a>
   </div>
+  <!-- BANNER PATROCINADORES -->
+  <!-- Pon en href la URL de la pagina de patrocinadores del companero (p.ej. https://usuario.github.io/patrocinadores/). De momento va a "#". -->
+  <a class="patro-banner" href="#" target="_blank" rel="noopener">
+    <div>
+      <div class="pb-kicker">Con el apoyo de</div>
+      <div class="pb-title">Patrocinadores</div>
+      <div class="pb-sub">Restauración · Fiesta · Empresas que hacen posible el Máster</div>
+    </div>
+    <div class="pb-arrow">→</div>
+  </a>
   <!-- CONTADOR INSCRITOS -->
   <div style="position:relative;z-index:2;text-align:center;margin-top:32px;">
     <div class="inscritos-box">
