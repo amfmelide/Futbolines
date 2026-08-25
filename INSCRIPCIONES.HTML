@@ -58,6 +58,15 @@
 
   .participantes-wrap { max-width: 900px; margin: 30px auto 0; padding: 0 20px; }
   .live-counter-box { text-align: center; padding: 24px 0 20px; }
+  .dual-counter { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .dual-box { flex: 1; min-width: 150px; max-width: 260px; background: rgba(17,24,39,0.9); border: 2px solid; border-radius: 20px; padding: 22px 20px; box-shadow: 0 0 40px rgba(0,0,0,0.2); }
+  .dual-box.mov { border-color: rgba(245,0,87,0.45); box-shadow: 0 0 40px rgba(245,0,87,0.12); }
+  .dual-box.par { border-color: rgba(21,101,192,0.45); box-shadow: 0 0 40px rgba(21,101,192,0.12); }
+  .dual-icon { font-size: 1.8rem; line-height: 1; margin-bottom: 4px; }
+  .dual-num { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 1; }
+  .dual-box.mov .dual-num { color: #f50057; text-shadow: 0 0 30px rgba(245,0,87,0.5); }
+  .dual-box.par .dual-num { color: #4a86e8; text-shadow: 0 0 30px rgba(21,101,192,0.5); }
+  .dual-label { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-size: 0.8rem; color: #7a8fa8; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; }
   .live-counter-inner { display: inline-flex; flex-direction: column; align-items: center; background: rgba(17,24,39,0.9); border: 2px solid rgba(0,200,83,0.4); border-radius: 20px; padding: 20px 48px; box-shadow: 0 0 40px rgba(0,200,83,0.15); }
   .live-counter-num { font-family: 'Bebas Neue', sans-serif; font-size: 4.5rem; color: #00c853; line-height: 1; text-shadow: 0 0 30px rgba(0,200,83,0.5); }
   .live-counter-label { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
@@ -277,11 +286,19 @@
 <div id="tab-participantes" style="display:none">
   <div class="participantes-wrap">
     <div class="live-counter-box">
-      <div class="live-counter-inner">
-        <div class="live-counter-num" id="part-total-counter">--</div>
-        <div class="live-counter-label"><span class="live-dot"></span><span>Equipos inscritos</span></div>
-        <div class="live-cats" id="part-cat-mini"></div>
+      <div class="dual-counter">
+        <div class="dual-box mov">
+          <div class="dual-icon">🔄</div>
+          <div class="dual-num" id="part-mov-counter">--</div>
+          <div class="dual-label"><span class="live-dot" style="background:#f50057"></span>Movimiento</div>
+        </div>
+        <div class="dual-box par">
+          <div class="dual-icon">✋</div>
+          <div class="dual-num" id="part-par-counter">--</div>
+          <div class="dual-label"><span class="live-dot" style="background:#1565c0"></span>Parado</div>
+        </div>
       </div>
+      <div class="live-cats" id="part-cat-mini" style="justify-content:center;margin-top:14px;"></div>
     </div>
     <div class="stats-row" id="part-stats-row"></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;">
@@ -334,6 +351,10 @@
         <select class="filter-select" id="filter-cat" onchange="renderTable()">
           <option value="">Todas las categorías</option>
           <option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+        </select>
+        <select class="filter-select" id="filter-mod-admin" onchange="renderTable()">
+          <option value="">Todas las modalidades</option>
+          <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option>
         </select>
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
@@ -628,14 +649,14 @@ function loadParticipantes() {
       var rows = data.rows || [];
       window._partRows = rows;
 
-      animCounter(document.getElementById('part-total-counter'), rows.length);
+      // Participaciones por modalidad (una pareja en las 2 cuenta en ambas)
+      var totalMov = rows.filter(function(r){ return r[11]; }).length;
+      var totalPar = rows.filter(function(r){ return r[12]; }).length;
+      animCounter(document.getElementById('part-mov-counter'), totalMov);
+      animCounter(document.getElementById('part-par-counter'), totalPar);
 
       var mini = document.getElementById('part-cat-mini');
-      mini.innerHTML = CATS.map(function(cat){
-        var n = rows.filter(function(r){ return r[11]===cat || r[12]===cat; }).length;
-        if (!n) return '';
-        return '<span style="font-size:0.72rem;color:'+CAT_COLORS[cat]+';font-weight:700;">'+CAT_EMOJI[cat]+' '+cat+' <span style="color:#e8edf5;">'+n+'</span></span>';
-      }).join('<span style="color:#1e2d45;margin:0 4px;">·</span>');
+      mini.innerHTML = '';
 
       var zonas = rows.map(function(r){return r[6];}).filter(Boolean);
       var zonasUnicas = zonas.filter(function(v,i){ return zonas.indexOf(v)===i; });
@@ -646,14 +667,16 @@ function loadParticipantes() {
       var statsRow = document.getElementById('part-stats-row');
       statsRow.innerHTML =
         '<div class="stats-box"><div class="slabel">Total equipos</div><div class="snum" style="color:#7cb3ff;">'+rows.length+'</div></div>' +
+        '<div class="stats-box"><div class="slabel">🔄 Movimiento</div><div class="snum" style="color:#f50057;">'+totalMov+'</div></div>' +
+        '<div class="stats-box"><div class="slabel">✋ Parado</div><div class="snum" style="color:#4a86e8;">'+totalPar+'</div></div>' +
         '<div class="stats-box"><div class="slabel">Zonas</div><div class="snum" style="color:#ffc107;">'+zonasUnicas.length+'</div></div>' +
-        '<div class="stats-box"><div class="slabel">Zona con más parejas</div><div class="snum" style="color:#00c853;font-size:1.3rem;">📍 '+zonaTop+(zonaTopN>1?' <span style="color:#7a8fa8;font-size:0.9rem;">('+zonaTopN+')</span>':'')+'</div></div>' +
-        CATS.map(function(cat){ var n=rows.filter(function(r){return r[11]===cat||r[12]===cat;}).length; return '<div class="stats-box '+cat.toLowerCase()+'"><div class="slabel">'+cat+'</div><div class="snum">'+n+'</div></div>'; }).join('');
+        '<div class="stats-box"><div class="slabel">Zona con más parejas</div><div class="snum" style="color:#00c853;font-size:1.3rem;">📍 '+zonaTop+(zonaTopN>1?' <span style="color:#7a8fa8;font-size:0.9rem;">('+zonaTopN+')</span>':'')+'</div></div>';
 
       renderParticipantes(rows);
     })
     .catch(function(err){
-      document.getElementById('part-total-counter').textContent = '0';
+      var mc = document.getElementById('part-mov-counter'); if (mc) mc.textContent = '0';
+      var pc = document.getElementById('part-par-counter'); if (pc) pc.textContent = '0';
       document.getElementById('participantes-content').innerHTML = '<div class="error-box"><strong>No se pudieron cargar los participantes.</strong><br>'+ (err && err.message ? err.message : 'Error de conexión') +'</div>';
     });
 }
@@ -664,31 +687,50 @@ function renderParticipantes(rows) {
   var modF = (document.getElementById('filter-part-mod')||{}).value || '';
   var sort  = (document.getElementById('sort-part')||{}).value || 'cat';
 
-  // Filtrar por modalidad: 'mov' => tiene cat en movimiento (r[11]); 'par' => tiene cat en parado (r[12])
-  function pasaMod(r){ return !modF || (modF==='mov' && r[11]) || (modF==='par' && r[12]); }
-  // Comprobar si un equipo está en una categoría, según la modalidad activa
-  function tieneCat(r, cat){
-    if (modF==='mov') return r[11]===cat;
-    if (modF==='par') return r[12]===cat;
-    return r[11]===cat || r[12]===cat;
+  function ordenar(lista){
+    var l = lista.slice();
+    if (sort==='alfa')  l.sort(function(a,b){ return (a[1]||'').localeCompare(b[1]||''); });
+    if (sort==='fecha') l.sort(function(a,b){ return (a[0]||'').localeCompare(b[0]||''); });
+    return l;
   }
 
-  var filtered = rows.filter(function(r){ return pasaMod(r) && (!catF || tieneCat(r, catF)); });
-  if (sort==='alfa')  filtered.sort(function(a,b){ return (a[1]||'').localeCompare(b[1]||''); });
-  if (sort==='fecha') filtered.sort(function(a,b){ return (a[0]||'').localeCompare(b[0]||''); });
+  function bloqueModalidad(modKey, modLabel, modIcon, modColor) {
+    var colIdx = (modKey === 'mov') ? 11 : 12;
+    var equiposMod = rows.filter(function(r){ return r[colIdx]; });
+    if (catF) equiposMod = equiposMod.filter(function(r){ return r[colIdx] === catF; });
+    if (!equiposMod.length) return '';
+
+    var h = '<div style="margin:10px 0 28px;">';
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;background:'+modColor+'22;border:1px solid '+modColor+'55;border-radius:12px;">';
+    h += '<span style="font-size:1.5rem;">'+modIcon+'</span>';
+    h += '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.5rem;letter-spacing:0.06em;color:'+modColor+';">'+modLabel+'</span>';
+    h += '<span style="margin-left:auto;font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:#e8edf5;">'+equiposMod.length+'</span>';
+    h += '</div>';
+
+    if (sort==='cat') {
+      CATS.forEach(function(cat){
+        var eq = ordenar(equiposMod.filter(function(r){ return r[colIdx]===cat; }));
+        if (!eq.length) return;
+        h += '<div class="cat-section"><div class="cat-title '+cat.toLowerCase()+'">'+CAT_EMOJI[cat]+' '+cat.toUpperCase()+' — '+eq.length+' equipo'+(eq.length>1?'s':'')+'</div>';
+        eq.forEach(function(r,i){ h += equipoCard(r, i+1); });
+        h += '</div>';
+      });
+    } else {
+      ordenar(equiposMod).forEach(function(r,i){ h += equipoCard(r, i+1); });
+    }
+    h += '</div>';
+    return h;
+  }
 
   var html = '';
-  if (sort==='cat' && !catF) {
-    CATS.forEach(function(cat){
-      var eq = filtered.filter(function(r){ return tieneCat(r, cat); });
-      if (!eq.length) return;
-      html += '<div class="cat-section"><div class="cat-title '+cat.toLowerCase()+'">'+CAT_EMOJI[cat]+' '+cat.toUpperCase()+' — '+eq.length+' equipo'+(eq.length>1?'s':'')+'</div>';
-      eq.forEach(function(r,i){ html += equipoCard(r, i+1); });
-      html += '</div>';
-    });
+  if (modF === 'mov') {
+    html = bloqueModalidad('mov', 'MOVIMIENTO', '🔄', '#f50057');
+  } else if (modF === 'par') {
+    html = bloqueModalidad('par', 'PARADO', '✋', '#4a86e8');
   } else {
-    filtered.forEach(function(r,i){ html += equipoCard(r, i+1); });
+    html = bloqueModalidad('mov', 'MOVIMIENTO', '🔄', '#f50057') + bloqueModalidad('par', 'PARADO', '✋', '#4a86e8');
   }
+
   document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes para ese filtro</p></div>';
 }
 
@@ -767,12 +809,16 @@ function renderTable() {
   var q  = (document.getElementById('search-admin').value||'').toLowerCase();
   var cf = document.getElementById('filter-cat').value;
   var pf = document.getElementById('filter-pago').value;
+  var mf = (document.getElementById('filter-mod-admin')||{}).value || '';
   var filtered = allData.filter(function(r){
     var ms = !q  || [r[1],r[2],r[4],r[6]].some(function(v){ return (v||'').toLowerCase().indexOf(q)>=0; });
     var mc = !cf || r[11]===cf || r[12]===cf;
     var mp = !pf || r[3]===pf  || r[5]===pf;
-    return ms && mc && mp;
+    var mm = !mf || (mf==='mov' && r[11]) || (mf==='par' && r[12]);
+    return ms && mc && mp && mm;
   });
+  window._adminFiltered = filtered;
+  window._adminModFilter = mf;
   var tbody = document.getElementById('table-body');
   if (!filtered.length) { tbody.innerHTML=''; document.getElementById('empty-state').style.display='block'; return; }
   document.getElementById('empty-state').style.display = 'none';
@@ -914,14 +960,39 @@ function loadHistorial() {
 }
 
 function exportCSV() {
-  if (!allData.length) { showToast('No hay datos'); return; }
-  var headers = ['Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas'];
-  var rows = [headers].concat(allData).map(function(r){ return r.slice(0,15).map(function(c){ return '"'+(c||'')+'"'; }).join(','); }).join('\n');
+  var mf = window._adminModFilter || '';
+  var datos = window._adminFiltered || allData;
+  if (!datos.length) { showToast('No hay datos para exportar'); return; }
+
+  var headers = ['Modalidad','Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas'];
+  var lineas = [headers.map(function(c){ return '"'+c+'"'; }).join(',')];
+
+  datos.forEach(function(r){
+    var modalidades = [];
+    if (mf === 'mov') { if (r[11]) modalidades.push('Movimiento'); }
+    else if (mf === 'par') { if (r[12]) modalidades.push('Parado'); }
+    else {
+      if (r[11]) modalidades.push('Movimiento');
+      if (r[12]) modalidades.push('Parado');
+    }
+    // Si hay filtro de modalidad y esta fila no tiene esa modalidad, se omite (no se exporta vacía)
+    if (!modalidades.length) return;
+
+    modalidades.forEach(function(mod){
+      var fila = [mod].concat(r.slice(0,15));
+      lineas.push(fila.map(function(c){ return '"'+(c===undefined||c===null?'':c)+'"'; }).join(','));
+    });
+  });
+
+  var nombre = 'inscripciones_amf';
+  if (mf === 'mov') nombre = 'inscripciones_MOVIMIENTO';
+  if (mf === 'par') nombre = 'inscripciones_PARADO';
+
   var a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows], {type:'text/csv;charset=utf-8;'}));
-  a.download = 'inscripciones_amf.csv';
+  a.href = URL.createObjectURL(new Blob(['\ufeff' + lineas.join('\n')], {type:'text/csv;charset=utf-8;'}));
+  a.download = nombre + '.csv';
   a.click();
-  showToast('⬇️ CSV descargado');
+  showToast('⬇️ CSV descargado ('+ datos.length +' equipos)');
 }
 </script>
 </body>
