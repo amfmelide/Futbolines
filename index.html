@@ -114,6 +114,28 @@
   .cd-label { font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; display: block; }
   .cd-title { font-size: 0.78rem; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
   .inscritos-box { display: inline-flex; flex-direction: column; align-items: center; background: rgba(17,24,39,0.8); border: 1px solid rgba(0,200,83,0.3); border-radius: 14px; padding: 14px 28px; margin-bottom: 24px; backdrop-filter: blur(10px); }
+  /* Bloque destacado de inscripciones (portada) */
+  .destacado-inscripciones { width: 100%; margin: 0 0 30px; padding: 26px 22px; border-radius: 20px;
+    background: linear-gradient(135deg, rgba(245,0,87,0.10), rgba(21,101,192,0.10));
+    border: 1px solid rgba(255,193,7,0.35); backdrop-filter: blur(10px); text-align: center; position: relative; z-index: 2; }
+  .di-titulo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 4vw, 2.1rem); letter-spacing: 0.04em; color: var(--gold); margin-bottom: 20px; }
+  .dual-counter { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .dual-box { flex: 1; min-width: 140px; max-width: 240px; background: rgba(10,14,26,0.6); border: 2px solid; border-radius: 18px; padding: 20px 16px; }
+  .dual-box.mov { border-color: rgba(245,0,87,0.5); box-shadow: 0 0 30px rgba(245,0,87,0.15); }
+  .dual-box.par { border-color: rgba(21,101,192,0.5); box-shadow: 0 0 30px rgba(21,101,192,0.15); }
+  .dual-icon { font-size: 1.7rem; line-height: 1; margin-bottom: 4px; }
+  .dual-num { font-family: 'Bebas Neue', sans-serif; font-size: 3.6rem; line-height: 1; }
+  .dual-box.mov .dual-num { color: #f50057; text-shadow: 0 0 30px rgba(245,0,87,0.5); }
+  .dual-box.par .dual-num { color: #4a86e8; text-shadow: 0 0 30px rgba(21,101,192,0.5); }
+  .dual-label { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; font-size: 0.78rem; color: #7a8fa8; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+  .di-contador { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .di-contador-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; color: #00c853; line-height: 1; text-shadow: 0 0 20px rgba(0,200,83,0.4); }
+  .di-contador-label { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.16em; text-transform: uppercase; }
+  .di-cta { display: inline-block; margin-top: 20px; padding: 14px 32px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #0d47a1); color: #fff; text-decoration: none;
+    font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase;
+    box-shadow: 0 6px 24px rgba(21,101,192,0.4); transition: transform 0.2s; }
+  .di-cta:hover { transform: translateY(-3px); }
   .inscritos-num { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: #00c853; line-height: 1; text-shadow: 0 0 20px rgba(0,200,83,0.4); }
   .inscritos-label { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 2px; }
   .inscritos-dot { width: 8px; height: 8px; background: #00c853; border-radius: 50%; display: inline-block; margin-right: 6px; animation: blink 1.5s ease-in-out infinite; }
@@ -184,6 +206,29 @@
     <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
     <p class="subtitle">IV Máster de Melide · 18-19-20 Septiembre 2026</p>
   </header>
+
+  <!-- ===== INSCRIPCIONES DESTACADAS (arriba del todo) ===== -->
+  <div class="destacado-inscripciones">
+    <div class="di-titulo">🔥 ¡Inscríbete ya al IV Máster!</div>
+    <div class="dual-counter">
+      <div class="dual-box mov">
+        <div class="dual-icon">🔄</div>
+        <div class="dual-num" id="home-mov-counter">--</div>
+        <div class="dual-label"><span class="live-dot" style="background:#f50057"></span>Movimiento</div>
+      </div>
+      <div class="dual-box par">
+        <div class="dual-icon">✋</div>
+        <div class="dual-num" id="home-par-counter">--</div>
+        <div class="dual-label"><span class="live-dot" style="background:#1565c0"></span>Parado</div>
+      </div>
+    </div>
+    <div class="di-contador">
+      <span class="di-contador-num" id="contador-inscritos">--</span>
+      <span class="di-contador-label"><span class="inscritos-dot"></span>Parejas inscritas</span>
+    </div>
+    <a class="di-cta" href="INSCRIPCIONES.HTML">📝 INSCRIBIR MI EQUIPO</a>
+  </div>
+
   <div class="grid">
     <a class="card-btn inscripcion" href="INSCRIPCIONES.HTML">
       <div class="card-icon">📝</div>
@@ -231,13 +276,6 @@
     </div>
     <div class="pb-arrow">→</div>
   </a>
-  <!-- CONTADOR INSCRITOS -->
-  <div style="position:relative;z-index:2;text-align:center;margin-top:32px;">
-    <div class="inscritos-box">
-      <div class="inscritos-num" id="contador-inscritos">--</div>
-      <div class="inscritos-label"><span class="inscritos-dot"></span>Inscripciones confirmadas</div>
-    </div>
-  </div>
   <!-- COUNTDOWN -->
   <div style="position:relative;z-index:2;text-align:center;margin-top:32px;">
     <div class="cd-title">⏳ Cuenta atrás para el torneo</div>
@@ -372,22 +410,33 @@ document.addEventListener('keydown', e => {
 });
 // CONTADOR INSCRITOS
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
+function animarNum(el, total) {
+  if (!el) return;
+  let current = 0;
+  const step = Math.max(1, Math.ceil(total / 30));
+  const interval = setInterval(() => {
+    current = Math.min(current + step, total);
+    el.textContent = current;
+    if (current >= total) clearInterval(interval);
+  }, 40);
+}
 function loadContador() {
   fetch(SCRIPT_URL + '?action=get')
     .then(r => r.json())
     .then(data => {
       const rows = data.rows || [];
       const total = rows.length;
-      const el = document.getElementById('contador-inscritos');
-      let current = 0;
-      const step = Math.max(1, Math.ceil(total / 30));
-      const interval = setInterval(() => {
-        current = Math.min(current + step, total);
-        el.textContent = current;
-        if (current >= total) clearInterval(interval);
-      }, 40);
+      const totalMov = rows.filter(r => r[11]).length;
+      const totalPar = rows.filter(r => r[12]).length;
+      animarNum(document.getElementById('contador-inscritos'), total);
+      animarNum(document.getElementById('home-mov-counter'), totalMov);
+      animarNum(document.getElementById('home-par-counter'), totalPar);
     })
-    .catch(() => { document.getElementById('contador-inscritos').textContent = '0'; });
+    .catch(() => {
+      const c = document.getElementById('contador-inscritos'); if (c) c.textContent = '0';
+      const m = document.getElementById('home-mov-counter'); if (m) m.textContent = '0';
+      const p = document.getElementById('home-par-counter'); if (p) p.textContent = '0';
+    });
 }
 loadContador();
 setInterval(loadContador, 30000);
