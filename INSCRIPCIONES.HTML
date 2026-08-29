@@ -144,6 +144,7 @@
   .btn-pago { padding: 4px 10px; border: none; border-radius: 20px; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .btn-pago.no { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
   .btn-pago.si { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
+  .btn-pago.otra { background: rgba(124,179,255,0.15); color: #7cb3ff; border: 1px solid rgba(124,179,255,0.35); }
   .btn-pago.gratis { background: rgba(206,147,216,0.15); color: #ce93d8; border: 1px solid rgba(206,147,216,0.35); }
   .btn-pago.staff { background: rgba(255,171,64,0.15); color: #ffab40; border: 1px solid rgba(255,171,64,0.35); }
   .notas-input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-size: 0.78rem; padding: 4px 6px; outline: none; width: 120px; }
@@ -340,13 +341,14 @@
       </div>
       <div id="admin-error" style="display:none" class="error-box"></div>
       <div id="duplicados-banner" style="display:none;background:rgba(245,0,87,0.1);border:1px solid rgba(245,0,87,0.3);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
-        <div style="font-weight:700;color:var(--ocupado);margin-bottom:8px;">⚠️ TELÉFONOS REPETIDOS DETECTADOS</div>
+        <div style="font-weight:700;color:var(--ocupado);margin-bottom:8px;">⚠️ POSIBLES REPETIDOS DETECTADOS (teléfono o jugador)</div>
         <div id="duplicados-lista" style="font-size:0.82rem;color:var(--text-dim);"></div>
       </div>
       <div id="historial-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:0.08em;color:var(--gold);margin-bottom:14px;">📋 HISTORIAL DE CAMBIOS</div>
         <div id="historial-lista" style="font-size:0.82rem;color:var(--text-dim);">Cargando...</div>
       </div>
+      <div id="sync-estado" style="font-size:0.78rem;font-weight:700;margin-bottom:12px;min-height:18px;"></div>
       <div class="stats-grid" id="stats-grid"></div>
       <div class="table-controls">
         <input class="search-input" type="text" id="search-admin" placeholder="🔍 Buscar jugador o equipo..." oninput="renderTable()">
@@ -361,6 +363,7 @@
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
           <option value="Si">✅ Pagados</option><option value="No">❌ Pendientes</option>
+          <option value="OtraPareja">🔁 Ya pagó en otra pareja</option>
           <option value="Gratis">🎁 Gratis</option><option value="Staff">🎽 Staff</option>
         </select>
       </div>
@@ -437,12 +440,91 @@ var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17L
 var ADMIN_PASS = 'amf2025';
 var PRECIO = 25;
 var PRECIO_STAFF = 10;
-var IMPORTE_PAGO = { 'Si': PRECIO, 'Staff': PRECIO_STAFF, 'Gratis': 0 };
-var CICLO_PAGO   = ['No','Si','Gratis','Staff'];
-var LABEL_PAGO   = { 'No':'❌', 'Si':'✅', 'Gratis':'🎁', 'Staff':'🎽' };
-var CLASE_PAGO   = { 'No':'no', 'Si':'si', 'Gratis':'gratis', 'Staff':'staff' };
-var TITULO_PAGO  = { 'No':'Pendiente', 'Si':'Pagado ('+PRECIO+'€)', 'Gratis':'Gratis (0€)', 'Staff':'Staff ('+PRECIO_STAFF+'€)' };
+var IMPORTE_PAGO = { 'Si': PRECIO, 'Staff': PRECIO_STAFF, 'Gratis': 0, 'OtraPareja': 0 };
+var CICLO_PAGO   = ['No','Si','OtraPareja','Gratis','Staff'];
+var LABEL_PAGO   = { 'No':'❌', 'Si':'✅', 'OtraPareja':'🔁', 'Gratis':'🎁', 'Staff':'🎽' };
+var CLASE_PAGO   = { 'No':'no', 'Si':'si', 'OtraPareja':'otra', 'Gratis':'gratis', 'Staff':'staff' };
+var TITULO_PAGO  = { 'No':'Pendiente', 'Si':'Pagado ('+PRECIO+'€)', 'OtraPareja':'Ya pagó en otra pareja (0€)', 'Gratis':'Gratis (0€)', 'Staff':'Staff ('+PRECIO_STAFF+'€)' };
 function estadoPago(v){ return CICLO_PAGO.indexOf(v) >= 0 ? v : 'No'; }
+function importePago(v){ var e = estadoPago(v); return e === 'No' ? 0 : IMPORTE_PAGO[e]; }
+
+/* ─── SINCRONIZACION SEGURA CON LA HOJA ───
+   Las escrituras van por 'no-cors' (respuesta opaca), asi que:
+   1) antes de escribir se comprueba que los datos locales no estan caducados,
+   2) la fila de la hoja se localiza por CODIGO, nunca por posicion,
+   3) despues de escribir se relee la hoja y se comprueba que se guardo. */
+var ultimaCarga = 0;
+var MAX_EDAD_DATOS = 15000;   // ms
+var ESPERA_VERIF   = 4000;    // ms
+var verifTimer = null;
+var escrituraEnCurso = false;
+
+function indicePorCodigo(cod) {
+  for (var i = 0; i < allData.length; i++) {
+    if (String(allData[i][13]) === String(cod)) return i;
+  }
+  return -1;
+}
+function datosFrescos(){ return (Date.now() - ultimaCarga) < MAX_EDAD_DATOS; }
+function refrescarDatos() {
+  return pedirDatos('get').then(function(d){
+    allData = d.rows || [];
+    ultimaCarga = Date.now();
+    return true;
+  });
+}
+function asegurarFrescura() {
+  return datosFrescos() ? Promise.resolve(false) : refrescarDatos();
+}
+function enviarAlServidor(payload) {
+  return fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+}
+function setEstadoSync(txt, color) {
+  var el = document.getElementById('sync-estado');
+  if (!el) return;
+  el.textContent = txt || '';
+  el.style.color = color || 'var(--text-dim)';
+}
+function programarVerificacion() {
+  clearTimeout(verifTimer);
+  setEstadoSync('⏳ Guardando en la hoja…', '#ffc107');
+  verifTimer = setTimeout(verificarGuardado, ESPERA_VERIF);
+}
+function verificarGuardado() {
+  var esperado = {};
+  allData.forEach(function(r){
+    if (!r[13]) return;
+    esperado[String(r[13])] = [estadoPago(r[3]), estadoPago(r[5]), (r[14] == null ? '' : String(r[14]))];
+  });
+  pedirDatos('get').then(function(d){
+    var srv = d.rows || [];
+    var enServidor = {};
+    var fallos = [];
+    srv.forEach(function(r){
+      var k = String(r[13]);
+      enServidor[k] = true;
+      if (!(k in esperado)) return;
+      var e = esperado[k];
+      if (estadoPago(r[3]) !== e[0] || estadoPago(r[5]) !== e[1] || (r[14] == null ? '' : String(r[14])) !== e[2]) {
+        fallos.push(r[1] || k);
+      }
+    });
+    var desaparecidas = Object.keys(esperado).filter(function(k){ return !enServidor[k]; }).length;
+    allData = srv;
+    ultimaCarga = Date.now();
+    renderStats(); renderTable(); checkDuplicados();
+    if (fallos.length) {
+      setEstadoSync('⚠️ No se guardo: ' + fallos.slice(0,3).join(', ') + (fallos.length>3 ? '…' : '') + ' — vuelve a marcarlo', '#f50057');
+      showToast('⚠️ Algún cambio no llegó a la hoja. Datos recargados.');
+    } else if (desaparecidas) {
+      setEstadoSync('🔄 La hoja cambió (alguien canceló o modificó). Datos recargados.', '#ffc107');
+    } else {
+      setEstadoSync('✅ Guardado y verificado en la hoja', '#00c853');
+    }
+  }).catch(function(){
+    setEstadoSync('⚠️ No se pudo verificar (sin conexión). Pulsa \u00abActualizar\u00bb cuando vuelvas.', '#ffc107');
+  });
+}
 var CATS = ['Elite','Plata','Bronce','Rookie'];
 var CAT_COLORS = {Elite:'#ffd700',Plata:'#b0bec5',Bronce:'#cd7f32',Rookie:'#ce93d8'};
 var CAT_EMOJI  = {Elite:'🏆',Plata:'🥈',Bronce:'🥉',Rookie:'⭐'};
@@ -487,14 +569,20 @@ window.addEventListener('DOMContentLoaded', function() {
   // Vista normal por defecto: formulario de inscripción visible
 });
 
+function sesionAdminActiva() {
+  try { return sessionStorage.getItem('amf_admin_ok') === '1'; } catch(e) { return false; }
+}
+
 function abrirAdminDirecto() {
   document.getElementById('tab-inscripcion').style.display = 'none';
   document.getElementById('tab-participantes').style.display = 'none';
   document.getElementById('tab-admin').style.display = '';
   document.getElementById('tabs').style.display = 'none';
-  document.getElementById('admin-login').style.display = 'none';
-  document.getElementById('admin-panel').style.display = 'block';
-  loadData();
+  if (sesionAdminActiva()) { desbloquearAdmin(); return; }
+  document.getElementById('admin-login').style.display = '';
+  document.getElementById('admin-panel').style.display = 'none';
+  var inp = document.getElementById('admin-pass');
+  if (inp) { inp.value = ''; setTimeout(function(){ inp.focus(); }, 100); }
 }
 
 // ─── TABS ───
@@ -505,6 +593,10 @@ function showTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   if (tab === 'participantes') loadParticipantes();
+  if (tab === 'admin' && sesionAdminActiva() &&
+      document.getElementById('admin-panel').style.display !== 'block') {
+    desbloquearAdmin();
+  }
 }
 
 // ─── UTILS ───
@@ -758,11 +850,16 @@ function compartir() {
 }
 
 // ─── ADMIN ───
+function desbloquearAdmin() {
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  try { sessionStorage.setItem('amf_admin_ok', '1'); } catch(e) {}
+  loadData();
+}
+
 function checkPass() {
   if (document.getElementById('admin-pass').value === ADMIN_PASS) {
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-panel').style.display = 'block';
-    loadData();
+    desbloquearAdmin();
   } else { showToast('❌ Contraseña incorrecta'); }
 }
 
@@ -772,6 +869,9 @@ function loadData() {
   pedirDatos('get')
     .then(function(data){
       allData = data.rows || [];
+      ultimaCarga = Date.now();
+      clearTimeout(verifTimer);
+      setEstadoSync('', '');
       renderStats(); renderTable(); checkDuplicados();
       showToast('✅ ' + allData.length + ' inscripciones');
     })
@@ -783,13 +883,14 @@ function loadData() {
 }
 
 function renderStats() {
-  var tj = allData.length*2, tp = 0, recaudado = 0, pendiente = 0, nGratis = 0, nStaff = 0;
+  var tj = allData.length*2, tp = 0, recaudado = 0, pendiente = 0, nGratis = 0, nStaff = 0, nOtra = 0;
   allData.forEach(function(r){
     [r[3], r[5]].forEach(function(v){
       var e = estadoPago(v);
       if (e === 'No') { pendiente += PRECIO; return; }
       tp++;
       recaudado += IMPORTE_PAGO[e];
+      if (e === 'OtraPareja') nOtra++;
       if (e === 'Gratis') nGratis++;
       if (e === 'Staff')  nStaff++;
     });
@@ -799,6 +900,7 @@ function renderStats() {
   html += '<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">'+tp+'/'+tj+'</div></div>';
   html += '<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">'+recaudado+'€</div></div>';
   html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+pendiente+'€</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">🔁 Ya pagó en otra pareja</div><div class="stat-num" style="color:#7cb3ff">'+nOtra+'</div></div>';
   html += '<div class="stat-card"><div class="stat-label">🎁 Gratis</div><div class="stat-num" style="color:#ce93d8">'+nGratis+'</div></div>';
   html += '<div class="stat-card"><div class="stat-label">🎽 Staff</div><div class="stat-num" style="color:#ffab40">'+nStaff+'</div></div>';
   document.getElementById('stats-grid').innerHTML = html;
@@ -870,24 +972,65 @@ function renderTable() {
 }
 
 function togglePago(idx, jugador) {
+  if (escrituraEnCurso) { showToast('⏳ Espera un momento…'); return; }
+  if (!allData[idx]) return;
+  var cod = allData[idx][13];
+  if (!cod) { showToast('⚠️ Esa fila no tiene código. Pulsa Actualizar.'); return; }
   var col = jugador===1 ? 3 : 5;
+  escrituraEnCurso = true;
+  asegurarFrescura().then(function(refrescado){
+    var i = indicePorCodigo(cod);
+    if (i < 0) {
+      renderStats(); renderTable(); checkDuplicados();
+      showToast('⚠️ Esa inscripción ya no está en la hoja. Datos recargados.');
+      return;
+    }
+    if (refrescado) { renderStats(); renderTable(); }
+    aplicarPago(i, col, jugador);
+  }).catch(function(){
+    showToast('❌ Sin conexión: el cambio NO se ha guardado');
+    setEstadoSync('⚠️ Sin conexión con la hoja', '#f50057');
+  }).then(function(){ escrituraEnCurso = false; });
+}
+
+function aplicarPago(idx, col, jugador) {
   var actual = estadoPago(allData[idx][col]);
   var nv = CICLO_PAGO[(CICLO_PAGO.indexOf(actual)+1) % CICLO_PAGO.length];
   allData[idx][col] = nv;
   renderStats(); renderTable();
-  fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updatePago',row:idx+2,col:col+1,value:nv})});
+  enviarAlServidor({action:'updatePago',row:idx+2,col:col+1,value:nv});
+  programarVerificacion();
   var nombre = allData[idx][jugador===1?2:4];
   var msg = { 'No':'❌ '+nombre+' pendiente',
               'Si':'✅ '+nombre+' pagado ('+PRECIO+'€)',
+              'OtraPareja':'🔁 '+nombre+' ya pagó en otra pareja (0€)',
               'Gratis':'🎁 '+nombre+' gratis (0€)',
               'Staff':'🎽 '+nombre+' staff ('+PRECIO_STAFF+'€)' };
   showToast(msg[nv]);
 }
 
 function guardarNotas(idx, valor) {
-  allData[idx][14] = valor;
-  fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updateNotas',row:idx+2,value:valor})});
-  showToast('📝 Nota guardada');
+  if (!allData[idx]) return;
+  var cod = allData[idx][13];
+  var previo = allData[idx][14] == null ? '' : String(allData[idx][14]);
+  if (previo === valor) return;                 // sin cambios, no se escribe
+  if (!cod) { showToast('⚠️ Esa fila no tiene código. Pulsa Actualizar.'); return; }
+  asegurarFrescura().then(function(refrescado){
+    var i = indicePorCodigo(cod);
+    if (i < 0) {
+      renderStats(); renderTable(); checkDuplicados();
+      showToast('⚠️ Esa inscripción ya no está en la hoja. Datos recargados.');
+      return;
+    }
+    allData[i][14] = valor;
+    enviarAlServidor({action:'updateNotas',row:i+2,value:valor});
+    programarVerificacion();
+    if (refrescado) { renderStats(); renderTable(); }
+    showToast('📝 Nota guardada');
+  }).catch(function(){
+    showToast('❌ Sin conexión: la nota NO se ha guardado');
+    setEstadoSync('⚠️ Sin conexión con la hoja', '#f50057');
+  });
 }
 
 function abrirModal(idx) {
@@ -926,7 +1069,8 @@ function guardarEdicion() {
   allData[editIdx][1]=data.equipo; allData[editIdx][2]=data.jugador1; allData[editIdx][7]=data.telefono1;
   allData[editIdx][4]=data.jugador2; allData[editIdx][8]=data.telefono2; allData[editIdx][6]=data.zona;
   allData[editIdx][10]=data.email; allData[editIdx][11]=data.catMovimiento; allData[editIdx][12]=data.catParado;
-  fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  enviarAlServidor(data);
+  programarVerificacion();
   cerrarModal(); renderStats(); renderTable();
   showToast('✅ Inscripción actualizada');
 }
@@ -934,10 +1078,23 @@ function guardarEdicion() {
 function eliminarInscrito(idx) {
   var eq = allData[idx][1], j1 = allData[idx][2];
   if (!confirm('¿Eliminar la inscripción de "'+eq+'" ('+j1+')? Esta acción no se puede deshacer.')) return;
-  fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cancelar',codigo:allData[idx][13]})});
+  enviarAlServidor({action:'cancelar',codigo:allData[idx][13]});
   allData.splice(idx, 1);
   renderStats(); renderTable();
+  ultimaCarga = 0;                       // los indices ya no valen: obliga a releer
+  clearTimeout(verifTimer);
+  setEstadoSync('⏳ Eliminando y resincronizando…', '#ffc107');
+  setTimeout(loadData, ESPERA_VERIF);    // recarga real desde la hoja
   showToast('🗑️ '+eq+' eliminado');
+}
+
+function normalizarNombre(s) {
+  return (s == null ? '' : String(s))
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function checkDuplicados() {
@@ -958,10 +1115,32 @@ function checkDuplicados() {
     });
   });
   var dups = Object.keys(porTel).filter(function(k){ return porTel[k].idxs.length > 1; });
+
+  // Jugadores repetidos por nombre en parejas distintas
+  var porJug = {};
+  allData.forEach(function(r, idx){
+    var nombresFila = [];
+    [r[2], r[4]].forEach(function(n){
+      var nn = normalizarNombre(n);
+      if (!nn) return;
+      if (nombresFila.indexOf(nn) === -1) nombresFila.push(nn);
+    });
+    nombresFila.forEach(function(nn){
+      if (!porJug[nn]) porJug[nn] = { idxs: [], equipos: [], visible: (r[2] && normalizarNombre(r[2])===nn) ? r[2] : r[4] };
+      if (porJug[nn].idxs.indexOf(idx) === -1) {
+        porJug[nn].idxs.push(idx);
+        porJug[nn].equipos.push(r[1]);
+      }
+    });
+  });
+  var dupsJug = Object.keys(porJug).filter(function(k){ return porJug[k].idxs.length > 1; });
+
   var banner = document.getElementById('duplicados-banner');
-  if (!dups.length) { banner.style.display='none'; return; }
+  if (!dups.length && !dupsJug.length) { banner.style.display='none'; return; }
   banner.style.display = 'block';
-  document.getElementById('duplicados-lista').innerHTML = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+porTel[tel].nombres.join(' · '); }).join('<br>');
+  var lineas = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+porTel[tel].nombres.join(' · '); })
+    .concat(dupsJug.map(function(k){ return '👤 <strong>'+porJug[k].visible+'</strong>: '+porJug[k].equipos.join(' · '); }));
+  document.getElementById('duplicados-lista').innerHTML = lineas.join('<br>');
 }
 
 function toggleHistorial() {
@@ -990,7 +1169,7 @@ function exportCSV() {
   var datos = window._adminFiltered || allData;
   if (!datos.length) { showToast('No hay datos para exportar'); return; }
 
-  var headers = ['Modalidad','Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas'];
+  var headers = ['Modalidad','Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas','Importe J1','Importe J2','Importe pareja'];
   var lineas = [headers.map(function(c){ return '"'+c+'"'; }).join(',')];
 
   datos.forEach(function(r){
@@ -1005,7 +1184,8 @@ function exportCSV() {
     if (!modalidades.length) return;
 
     modalidades.forEach(function(mod){
-      var fila = [mod].concat(r.slice(0,15));
+      var i1 = importePago(r[3]), i2 = importePago(r[5]);
+      var fila = [mod].concat(r.slice(0,15)).concat([i1, i2, i1 + i2]);
       lineas.push(fila.map(function(c){ return '"'+(c===undefined||c===null?'':c)+'"'; }).join(','));
     });
   });
@@ -1018,7 +1198,7 @@ function exportCSV() {
   a.href = URL.createObjectURL(new Blob(['\ufeff' + lineas.join('\n')], {type:'text/csv;charset=utf-8;'}));
   a.download = nombre + '.csv';
   a.click();
-  showToast('⬇️ CSV descargado ('+ datos.length +' equipos)');
+  showToast('⬇️ CSV descargado ('+ (lineas.length - 1) +' filas / '+ datos.length +' equipos)');
 }
 </script>
 </body>
