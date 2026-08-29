@@ -144,6 +144,8 @@
   .btn-pago { padding: 4px 10px; border: none; border-radius: 20px; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .btn-pago.no { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
   .btn-pago.si { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
+  .btn-pago.gratis { background: rgba(206,147,216,0.15); color: #ce93d8; border: 1px solid rgba(206,147,216,0.35); }
+  .btn-pago.staff { background: rgba(255,171,64,0.15); color: #ffab40; border: 1px solid rgba(255,171,64,0.35); }
   .notas-input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-dim); font-family: 'Barlow', sans-serif; font-size: 0.78rem; padding: 4px 6px; outline: none; width: 120px; }
   .notas-input:focus { border-bottom-color: var(--accent); color: var(--text); }
   .btn-delete { background: rgba(245,0,87,0.1); border: 1px solid rgba(245,0,87,0.3); color: var(--ocupado); border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
@@ -359,6 +361,7 @@
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
           <option value="Si">✅ Pagados</option><option value="No">❌ Pendientes</option>
+          <option value="Gratis">🎁 Gratis</option><option value="Staff">🎽 Staff</option>
         </select>
       </div>
       <div class="table-wrap">
@@ -433,6 +436,13 @@
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
 var ADMIN_PASS = 'amf2025';
 var PRECIO = 25;
+var PRECIO_STAFF = 10;
+var IMPORTE_PAGO = { 'Si': PRECIO, 'Staff': PRECIO_STAFF, 'Gratis': 0 };
+var CICLO_PAGO   = ['No','Si','Gratis','Staff'];
+var LABEL_PAGO   = { 'No':'❌', 'Si':'✅', 'Gratis':'🎁', 'Staff':'🎽' };
+var CLASE_PAGO   = { 'No':'no', 'Si':'si', 'Gratis':'gratis', 'Staff':'staff' };
+var TITULO_PAGO  = { 'No':'Pendiente', 'Si':'Pagado ('+PRECIO+'€)', 'Gratis':'Gratis (0€)', 'Staff':'Staff ('+PRECIO_STAFF+'€)' };
+function estadoPago(v){ return CICLO_PAGO.indexOf(v) >= 0 ? v : 'No'; }
 var CATS = ['Elite','Plata','Bronce','Rookie'];
 var CAT_COLORS = {Elite:'#ffd700',Plata:'#b0bec5',Bronce:'#cd7f32',Rookie:'#ce93d8'};
 var CAT_EMOJI  = {Elite:'🏆',Plata:'🥈',Bronce:'🥉',Rookie:'⭐'};
@@ -773,14 +783,24 @@ function loadData() {
 }
 
 function renderStats() {
-  var p1 = allData.filter(function(r){return r[3]==='Si';}).length;
-  var p2 = allData.filter(function(r){return r[5]==='Si';}).length;
-  var tp = p1+p2, tj = allData.length*2;
+  var tj = allData.length*2, tp = 0, recaudado = 0, pendiente = 0, nGratis = 0, nStaff = 0;
+  allData.forEach(function(r){
+    [r[3], r[5]].forEach(function(v){
+      var e = estadoPago(v);
+      if (e === 'No') { pendiente += PRECIO; return; }
+      tp++;
+      recaudado += IMPORTE_PAGO[e];
+      if (e === 'Gratis') nGratis++;
+      if (e === 'Staff')  nStaff++;
+    });
+  });
   var html = '<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">'+allData.length+'</div></div>';
   CATS.forEach(function(cat){ var n=allData.filter(function(r){return r[11]===cat||r[12]===cat;}).length; html+='<div class="stat-card '+cat.toLowerCase()+'"><div class="stat-label">'+cat+'</div><div class="stat-num">'+n+'</div></div>'; });
   html += '<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">'+tp+'/'+tj+'</div></div>';
-  html += '<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">'+(tp*PRECIO)+'€</div></div>';
-  html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+((tj-tp)*PRECIO)+'€</div></div>';
+  html += '<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">'+recaudado+'€</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+pendiente+'€</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">🎁 Gratis</div><div class="stat-num" style="color:#ce93d8">'+nGratis+'</div></div>';
+  html += '<div class="stat-card"><div class="stat-label">🎽 Staff</div><div class="stat-num" style="color:#ffab40">'+nStaff+'</div></div>';
   document.getElementById('stats-grid').innerHTML = html;
 }
 
@@ -813,7 +833,7 @@ function renderTable() {
   var filtered = allData.filter(function(r){
     var ms = !q  || [r[1],r[2],r[4],r[6]].some(function(v){ return (v||'').toLowerCase().indexOf(q)>=0; });
     var mc = !cf || r[11]===cf || r[12]===cf;
-    var mp = !pf || r[3]===pf  || r[5]===pf;
+    var mp = !pf || estadoPago(r[3])===pf || estadoPago(r[5])===pf;
     var mm = !mf || (mf==='mov' && r[11]) || (mf==='par' && r[12]);
     return ms && mc && mp && mm;
   });
@@ -825,7 +845,7 @@ function renderTable() {
   var dupSet = telefonosDuplicados();
   tbody.innerHTML = filtered.map(function(r){
     var ri = allData.indexOf(r);
-    var p1 = r[3]==='Si', p2 = r[5]==='Si';
+    var e1 = estadoPago(r[3]), e2 = estadoPago(r[5]);
     var t1 = (r[7]||'').toString(), t2 = (r[8]||'').toString();
     var d1 = t1.replace(/\s/g,'') !== '' && dupSet[t1.replace(/\s/g,'')];
     var d2 = t2.replace(/\s/g,'') !== '' && dupSet[t2.replace(/\s/g,'')];
@@ -835,10 +855,10 @@ function renderTable() {
       '<td style="font-weight:700">'+(r[1]||'')+'</td>' +
       '<td>'+(r[2]||'')+'</td>' +
       '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+t1+(d1?' ⚠️':'')+'</td>' +
-      '<td><button class="btn-pago '+(p1?'si':'no')+'" onclick="togglePago('+ri+',1)">'+(p1?'✅':'❌')+'</button></td>' +
+      '<td><button class="btn-pago '+CLASE_PAGO[e1]+'" title="'+TITULO_PAGO[e1]+'" onclick="togglePago('+ri+',1)">'+LABEL_PAGO[e1]+'</button></td>' +
       '<td>'+(r[4]||'')+'</td>' +
       '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+t2+(d2?' ⚠️':'')+'</td>' +
-      '<td><button class="btn-pago '+(p2?'si':'no')+'" onclick="togglePago('+ri+',2)">'+(p2?'✅':'❌')+'</button></td>' +
+      '<td><button class="btn-pago '+CLASE_PAGO[e2]+'" title="'+TITULO_PAGO[e2]+'" onclick="togglePago('+ri+',2)">'+LABEL_PAGO[e2]+'</button></td>' +
       '<td style="color:var(--text-dim)">'+(r[6]||'')+'</td>' +
       '<td><span class="badge '+cc(r[11])+'">'+(r[11]||'-')+'</span></td>' +
       '<td><span class="badge '+cc(r[12])+'">'+(r[12]||'-')+'</span></td>' +
@@ -851,11 +871,17 @@ function renderTable() {
 
 function togglePago(idx, jugador) {
   var col = jugador===1 ? 3 : 5;
-  var nv  = allData[idx][col]==='Si' ? 'No' : 'Si';
+  var actual = estadoPago(allData[idx][col]);
+  var nv = CICLO_PAGO[(CICLO_PAGO.indexOf(actual)+1) % CICLO_PAGO.length];
   allData[idx][col] = nv;
   renderStats(); renderTable();
   fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'updatePago',row:idx+2,col:col+1,value:nv})});
-  showToast(nv==='Si' ? '✅ '+allData[idx][jugador===1?2:4]+' pagado' : '❌ '+allData[idx][jugador===1?2:4]+' pendiente');
+  var nombre = allData[idx][jugador===1?2:4];
+  var msg = { 'No':'❌ '+nombre+' pendiente',
+              'Si':'✅ '+nombre+' pagado ('+PRECIO+'€)',
+              'Gratis':'🎁 '+nombre+' gratis (0€)',
+              'Staff':'🎽 '+nombre+' staff ('+PRECIO_STAFF+'€)' };
+  showToast(msg[nv]);
 }
 
 function guardarNotas(idx, valor) {
