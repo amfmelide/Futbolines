@@ -156,6 +156,9 @@
 
   .confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 10001; justify-content: center; align-items: center; padding: 20px; }
   .confirm-overlay.show { display: flex; }
+  .cerrado-banner { background: rgba(245,0,87,0.12); border: 1px solid rgba(245,0,87,0.4); color: #ff5c8a; border-radius: 10px; padding: 14px 16px; margin-bottom: 22px; font-size: 0.85rem; line-height: 1.55; text-align: center; }
+  .btn-wa { display: block; width: 100%; margin-top: 18px; padding: 15px; border-radius: 10px; background: #25D366; color: #0b141a; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; text-align: center; }
+  .btn-wa:hover { background: #1fb355; }
   .confirm-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
   .confirm-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 20px; text-align: center; }
   .confirm-row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
@@ -203,6 +206,11 @@
   <div class="form-wrap">
     <div class="form-card" id="form-card">
       <div class="form-title" id="form-title">INSCRIPCIÓN DE EQUIPO</div>
+      <div class="cerrado-banner" id="cerrado-banner" style="display:none">
+        🔒 <strong>INSCRIPCIONES CERRADAS.</strong><br>
+        Ya no se admiten altas ni cambios por la web.<br>
+        Escribe a <strong>Iván</strong> por WhatsApp: <a href="https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener" style="color:#25D366;font-weight:800;text-decoration:none;">633 92 82 55</a>
+      </div>
       <div class="form-group">
         <label>Nombre del equipo</label>
         <input type="text" id="equipo" placeholder="Ej: Los Cracks de Melide">
@@ -336,6 +344,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-refresh" onclick="loadData()">🔄 Actualizar</button>
           <button class="btn-export" onclick="exportCSV()">⬇️ CSV</button>
+          <button class="btn-refresh" onclick="informeZonas()">🗺️ Informe por zonas</button>
           <button class="btn-refresh" onclick="toggleHistorial()">📋 Historial</button>
         </div>
       </div>
@@ -379,6 +388,20 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- Modal inscripciones cerradas -->
+<div class="confirm-overlay" id="cerrado-modal">
+  <div class="confirm-box" style="max-width:430px;text-align:center;">
+    <div class="confirm-title">🔒 INSCRIPCIONES CERRADAS</div>
+    <p style="color:var(--text-dim);font-size:0.9rem;line-height:1.65;margin-top:16px;">
+      El plazo para apuntarse por la web ya se ha cerrado, así que <strong style="color:var(--text)">no se ha guardado ningún dato</strong>.
+      <br><br>
+      Si quieres apuntarte o cambiar algo, escribe por WhatsApp a <strong style="color:var(--text)">Iván · 633 92 82 55</strong> y lo miramos por si queda hueco.
+    </p>
+    <a class="btn-wa" href="https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 Escribir a Iván por WhatsApp</a>
+    <button class="confirm-btn-back" style="width:100%;margin-top:10px;" onclick="cerrarAvisoCierre()">Cerrar</button>
+  </div>
+</div>
 
 <!-- Modal confirmación -->
 <div class="confirm-overlay" id="confirm-modal">
@@ -438,6 +461,28 @@
 'use strict';
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
 var ADMIN_PASS = 'amf2025';
+/* ─── CIERRE DE INSCRIPCIONES ───
+   A partir de esta fecha y hora la web deja de admitir altas, cambios y
+   cancelaciones: se muestra un aviso con el WhatsApp y no se envia nada
+   a la hoja. El panel de admin sigue funcionando con normalidad. */
+var FECHA_CIERRE = new Date('2026-09-14T23:59:59+02:00');
+var WA_CONTACTO  = 'https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide';
+
+function inscripcionesCerradas() { return Date.now() > FECHA_CIERRE.getTime(); }
+function mostrarAvisoCierre() {
+  var m = document.getElementById('cerrado-modal');
+  if (m) m.classList.add('show');
+}
+function cerrarAvisoCierre() {
+  var m = document.getElementById('cerrado-modal');
+  if (m) m.classList.remove('show');
+}
+function aplicarCierre() {
+  if (!inscripcionesCerradas()) return;
+  var b = document.getElementById('cerrado-banner');
+  if (b) b.style.display = 'block';
+}
+
 var PRECIO = 25;
 var PRECIO_STAFF = 10;
 var IMPORTE_PAGO = { 'Si': PRECIO, 'Staff': PRECIO_STAFF, 'Gratis': 0, 'OtraPareja': 0 };
@@ -454,10 +499,23 @@ function importePago(v){ var e = estadoPago(v); return e === 'No' ? 0 : IMPORTE_
    2) la fila de la hoja se localiza por CODIGO, nunca por posicion,
    3) despues de escribir se relee la hoja y se comprueba que se guardo. */
 var ultimaCarga = 0;
-var MAX_EDAD_DATOS = 15000;   // ms
-var ESPERA_VERIF   = 4000;    // ms
+var ESPERA_VERIF   = 4000;    // ms de espera antes de comprobar la hoja
+var TIMEOUT_RED    = 15000;   // ms: ninguna peticion puede colgarse mas que esto
 var verifTimer = null;
-var escrituraEnCurso = false;
+var ultimaEscritura = 0;
+var filasHoja = {};           // codigo -> numero de fila real en la hoja
+
+/* La fila de la hoja se memoriza cada vez que se leen datos, asi que las
+   escrituras nunca dependen de la posicion actual en pantalla ni obligan
+   a esperar por la red antes de pulsar. */
+function registrarFilas(rows) {
+  filasHoja = {};
+  (rows || []).forEach(function(r, i){ if (r[13]) filasHoja[String(r[13])] = i + 2; });
+}
+function filaDeCodigo(cod, idxFallback) {
+  var f = filasHoja[String(cod)];
+  return f ? f : (idxFallback + 2);
+}
 
 function indicePorCodigo(cod) {
   for (var i = 0; i < allData.length; i++) {
@@ -465,19 +523,20 @@ function indicePorCodigo(cod) {
   }
   return -1;
 }
-function datosFrescos(){ return (Date.now() - ultimaCarga) < MAX_EDAD_DATOS; }
 function refrescarDatos() {
   return pedirDatos('get').then(function(d){
     allData = d.rows || [];
     ultimaCarga = Date.now();
+    registrarFilas(allData);
     return true;
   });
 }
-function asegurarFrescura() {
-  return datosFrescos() ? Promise.resolve(false) : refrescarDatos();
-}
 function enviarAlServidor(payload) {
-  return fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  return fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .catch(function(){
+      // Sin conexion: la verificacion posterior avisara de lo que no llego
+      setEstadoSync('\u26a0\ufe0f Sin conexion con la hoja: el ultimo cambio puede no haberse guardado', '#f50057');
+    });
 }
 function setEstadoSync(txt, color) {
   var el = document.getElementById('sync-estado');
@@ -491,12 +550,16 @@ function programarVerificacion() {
   verifTimer = setTimeout(verificarGuardado, ESPERA_VERIF);
 }
 function verificarGuardado() {
+  var tsPeticion = Date.now();
   var esperado = {};
   allData.forEach(function(r){
     if (!r[13]) return;
     esperado[String(r[13])] = [estadoPago(r[3]), estadoPago(r[5]), (r[14] == null ? '' : String(r[14]))];
   });
   pedirDatos('get').then(function(d){
+    // Si has seguido tocando botones mientras se leia la hoja, esta
+    // respuesta ya no vale: se descarta y se vuelve a comprobar luego.
+    if (ultimaEscritura > tsPeticion) { programarVerificacion(); return; }
     var srv = d.rows || [];
     var enServidor = {};
     var fallos = [];
@@ -512,6 +575,7 @@ function verificarGuardado() {
     var desaparecidas = Object.keys(esperado).filter(function(k){ return !enServidor[k]; }).length;
     allData = srv;
     ultimaCarga = Date.now();
+    registrarFilas(allData);
     renderStats(); renderTable(); checkDuplicados();
     if (fallos.length) {
       setEstadoSync('⚠️ No se guardo: ' + fallos.slice(0,3).join(', ') + (fallos.length>3 ? '…' : '') + ' — vuelve a marcarlo', '#f50057');
@@ -551,7 +615,12 @@ window.addEventListener('DOMContentLoaded', function() {
   var p = new URLSearchParams(window.location.search);
   var accion = p.get('accion');
   var codigo = p.get('codigo');
+  aplicarCierre();
 
+  if ((accion === 'cancelar' || accion === 'modificar') && codigo && inscripcionesCerradas()) {
+    mostrarAvisoCierre();
+    return;
+  }
   if (accion === 'cancelar' && codigo) {
     modoActual = 'cancelar'; codigoActual = codigo;
     mostrarFormularioCancelar(codigo);
@@ -614,16 +683,21 @@ function animCounter(el, target) {
 
 // ─── FETCH ROBUSTO (texto -> JSON, error visible) ───
 function pedirDatos(action) {
-  return fetch(SCRIPT_URL + '?action=' + action)
-    .then(function(r){ return r.text(); })
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var opts = ctrl ? { signal: ctrl.signal } : {};
+  var limite = setTimeout(function(){ if (ctrl) ctrl.abort(); }, TIMEOUT_RED);
+  return fetch(SCRIPT_URL + '?action=' + action, opts)
+    .then(function(r){ clearTimeout(limite); return r.text(); })
     .then(function(txt){
       try { return JSON.parse(txt); }
       catch(e){ throw new Error('El servidor no devolvió datos válidos. Respuesta: ' + txt.slice(0,200)); }
-    });
+    })
+    .catch(function(e){ clearTimeout(limite); throw e; });
 }
 
 // ─── FORM ───
 function submitForm() {
+  if (inscripcionesCerradas()) { mostrarAvisoCierre(); return; }
   document.querySelectorAll('input.error').forEach(function(el){ el.classList.remove('error'); });
   var req = {equipo:'Nombre del equipo',jugador1:'Jugador 1',telefono1:'Tel. Jugador 1',jugador2:'Jugador 2',telefono2:'Tel. Jugador 2',zona:'Zona',telefono:'Tel. equipo',email:'Email'};
   for (var id in req) {
@@ -660,6 +734,7 @@ function submitForm() {
 function cerrarConfirm() { document.getElementById('confirm-modal').classList.remove('show'); }
 
 function enviarFormulario() {
+  if (inscripcionesCerradas()) { cerrarConfirm(); mostrarAvisoCierre(); return; }
   cerrarConfirm();
   var btn = document.getElementById('btn-submit');
   btn.disabled = true;
@@ -870,6 +945,7 @@ function loadData() {
     .then(function(data){
       allData = data.rows || [];
       ultimaCarga = Date.now();
+      registrarFilas(allData);
       clearTimeout(verifTimer);
       setEstadoSync('', '');
       renderStats(); renderTable(); checkDuplicados();
@@ -972,33 +1048,15 @@ function renderTable() {
 }
 
 function togglePago(idx, jugador) {
-  if (escrituraEnCurso) { showToast('⏳ Espera un momento…'); return; }
   if (!allData[idx]) return;
-  var cod = allData[idx][13];
-  if (!cod) { showToast('⚠️ Esa fila no tiene código. Pulsa Actualizar.'); return; }
   var col = jugador===1 ? 3 : 5;
-  escrituraEnCurso = true;
-  asegurarFrescura().then(function(refrescado){
-    var i = indicePorCodigo(cod);
-    if (i < 0) {
-      renderStats(); renderTable(); checkDuplicados();
-      showToast('⚠️ Esa inscripción ya no está en la hoja. Datos recargados.');
-      return;
-    }
-    if (refrescado) { renderStats(); renderTable(); }
-    aplicarPago(i, col, jugador);
-  }).catch(function(){
-    showToast('❌ Sin conexión: el cambio NO se ha guardado');
-    setEstadoSync('⚠️ Sin conexión con la hoja', '#f50057');
-  }).then(function(){ escrituraEnCurso = false; });
-}
-
-function aplicarPago(idx, col, jugador) {
+  var cod = allData[idx][13];
   var actual = estadoPago(allData[idx][col]);
   var nv = CICLO_PAGO[(CICLO_PAGO.indexOf(actual)+1) % CICLO_PAGO.length];
   allData[idx][col] = nv;
   renderStats(); renderTable();
-  enviarAlServidor({action:'updatePago',row:idx+2,col:col+1,value:nv});
+  ultimaEscritura = Date.now();
+  enviarAlServidor({action:'updatePago', row: filaDeCodigo(cod, idx), col: col+1, value: nv});
   programarVerificacion();
   var nombre = allData[idx][jugador===1?2:4];
   var msg = { 'No':'❌ '+nombre+' pendiente',
@@ -1011,26 +1069,14 @@ function aplicarPago(idx, col, jugador) {
 
 function guardarNotas(idx, valor) {
   if (!allData[idx]) return;
-  var cod = allData[idx][13];
   var previo = allData[idx][14] == null ? '' : String(allData[idx][14]);
   if (previo === valor) return;                 // sin cambios, no se escribe
-  if (!cod) { showToast('⚠️ Esa fila no tiene código. Pulsa Actualizar.'); return; }
-  asegurarFrescura().then(function(refrescado){
-    var i = indicePorCodigo(cod);
-    if (i < 0) {
-      renderStats(); renderTable(); checkDuplicados();
-      showToast('⚠️ Esa inscripción ya no está en la hoja. Datos recargados.');
-      return;
-    }
-    allData[i][14] = valor;
-    enviarAlServidor({action:'updateNotas',row:i+2,value:valor});
-    programarVerificacion();
-    if (refrescado) { renderStats(); renderTable(); }
-    showToast('📝 Nota guardada');
-  }).catch(function(){
-    showToast('❌ Sin conexión: la nota NO se ha guardado');
-    setEstadoSync('⚠️ Sin conexión con la hoja', '#f50057');
-  });
+  var cod = allData[idx][13];
+  allData[idx][14] = valor;
+  ultimaEscritura = Date.now();
+  enviarAlServidor({action:'updateNotas', row: filaDeCodigo(cod, idx), value: valor});
+  programarVerificacion();
+  showToast('📝 Nota guardada');
 }
 
 function abrirModal(idx) {
@@ -1069,6 +1115,7 @@ function guardarEdicion() {
   allData[editIdx][1]=data.equipo; allData[editIdx][2]=data.jugador1; allData[editIdx][7]=data.telefono1;
   allData[editIdx][4]=data.jugador2; allData[editIdx][8]=data.telefono2; allData[editIdx][6]=data.zona;
   allData[editIdx][10]=data.email; allData[editIdx][11]=data.catMovimiento; allData[editIdx][12]=data.catParado;
+  ultimaEscritura = Date.now();
   enviarAlServidor(data);
   programarVerificacion();
   cerrarModal(); renderStats(); renderTable();
@@ -1078,6 +1125,7 @@ function guardarEdicion() {
 function eliminarInscrito(idx) {
   var eq = allData[idx][1], j1 = allData[idx][2];
   if (!confirm('¿Eliminar la inscripción de "'+eq+'" ('+j1+')? Esta acción no se puede deshacer.')) return;
+  ultimaEscritura = Date.now();
   enviarAlServidor({action:'cancelar',codigo:allData[idx][13]});
   allData.splice(idx, 1);
   renderStats(); renderTable();
@@ -1162,6 +1210,103 @@ function loadHistorial() {
       }).join('');
     })
     .catch(function(){ document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
+}
+
+function informeZonas() {
+  var mf = window._adminModFilter || '';
+  var datos = window._adminFiltered || allData;
+  if (!datos.length) { showToast('No hay datos para el informe'); return; }
+
+  // Agrupar por zona
+  var zonas = {};
+  datos.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (mf === 'mov' && !r[11]) return;
+    if (mf === 'par' && !r[12]) return;
+    if (!zonas[z]) zonas[z] = [];
+    zonas[z].push(r);
+  });
+  var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
+  if (!nombresZona.length) { showToast('No hay datos para el informe'); return; }
+
+  function esc(t) {
+    return (t == null ? '' : String(t))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function modalidadesDe(r) {
+    var m = [];
+    if (r[11] && mf !== 'par') m.push('Movimiento · ' + r[11]);
+    if (r[12] && mf !== 'mov') m.push('Parado · ' + r[12]);
+    return m.length ? m.join('<br>') : '—';
+  }
+
+  var totalParejas = 0, totalJug = 0;
+  var cuerpo = '';
+  nombresZona.forEach(function(z){
+    var filas = zonas[z].slice().sort(function(a,b){
+      return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
+    });
+    totalParejas += filas.length;
+    totalJug += filas.length * 2;
+    cuerpo += '<section class="zona">';
+    cuerpo += '<h2>' + esc(z) + ' <span class="cuenta">' + filas.length +
+              (filas.length === 1 ? ' pareja' : ' parejas') + '</span></h2>';
+    cuerpo += '<table><thead><tr>' +
+              '<th class="n">#</th><th>Equipo</th><th>Modalidad y categoría</th><th>Jugadores</th>' +
+              '</tr></thead><tbody>';
+    filas.forEach(function(r, i){
+      cuerpo += '<tr>' +
+        '<td class="n">' + (i+1) + '</td>' +
+        '<td class="eq">' + esc(r[1]) + '</td>' +
+        '<td class="mod">' + modalidadesDe(r) + '</td>' +
+        '<td class="jug">' + esc(r[2]) + '<br>' + esc(r[4]) + '</td>' +
+        '</tr>';
+    });
+    cuerpo += '</tbody></table></section>';
+  });
+
+  var sub = 'Todas las modalidades';
+  if (mf === 'mov') sub = 'Solo MOVIMIENTO';
+  if (mf === 'par') sub = 'Solo PARADO';
+  var hoy = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+
+  var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">' +
+    '<title>Parejas por zona — AMF Melide</title>' +
+    '<style>' +
+    '*{box-sizing:border-box}' +
+    'body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff;margin:0;padding:28px 32px;font-size:12px}' +
+    'h1{font-size:19px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}' +
+    '.sub{color:#555;font-size:11px;margin-bottom:6px}' +
+    '.tot{font-size:11px;color:#111;font-weight:bold;margin-bottom:18px;border-bottom:2px solid #111;padding-bottom:10px}' +
+    '.zona{margin-bottom:22px;page-break-inside:avoid}' +
+    'h2{font-size:14px;margin:0 0 6px;background:#111;color:#fff;padding:6px 10px;letter-spacing:.05em}' +
+    '.cuenta{float:right;font-weight:normal;font-size:11px}' +
+    'table{width:100%;border-collapse:collapse}' +
+    'th{background:#eee;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 8px;border:1px solid #bbb}' +
+    'td{padding:6px 8px;border:1px solid #bbb;vertical-align:top}' +
+    'td.n,th.n{width:26px;text-align:center;color:#666}' +
+    'td.eq{font-weight:bold;width:27%}' +
+    'td.mod{width:27%;font-size:11px}' +
+    'td.jug{width:32%}' +
+    'tbody tr:nth-child(even){background:#f7f7f7}' +
+    '.barra{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:9px;text-align:center}' +
+    '.barra button{font-size:13px;padding:7px 20px;margin:0 5px;cursor:pointer;border:0;border-radius:5px;font-weight:bold}' +
+    '@media print{.barra{display:none}body{padding:0;font-size:11px}}' +
+    '</style></head><body>' +
+    '<div class="barra"><button onclick="window.print()">🖨️ Imprimir o guardar en PDF</button>' +
+    '<button onclick="window.close()">Cerrar</button></div>' +
+    '<div style="height:44px"></div>' +
+    '<h1>Parejas por zona — IV Máster de Melide</h1>' +
+    '<div class="sub">' + esc(sub) + ' · Listado generado el ' + esc(hoy) + '</div>' +
+    '<div class="tot">' + nombresZona.length + ' zonas · ' + totalParejas +
+    ' parejas · ' + totalJug + ' jugadores</div>' +
+    cuerpo + '</body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { showToast('⚠️ El navegador bloqueó la ventana. Permite las ventanas emergentes.'); return; }
+  win.document.write(doc);
+  win.document.close();
+  showToast('🗺️ Informe generado (' + totalParejas + ' parejas en ' + nombresZona.length + ' zonas)');
 }
 
 function exportCSV() {
