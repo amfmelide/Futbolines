@@ -162,6 +162,60 @@
     .table-wrap { display: none; }
     .cards-wrap { display: block; }
   }
+
+  /* ─── HOJA DE COBRO INTERACTIVA ─── */
+  #cobro-view { display: none; position: fixed; inset: 0; z-index: 10100; background: var(--bg); overflow-y: auto; }
+  #cobro-view.show { display: block; }
+  .cobro-bar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cobro-bar button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 14px; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+  .cobro-bar button.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cobro-tot { flex: 1; min-width: 200px; font-size: 0.78rem; color: var(--text-dim); line-height: 1.45; }
+  .cobro-tot b { color: var(--text); font-size: 0.95rem; }
+  .cobro-tot .vd { color: var(--libre); }
+  .cobro-tot .rj { color: var(--ocupado); }
+  .cobro-body { padding: 16px; max-width: 900px; margin: 0 auto; }
+  .cobro-zona { margin-bottom: 26px; }
+  .cobro-zona h3 { font-family: 'Barlow', sans-serif; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; gap: 10px; }
+  .cobro-zona h3 span { font-weight: 600; font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.04em; }
+  .crow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; }
+  .crow.pagado { background: rgba(0,200,83,0.10); border-color: rgba(0,200,83,0.45); }
+  .crow-info { flex: 1; min-width: 0; }
+  .crow-nom { font-weight: 700; font-size: 0.92rem; }
+  .crow.pagado .crow-nom { color: var(--libre); }
+  .crow-eq { color: var(--text-dim); font-size: 0.72rem; margin-top: 2px; }
+  .crow-dup { color: #ffab40; font-size: 0.72rem; margin-top: 3px; font-weight: 700; }
+  .crow select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 6px; font-size: 0.78rem; font-family: inherit; max-width: 130px; }
+  .crow-imp { font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 1rem; min-width: 48px; text-align: right; }
+  .crow.pagado .crow-imp { color: var(--libre); }
+  .crow-imp.manual { color: #ffab40; }
+  .crow-tick { width: 46px; height: 42px; border-radius: 9px; border: 2px solid var(--border); background: var(--surface2); color: var(--text-dim); font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
+  .crow.pagado .crow-tick { background: var(--libre); border-color: var(--libre); color: #06210f; }
+  .cobro-sub { text-align: right; font-size: 0.76rem; color: var(--text-dim); padding: 6px 4px 0; border-top: 1px solid var(--border); margin-top: 4px; }
+  .solo-print { display: none; }
+
+  @media print {
+    body.print-cobro > *:not(#cobro-view) { display: none !important; }
+    body.print-cobro { background: #fff !important; }
+    body.print-cobro #cobro-view { position: static !important; overflow: visible !important; background: #fff !important; color: #000 !important; }
+    body.print-cobro .cobro-bar, body.print-cobro .crow select, body.print-cobro .no-print { display: none !important; }
+    body.print-cobro .solo-print { display: inline !important; }
+    body.print-cobro .cobro-body { padding: 0; max-width: none; }
+    body.print-cobro .cobro-zona { page-break-inside: avoid; margin-bottom: 16px; }
+    body.print-cobro .cobro-zona h3 { background: #111 !important; color: #fff !important; border: 0; border-radius: 0; font-size: 12px; padding: 5px 8px; }
+    body.print-cobro .cobro-zona h3 span { color: #ddd !important; }
+    body.print-cobro .crow { background: #fff !important; border: 1px solid #999 !important; border-radius: 0; padding: 5px 8px; margin-bottom: -1px; page-break-inside: avoid; }
+    body.print-cobro .crow.pagado { background: #f0f0f0 !important; }
+    body.print-cobro .crow-nom, body.print-cobro .crow.pagado .crow-nom { color: #000 !important; font-size: 11px; }
+    body.print-cobro .crow.pagado .crow-nom { color: #777 !important; }
+    body.print-cobro .crow-eq { color: #555 !important; font-size: 10px; }
+    body.print-cobro .crow-dup { color: #000 !important; font-weight: bold; }
+    body.print-cobro .crow-imp, body.print-cobro .crow.pagado .crow-imp { color: #000 !important; font-size: 12px; }
+    body.print-cobro .crow-tick { border: 1.5px solid #000 !important; background: #fff !important; color: transparent !important; width: 20px; height: 20px; border-radius: 0; }
+    body.print-cobro .crow.pagado .crow-tick { background: #bbb !important; }
+    body.print-cobro .cobro-sub, body.print-cobro .cobro-sub b { color: #000 !important; }
+    body.print-cobro .cobro-sub { border-top: 1px solid #000; font-size: 11px; }
+    body.print-cobro #cobro-print-head { display: block !important; }
+  }
   table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
   thead { background: var(--surface2); }
   th { padding: 10px 12px; text-align: left; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); white-space: nowrap; }
@@ -421,6 +475,20 @@
 </div>
 
 <div id="toast"></div>
+
+<!-- Hoja de cobro interactiva -->
+<div id="cobro-view">
+  <div class="cobro-bar no-print">
+    <button onclick="cerrarCobro()">← Volver</button>
+    <div class="cobro-tot" id="cobro-tot"></div>
+    <button onclick="imprimirCobro()" class="pri">🖨️ Imprimir / PDF</button>
+  </div>
+  <div id="cobro-print-head" style="display:none;padding:0 0 10px;border-bottom:2px solid #000;margin-bottom:14px;">
+    <div style="font-family:Barlow,sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;">Hoja de cobro — IV Máster de Melide</div>
+    <div id="cobro-print-sub" style="font-size:11px;color:#333;margin-top:3px;"></div>
+  </div>
+  <div class="cobro-body" id="cobro-body"></div>
+</div>
 
 <!-- Menu de estado de pago -->
 <div id="menu-pago" onclick="cerrarMenuPago(event)">
@@ -1359,16 +1427,58 @@ function loadHistorial() {
     .catch(function(){ document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
 }
 
+/* ─── HOJA DE COBRO INTERACTIVA ───
+   Se marca desde aqui igual que en la tabla (se guarda en la hoja de Google).
+   El importe manual solo vive en este navegador: sirve para cuadrar la caja
+   cuando alguien paga una cantidad distinta de las de siempre. */
+var importesManuales = {};
+try { importesManuales = JSON.parse(localStorage.getItem('amf_importes_manuales') || '{}'); } catch(e) { importesManuales = {}; }
+
+function claveManual(cod, jugador){ return String(cod) + '-' + jugador; }
+function guardarManuales() {
+  try { localStorage.setItem('amf_importes_manuales', JSON.stringify(importesManuales)); } catch(e) {}
+}
+function importeDe(cod, jugador, estado) {
+  var m = importesManuales[claveManual(cod, jugador)];
+  if (m !== undefined && m !== null && m !== '') return { valor: Number(m), manual: true };
+  return { valor: importePago(estado), manual: false };
+}
+
+/* Jugadores que aparecen en mas de una pareja: nombre normalizado -> equipos */
+function jugadoresRepetidos() {
+  var por = {};
+  allData.forEach(function(r){
+    [r[2], r[4]].forEach(function(n){
+      var nn = normalizarNombre(n);
+      if (!nn) return;
+      if (!por[nn]) por[nn] = [];
+      if (por[nn].indexOf(r[1]) === -1) por[nn].push(r[1]);
+    });
+  });
+  return por;
+}
+
 function hojaCobro() {
   var datos = window._adminFiltered || allData;
   if (!datos.length) { showToast('No hay datos para la hoja de cobro'); return; }
+  document.getElementById('cobro-view').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  renderCobro();
+}
+function cerrarCobro() {
+  document.getElementById('cobro-view').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function imprimirCobro() {
+  document.body.classList.add('print-cobro');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('print-cobro'); }, 600);
+}
 
-  function esc(t) {
-    return (t == null ? '' : String(t))
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+function renderCobro() {
+  var datos = window._adminFiltered || allData;
+  var reps = jugadoresRepetidos();
 
-  // Agrupar por zona, y dentro por equipo
   var zonas = {};
   datos.forEach(function(r){
     var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
@@ -1377,93 +1487,103 @@ function hojaCobro() {
   });
   var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
 
-  var cobrado = 0, pendiente = 0, nPend = 0, nJug = 0;
-  var cuerpo = '';
+  function esc(t) {
+    return (t == null ? '' : String(t))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  var cobrado = 0, pendiente = 0, nPend = 0, nJug = 0, html = '';
 
   nombresZona.forEach(function(z){
     var filas = zonas[z].slice().sort(function(a,b){
       return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
     });
-    var zCob = 0, zPen = 0, zPendN = 0, n = 0, tr = '';
+    var zCob = 0, zPen = 0, zPendN = 0, n = 0, cuerpo = '';
+
     filas.forEach(function(r){
-      [[r[2], r[3]], [r[4], r[5]]].forEach(function(par){
+      var ri = allData.indexOf(r);
+      [[r[2], r[3], 1], [r[4], r[5], 2]].forEach(function(par){
         var est = estadoPago(par[1]);
-        var imp = importePago(est);
+        var jugN = par[2];
+        var imp = importeDe(r[13], jugN, est);
         var pend = est === 'No';
         n++; nJug++;
-        if (pend) { zPen += PRECIO; zPendN++; } else { zCob += imp; }
-        tr += '<tr class="' + (pend ? 'pend' : 'ok') + '">' +
-          '<td class="n">' + n + '</td>' +
-          '<td class="eq">' + esc(r[1]) + '</td>' +
-          '<td class="jg">' + esc(par[0]) + '</td>' +
-          '<td class="es">' + (pend ? 'PENDIENTE' : TITULO_PAGO[est].replace(/ \(.*\)/,'')) + '</td>' +
-          '<td class="im">' + (pend ? PRECIO + '€' : imp + '€') + '</td>' +
-          '<td class="ck"></td>' +
-          '</tr>';
+        if (pend) { zPen += PRECIO; zPendN++; } else { zCob += imp.valor; }
+
+        var otros = (reps[normalizarNombre(par[0])] || []).filter(function(e){ return e !== r[1]; });
+        var ops = CICLO_PAGO.map(function(e){
+          return '<option value="'+e+'"'+(e===est ? ' selected':'')+'>' +
+                 LABEL_PAGO[e] + ' ' + TITULO_PAGO[e].replace(/ \(.*\)/,'') +
+                 (e==='No' ? '' : ' \u00b7 ' + IMPORTE_PAGO[e] + '\u20ac') + '</option>';
+        }).join('');
+
+        cuerpo += '<div class="crow' + (pend ? '' : ' pagado') + '" id="crow-'+ri+'-'+jugN+'">' +
+          '<div class="crow-info">' +
+            '<div class="crow-nom">' + esc(par[0]) + '</div>' +
+            '<div class="crow-eq">' + esc(r[1]) + '</div>' +
+            (otros.length ? '<div class="crow-dup">👥 Tambi\u00e9n en: ' + esc(otros.join(' \u00b7 ')) + '</div>' : '') +
+          '</div>' +
+          '<select onchange="cobroCambiarEstado('+ri+','+jugN+',this.value)">' + ops +
+            '<option value="__manual__">\u270f\ufe0f Otro importe\u2026</option></select>' +
+          '<div class="crow-imp' + (imp.manual ? ' manual' : '') + '">' +
+            (pend && !imp.manual ? PRECIO + '\u20ac' : imp.valor + '\u20ac') +
+            '<span class="solo-print" style="display:none"> ' + (pend ? '' : '\u00b7 ' + TITULO_PAGO[est].replace(/ \(.*\)/,'')) + '</span>' +
+          '</div>' +
+          '<button class="crow-tick" onclick="cobroToggle('+ri+','+jugN+')" title="Marcar cobrado">\u2713</button>' +
+        '</div>';
       });
     });
+
     cobrado += zCob; pendiente += zPen; nPend += zPendN;
-    cuerpo += '<section class="zona">' +
-      '<h2>' + esc(z) + ' <span class="cuenta">' + filas.length +
-      (filas.length === 1 ? ' pareja' : ' parejas') + ' · ' + n + ' jugadores</span></h2>' +
-      '<table><thead><tr><th class="n">#</th><th>Equipo</th><th>Jugador</th>' +
-      '<th>Estado</th><th style="text-align:right">Importe</th><th class="ck">✓</th></tr></thead>' +
-      '<tbody>' + tr + '</tbody></table>' +
-      '<div class="sub-zona">Cobrado en ' + esc(z) + ': <b>' + zCob + '€</b>' +
-      ' · Pendiente: <b>' + zPen + '€</b>' + (zPendN ? ' (' + zPendN + ' jug.)' : '') + '</div>' +
-      '</section>';
+    html += '<div class="cobro-zona"><h3>' + esc(z) +
+      '<span>' + filas.length + (filas.length===1 ? ' pareja' : ' parejas') + ' \u00b7 ' + n + ' jug.</span></h3>' +
+      cuerpo +
+      '<div class="cobro-sub">Cobrado: <b>' + zCob + '\u20ac</b> \u00b7 Pendiente: <b>' + zPen + '\u20ac</b>' +
+      (zPendN ? ' (' + zPendN + ' jug.)' : '') + '</div></div>';
   });
-  var lista = { length: nJug };
 
-  var hoy = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
-  var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">' +
-    '<title>Hoja de cobro — AMF Melide</title><style>' +
-    '*{box-sizing:border-box}' +
-    'body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff;margin:0;padding:26px 30px;font-size:12px}' +
-    'h1{font-size:19px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}' +
-    '.sub{color:#555;font-size:11px;margin-bottom:10px}' +
-    '.res{display:flex;gap:10px;margin-bottom:16px}' +
-    '.res div{flex:1;border:1px solid #111;padding:8px 10px}' +
-    '.res b{display:block;font-size:17px;margin-top:2px}' +
-    '.res span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#555}' +
-    'table{width:100%;border-collapse:collapse}' +
-    'th{background:#111;color:#fff;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:6px 7px;border:1px solid #111}' +
-    'td{padding:6px 7px;border:1px solid #bbb}' +
-    'td.n,th.n{width:26px;text-align:center;color:#666}' +
-    'td.eq{width:30%;font-size:11px;color:#444}' +
-    'td.jg{width:30%;font-weight:bold}' +
-    'td.es{width:14%;font-size:10px;letter-spacing:.03em}' +
-    'td.im{width:9%;text-align:right;font-weight:bold}' +
-    'td.ck,th.ck{width:34px;text-align:center}' +
-    'td.ck:before{content:"";display:inline-block;width:15px;height:15px;border:1.5px solid #111}' +
-    'tr.ok td{color:#888;background:#f4f4f4}' +
-    'tr.ok td.ck:before{border-color:#999;background:#ddd}' +
-    'tr.pend td.im{background:#fff3cd}' +
-    'thead{display:table-header-group}tr{page-break-inside:avoid}' +
-    '.zona{margin-bottom:20px;page-break-inside:avoid}' +
-    '.zona h2{font-size:13px;margin:0 0 6px;background:#111;color:#fff;padding:6px 10px;letter-spacing:.05em}' +
-    '.zona h2 .cuenta{float:right;font-weight:normal;font-size:10px}' +
-    '.sub-zona{margin-top:5px;font-size:11px;text-align:right;border-top:1px solid #111;padding-top:4px}' +
-    '.barra{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:9px;text-align:center}' +
-    '.barra button{font-size:13px;padding:7px 20px;margin:0 5px;cursor:pointer;border:0;border-radius:5px;font-weight:bold}' +
-    '@media print{.barra{display:none}body{padding:0;font-size:11px}}' +
-    '</style></head><body>' +
-    '<div class="barra"><button onclick="window.print()">🖨️ Imprimir o guardar en PDF</button>' +
-    '<button onclick="window.close()">Cerrar</button></div><div style="height:44px"></div>' +
-    '<h1>Hoja de cobro — IV Máster de Melide</h1>' +
-    '<div class="sub">' + lista.length + ' jugadores · Listado generado el ' + esc(hoy) + '</div>' +
-    '<div class="res">' +
-      '<div><span>Ya cobrado</span><b>' + cobrado + '€</b></div>' +
-      '<div><span>Pendiente (' + nPend + ' jug.)</span><b>' + pendiente + '€</b></div>' +
-      '<div><span>Total si se cobra todo</span><b>' + (cobrado + pendiente) + '€</b></div>' +
-    '</div>' +
-    cuerpo + '</body></html>';
+  document.getElementById('cobro-body').innerHTML = html;
+  document.getElementById('cobro-tot').innerHTML =
+    'Cobrado <b class="vd">' + cobrado + '\u20ac</b> \u00b7 ' +
+    'Pendiente <b class="rj">' + pendiente + '\u20ac</b> (' + nPend + ' jug.) \u00b7 ' +
+    'Total <b>' + (cobrado + pendiente) + '\u20ac</b>';
+  document.getElementById('cobro-print-sub').textContent =
+    nJug + ' jugadores \u00b7 Cobrado ' + cobrado + '\u20ac \u00b7 Pendiente ' + pendiente +
+    '\u20ac (' + nPend + ') \u00b7 ' + new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+}
 
-  var win = window.open('', '_blank');
-  if (!win) { showToast('⚠️ El navegador bloqueó la ventana. Permite las ventanas emergentes.'); return; }
-  win.document.write(doc);
-  win.document.close();
-  showToast('💶 Hoja de cobro (' + nPend + ' pendientes, ' + pendiente + '€)');
+function cobroToggle(idx, jugador) {
+  if (!allData[idx]) return;
+  var col = jugador===1 ? 3 : 5;
+  var est = estadoPago(allData[idx][col]);
+  escribirPago(idx, jugador, est === 'No' ? 'Si' : 'No');
+  renderCobro();
+}
+function cobroCambiarEstado(idx, jugador, valor) {
+  if (!allData[idx]) return;
+  var cod = allData[idx][13];
+  if (valor === '__manual__') {
+    var actual = importesManuales[claveManual(cod, jugador)];
+    var t = prompt('Importe cobrado a ' + (allData[idx][jugador===1?2:4]||'') + ' (en \u20ac).\nD\u00e9jalo vac\u00edo para volver al importe normal:', actual == null ? '' : actual);
+    if (t === null) { renderCobro(); return; }
+    t = t.replace(',', '.').trim();
+    if (t === '') {
+      delete importesManuales[claveManual(cod, jugador)];
+    } else if (isNaN(Number(t)) || Number(t) < 0) {
+      showToast('\u26a0\ufe0f Importe no v\u00e1lido');
+      renderCobro(); return;
+    } else {
+      importesManuales[claveManual(cod, jugador)] = Number(t);
+      if (estadoPago(allData[idx][jugador===1?3:5]) === 'No') escribirPago(idx, jugador, 'Si');
+    }
+    guardarManuales();
+    renderCobro();
+    return;
+  }
+  delete importesManuales[claveManual(cod, jugador)];
+  guardarManuales();
+  escribirPago(idx, jugador, valor);
+  renderCobro();
 }
 
 function informeZonas() {
