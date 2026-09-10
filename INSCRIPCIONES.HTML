@@ -169,6 +169,9 @@
   .cobro-bar { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .cobro-bar button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 14px; font-family: 'Barlow', sans-serif; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
   .cobro-bar button.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cobro-filtro { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 11px; font-size: 0.82rem; font-family: inherit; }
+  #cobro-search { flex: 1; min-width: 150px; }
+  .cobro-tot .fil { color: #ffab40; font-weight: 800; }
   .cobro-tot { flex: 1; min-width: 200px; font-size: 0.78rem; color: var(--text-dim); line-height: 1.45; }
   .cobro-tot b { color: var(--text); font-size: 0.95rem; }
   .cobro-tot .vd { color: var(--libre); }
@@ -480,6 +483,9 @@
 <div id="cobro-view">
   <div class="cobro-bar no-print">
     <button onclick="cerrarCobro()">← Volver</button>
+    <input type="text" id="cobro-search" class="cobro-filtro" placeholder="🔍 Buscar jugador o equipo…" oninput="renderCobro()">
+    <select id="cobro-zona" class="cobro-filtro" onchange="renderCobro()"><option value="">Todas las zonas</option></select>
+    <button onclick="limpiarFiltrosCobro()" id="cobro-limpiar" style="display:none">✕ Quitar filtros</button>
     <div class="cobro-tot" id="cobro-tot"></div>
     <button onclick="imprimirCobro()" class="pri">🖨️ Imprimir / PDF</button>
   </div>
@@ -1463,6 +1469,18 @@ function hojaCobro() {
   if (!datos.length) { showToast('No hay datos para la hoja de cobro'); return; }
   document.getElementById('cobro-view').classList.add('show');
   document.body.style.overflow = 'hidden';
+  var sel = document.getElementById('cobro-zona');
+  var previa = sel.value;
+  var zs = [];
+  datos.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (zs.indexOf(z) === -1) zs.push(z);
+  });
+  zs.sort(function(a,b){ return a.localeCompare(b, 'es'); });
+  sel.innerHTML = '<option value="">Todas las zonas</option>' + zs.map(function(z){
+    return '<option value="' + z + '">' + z + '</option>';
+  }).join('');
+  sel.value = zs.indexOf(previa) >= 0 ? previa : '';
   renderCobro();
 }
 function cerrarCobro() {
@@ -1479,9 +1497,21 @@ function renderCobro() {
   var datos = window._adminFiltered || allData;
   var reps = jugadoresRepetidos();
 
+  var qEl = document.getElementById('cobro-search');
+  var zEl = document.getElementById('cobro-zona');
+  var q = qEl ? qEl.value.trim().toLowerCase() : '';
+  var zf = zEl ? zEl.value : '';
+  var hayFiltro = !!(q || zf);
+  var btnL = document.getElementById('cobro-limpiar');
+  if (btnL) btnL.style.display = hayFiltro ? '' : 'none';
+
   var zonas = {};
   datos.forEach(function(r){
     var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (zf && z !== zf) return;
+    if (q && ![r[1], r[2], r[4], r[6]].some(function(v){
+      return (v == null ? '' : String(v)).toLowerCase().indexOf(q) >= 0;
+    })) return;
     if (!zonas[z]) zonas[z] = [];
     zonas[z].push(r);
   });
@@ -1542,14 +1572,22 @@ function renderCobro() {
       (zPendN ? ' (' + zPendN + ' jug.)' : '') + '</div></div>';
   });
 
-  document.getElementById('cobro-body').innerHTML = html;
+  document.getElementById('cobro-body').innerHTML = html ||
+    '<div class="empty-state"><p>Ning\u00fan jugador coincide con la b\u00fasqueda</p></div>';
   document.getElementById('cobro-tot').innerHTML =
+    (hayFiltro ? '<span class="fil">FILTRADO:</span> ' : '') +
     'Cobrado <b class="vd">' + cobrado + '\u20ac</b> \u00b7 ' +
     'Pendiente <b class="rj">' + pendiente + '\u20ac</b> (' + nPend + ' jug.) \u00b7 ' +
     'Total <b>' + (cobrado + pendiente) + '\u20ac</b>';
   document.getElementById('cobro-print-sub').textContent =
     nJug + ' jugadores \u00b7 Cobrado ' + cobrado + '\u20ac \u00b7 Pendiente ' + pendiente +
     '\u20ac (' + nPend + ') \u00b7 ' + new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+}
+
+function limpiarFiltrosCobro() {
+  document.getElementById('cobro-search').value = '';
+  document.getElementById('cobro-zona').value = '';
+  renderCobro();
 }
 
 function cobroToggle(idx, jugador) {
