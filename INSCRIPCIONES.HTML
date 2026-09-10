@@ -1368,30 +1368,52 @@ function hojaCobro() {
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  var lista = [];
-  datos.slice().sort(function(a,b){
-    return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
-  }).forEach(function(r){
-    [[r[2], r[3]], [r[4], r[5]]].forEach(function(par){
-      lista.push({ eq: r[1], zona: r[6], nombre: par[0], estado: estadoPago(par[1]) });
-    });
+  // Agrupar por zona, y dentro por equipo
+  var zonas = {};
+  datos.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (!zonas[z]) zonas[z] = [];
+    zonas[z].push(r);
   });
+  var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
 
-  var cobrado = 0, pendiente = 0, nPend = 0;
-  var filas = lista.map(function(j, i){
-    var imp = importePago(j.estado);
-    if (j.estado === 'No') { pendiente += PRECIO; nPend++; } else { cobrado += imp; }
-    var pend = j.estado === 'No';
-    return '<tr class="' + (pend ? 'pend' : 'ok') + '">' +
-      '<td class="n">' + (i+1) + '</td>' +
-      '<td class="eq">' + esc(j.eq) + '</td>' +
-      '<td class="jg">' + esc(j.nombre) + '</td>' +
-      '<td class="zo">' + esc(j.zona) + '</td>' +
-      '<td class="es">' + (pend ? 'PENDIENTE' : TITULO_PAGO[j.estado].replace(/ \(.*\)/,'')) + '</td>' +
-      '<td class="im">' + (pend ? PRECIO + '€' : imp + '€') + '</td>' +
-      '<td class="ck"></td>' +
-      '</tr>';
-  }).join('');
+  var cobrado = 0, pendiente = 0, nPend = 0, nJug = 0;
+  var cuerpo = '';
+
+  nombresZona.forEach(function(z){
+    var filas = zonas[z].slice().sort(function(a,b){
+      return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
+    });
+    var zCob = 0, zPen = 0, zPendN = 0, n = 0, tr = '';
+    filas.forEach(function(r){
+      [[r[2], r[3]], [r[4], r[5]]].forEach(function(par){
+        var est = estadoPago(par[1]);
+        var imp = importePago(est);
+        var pend = est === 'No';
+        n++; nJug++;
+        if (pend) { zPen += PRECIO; zPendN++; } else { zCob += imp; }
+        tr += '<tr class="' + (pend ? 'pend' : 'ok') + '">' +
+          '<td class="n">' + n + '</td>' +
+          '<td class="eq">' + esc(r[1]) + '</td>' +
+          '<td class="jg">' + esc(par[0]) + '</td>' +
+          '<td class="es">' + (pend ? 'PENDIENTE' : TITULO_PAGO[est].replace(/ \(.*\)/,'')) + '</td>' +
+          '<td class="im">' + (pend ? PRECIO + '€' : imp + '€') + '</td>' +
+          '<td class="ck"></td>' +
+          '</tr>';
+      });
+    });
+    cobrado += zCob; pendiente += zPen; nPend += zPendN;
+    cuerpo += '<section class="zona">' +
+      '<h2>' + esc(z) + ' <span class="cuenta">' + filas.length +
+      (filas.length === 1 ? ' pareja' : ' parejas') + ' · ' + n + ' jugadores</span></h2>' +
+      '<table><thead><tr><th class="n">#</th><th>Equipo</th><th>Jugador</th>' +
+      '<th>Estado</th><th style="text-align:right">Importe</th><th class="ck">✓</th></tr></thead>' +
+      '<tbody>' + tr + '</tbody></table>' +
+      '<div class="sub-zona">Cobrado en ' + esc(z) + ': <b>' + zCob + '€</b>' +
+      ' · Pendiente: <b>' + zPen + '€</b>' + (zPendN ? ' (' + zPendN + ' jug.)' : '') + '</div>' +
+      '</section>';
+  });
+  var lista = { length: nJug };
 
   var hoy = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
   var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">' +
@@ -1408,9 +1430,8 @@ function hojaCobro() {
     'th{background:#111;color:#fff;text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:6px 7px;border:1px solid #111}' +
     'td{padding:6px 7px;border:1px solid #bbb}' +
     'td.n,th.n{width:26px;text-align:center;color:#666}' +
-    'td.eq{width:23%;font-size:11px;color:#444}' +
-    'td.jg{width:25%;font-weight:bold}' +
-    'td.zo{width:15%;font-size:11px;color:#444}' +
+    'td.eq{width:30%;font-size:11px;color:#444}' +
+    'td.jg{width:30%;font-weight:bold}' +
     'td.es{width:14%;font-size:10px;letter-spacing:.03em}' +
     'td.im{width:9%;text-align:right;font-weight:bold}' +
     'td.ck,th.ck{width:34px;text-align:center}' +
@@ -1419,6 +1440,10 @@ function hojaCobro() {
     'tr.ok td.ck:before{border-color:#999;background:#ddd}' +
     'tr.pend td.im{background:#fff3cd}' +
     'thead{display:table-header-group}tr{page-break-inside:avoid}' +
+    '.zona{margin-bottom:20px;page-break-inside:avoid}' +
+    '.zona h2{font-size:13px;margin:0 0 6px;background:#111;color:#fff;padding:6px 10px;letter-spacing:.05em}' +
+    '.zona h2 .cuenta{float:right;font-weight:normal;font-size:10px}' +
+    '.sub-zona{margin-top:5px;font-size:11px;text-align:right;border-top:1px solid #111;padding-top:4px}' +
     '.barra{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:9px;text-align:center}' +
     '.barra button{font-size:13px;padding:7px 20px;margin:0 5px;cursor:pointer;border:0;border-radius:5px;font-weight:bold}' +
     '@media print{.barra{display:none}body{padding:0;font-size:11px}}' +
@@ -1432,9 +1457,7 @@ function hojaCobro() {
       '<div><span>Pendiente (' + nPend + ' jug.)</span><b>' + pendiente + '€</b></div>' +
       '<div><span>Total si se cobra todo</span><b>' + (cobrado + pendiente) + '€</b></div>' +
     '</div>' +
-    '<table><thead><tr><th class="n">#</th><th>Equipo</th><th>Jugador</th><th>Zona</th>' +
-    '<th>Estado</th><th style="text-align:right">Importe</th><th class="ck">✓</th></tr></thead>' +
-    '<tbody>' + filas + '</tbody></table></body></html>';
+    cuerpo + '</body></html>';
 
   var win = window.open('', '_blank');
   if (!win) { showToast('⚠️ El navegador bloqueó la ventana. Permite las ventanas emergentes.'); return; }
