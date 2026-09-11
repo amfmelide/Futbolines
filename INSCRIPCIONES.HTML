@@ -297,7 +297,7 @@
       <div class="cerrado-banner" id="cerrado-banner" style="display:none">
         🔒 <strong>INSCRIPCIONES CERRADAS.</strong><br>
         Ya no se admiten altas ni cambios por la web.<br>
-        Escribe a <strong>Iván</strong> por WhatsApp: <a href="https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener" style="color:#25D366;font-weight:800;text-decoration:none;">633 92 82 55</a>
+        Escríbenos por WhatsApp: <a href="https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener" style="color:#25D366;font-weight:800;text-decoration:none;">633 92 82 55</a>
       </div>
       <div class="form-group">
         <label>Nombre del equipo</label>
@@ -512,9 +512,9 @@
     <p style="color:var(--text-dim);font-size:0.9rem;line-height:1.65;margin-top:16px;">
       El plazo para apuntarse por la web ya se ha cerrado, así que <strong style="color:var(--text)">no se ha guardado ningún dato</strong>.
       <br><br>
-      Si quieres apuntarte o cambiar algo, escribe por WhatsApp a <strong style="color:var(--text)">Iván · 633 92 82 55</strong> y lo miramos por si queda hueco.
+      Si quieres apuntarte o cambiar algo, escríbenos por WhatsApp al <strong style="color:var(--text)">633 92 82 55</strong> y lo miramos por si queda hueco.
     </p>
-    <a class="btn-wa" href="https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 Escribir a Iván por WhatsApp</a>
+    <a class="btn-wa" href="https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
     <button class="confirm-btn-back" style="width:100%;margin-top:10px;" onclick="cerrarAvisoCierre()">Cerrar</button>
   </div>
 </div>
@@ -581,8 +581,8 @@ var ADMIN_PASS = 'amf2025';
    A partir de esta fecha y hora la web deja de admitir altas, cambios y
    cancelaciones: se muestra un aviso con el WhatsApp y no se envia nada
    a la hoja. El panel de admin sigue funcionando con normalidad. */
-var FECHA_CIERRE = new Date('2026-09-11T23:59:59+02:00');
-var WA_CONTACTO  = 'https://wa.me/34633928255?text=Hola%20Iv%C3%A1n%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide';
+var FECHA_CIERRE = new Date('2026-09-11T00:00:00+02:00');
+var WA_CONTACTO  = 'https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide';
 
 function inscripcionesCerradas() { return Date.now() > FECHA_CIERRE.getTime(); }
 function mostrarAvisoCierre() {
@@ -597,6 +597,16 @@ function aplicarCierre() {
   if (!inscripcionesCerradas()) return;
   var b = document.getElementById('cerrado-banner');
   if (b) b.style.display = 'block';
+  if (esModoAdmin()) return;
+
+  // El formulario desaparece: solo queda el listado de participantes
+  var btns = document.querySelectorAll('#tabs .tab-btn');
+  if (btns[0]) btns[0].style.display = 'none';
+  if (btns[1]) btns[1].classList.add('active');
+  var ti = document.getElementById('tab-inscripcion');
+  if (ti) ti.style.display = 'none';
+  showTab('participantes', null);
+  if (btns[1]) btns[1].classList.add('active');
 }
 
 var PRECIO = 25;
@@ -732,6 +742,14 @@ window.addEventListener('DOMContentLoaded', function() {
   var accion = p.get('accion');
   var codigo = p.get('codigo');
   aplicarCierre();
+
+  // Enlace directo al listado de participantes (desde la portada)
+  if (p.get('ver') === 'participantes' || location.hash === '#participantes') {
+    showTab('participantes', null);
+    var tb = document.querySelectorAll('#tabs .tab-btn');
+    if (tb && tb[1]) { tb[0].classList.remove('active'); tb[1].classList.add('active'); }
+    return;
+  }
 
   if ((accion === 'cancelar' || accion === 'modificar') && codigo && inscripcionesCerradas()) {
     mostrarAvisoCierre();
