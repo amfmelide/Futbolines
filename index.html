@@ -14,6 +14,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: 'Barlow', sans-serif;
+    -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
     background: var(--bg); color: var(--text);
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -136,6 +137,170 @@
     font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase;
     box-shadow: 0 6px 24px rgba(21,101,192,0.4); transition: transform 0.2s; }
   .di-cta:hover { transform: translateY(-3px); }
+  /* ─── ESCENARIO: modo semana del torneo ─── */
+  body.modo-torneo .bg-image { filter: brightness(0.16) blur(3px) sepia(0.45); animation: stage-zoom 40s ease-in-out infinite alternate; }
+  body.modo-torneo .bg-overlay { background: radial-gradient(110% 75% at 50% 0%, rgba(200,169,110,0.13) 0%, rgba(7,9,14,0.82) 45%, rgba(5,6,10,0.96) 100%); }
+  @keyframes stage-zoom { from { transform: scale(1.05); } to { transform: scale(1.16); } }
+
+  .focos { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; display: none; }
+  body.modo-torneo .focos { display: block; }
+  .foco { position: absolute; top: -14vh; width: 46vw; height: 115vh;
+    background: linear-gradient(to bottom, rgba(233,205,148,0.20), rgba(233,205,148,0.05) 45%, transparent 78%);
+    filter: blur(22px); transform-origin: 50% 0%; }
+  .foco.i { left: -14vw; animation: barrido-i 13s ease-in-out infinite alternate; }
+  .foco.d { right: -14vw; animation: barrido-d 16s ease-in-out infinite alternate; }
+  @keyframes barrido-i { from { transform: rotate(14deg); opacity: 0.55; } to { transform: rotate(30deg); opacity: 0.9; } }
+  @keyframes barrido-d { from { transform: rotate(-30deg); opacity: 0.9; } to { transform: rotate(-14deg); opacity: 0.55; } }
+
+  .grano { position: fixed; inset: 0; z-index: 1; pointer-events: none; display: none; opacity: 0.14; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  body.modo-torneo .grano { display: block; }
+
+  /* ─── HERO ─── */
+  #hero-torneo { display: none; width: 100%; position: relative; z-index: 2; text-align: center; margin-bottom: 26px; }
+  #hero-torneo.show { display: block; }
+  .hero-kicker { font-family: 'Bebas Neue', sans-serif; font-size: clamp(0.75rem, 2.6vw, 1rem); letter-spacing: 0.42em;
+    color: #9c8558; text-indent: 0.42em; opacity: 0; animation: subir 0.8s 0.1s ease-out forwards; }
+  .hero-tit { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.1rem, 15vw, 8rem); line-height: 0.82;
+    letter-spacing: 0.02em; margin: 6px 0 2px; position: relative; display: inline-block;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 32%, #b08d4f 62%, #8a6d38 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,0.55)) drop-shadow(0 0 44px rgba(217,188,133,0.32));
+    opacity: 0; animation: subir 1s 0.25s ease-out forwards; }
+  .hero-tit::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.55) 48%, transparent 58%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: brillo 5.5s 1.4s ease-in-out infinite; }
+  @keyframes brillo { 0%, 72% { background-position: -180% 0; } 100% { background-position: 180% 0; } }
+  .hero-tit::after { background-size: 260% 100%; }
+  .hero-lema { font-family: 'Bebas Neue', sans-serif; font-size: clamp(0.85rem, 3vw, 1.25rem); letter-spacing: 0.3em;
+    color: #c8a96e; text-indent: 0.3em; opacity: 0; animation: subir 0.9s 0.5s ease-out forwards; }
+  .hero-linea { width: 0; height: 1px; margin: 16px auto 0; background: linear-gradient(90deg, transparent, #c8a96e, transparent);
+    animation: abrir 1.1s 0.7s ease-out forwards; }
+  @keyframes abrir { to { width: min(340px, 82%); } }
+  @keyframes subir { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+  .hero-recuento { margin-top: 22px; opacity: 0; animation: subir 0.9s 0.6s ease-out forwards; }
+  .hr-num { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4.4rem, 19vw, 7.5rem); line-height: 0.85;
+    color: #e9cd94; text-shadow: 0 0 44px rgba(233,205,148,0.35), 0 3px 0 rgba(0,0,0,0.5); }
+  .hr-lab { font-size: 0.76rem; letter-spacing: 0.22em; color: #9c8558; text-transform: uppercase; font-weight: 700; margin-top: 4px; }
+  .hr-lab .inscritos-dot { background: #e9cd94; }
+  .hr-split { display: flex; align-items: center; justify-content: center; gap: 22px; margin-top: 16px; }
+  .hr-sep { width: 1px; height: 34px; background: rgba(200,169,110,0.35); }
+  .hr-mod { display: flex; flex-direction: column; align-items: center; }
+  .hr-mod-n { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; color: #c8a96e; }
+  .hr-mod-l { font-size: 0.66rem; letter-spacing: 0.16em; color: #8a7549; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+  .hr-botones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .hr-btn { display: inline-block; padding: 13px 24px; border-radius: 10px; text-decoration: none;
+    border: 1.5px solid rgba(200,169,110,0.45); background: rgba(8,10,16,0.6); color: #c8a96e;
+    font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.82rem; letter-spacing: 0.08em;
+    text-transform: uppercase; transition: all 0.2s; }
+  .hr-btn:hover { transform: translateY(-2px); border-color: #e9cd94; color: #e9cd94; }
+  .hr-btn.pri { background: rgba(200,169,110,0.16); border-color: rgba(233,205,148,0.75); color: #e9cd94;
+    box-shadow: 0 6px 26px rgba(233,205,148,0.16); }
+  .hr-btn.wa { border-color: rgba(37,211,102,0.6); color: #25D366; background: rgba(37,211,102,0.10); }
+  .hr-btn.wa:hover { border-color: #25D366; color: #25D366; background: rgba(37,211,102,0.2); }
+  .aviso-wa { display: none; margin-top: 16px; padding: 14px 16px; border-radius: 12px;
+    border: 1px solid rgba(37,211,102,0.35); background: rgba(37,211,102,0.07); }
+  .aviso-wa.show { display: block; }
+  .aviso-wa-t { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.06em; color: #e9cd94; }
+  .aviso-wa-s { font-size: 0.78rem; color: #a79267; line-height: 1.5; margin-top: 4px; }
+  .aviso-wa-s b { color: #25D366; }
+  .hr-btn.pri:hover { background: rgba(200,169,110,0.28); }
+
+  .hero-cd { margin-top: 20px; opacity: 0; animation: subir 0.9s 0.85s ease-out forwards; }
+  body.modo-torneo .cd-title { color: #9c8558; letter-spacing: 0.24em; font-weight: 700; }
+  body.modo-torneo .countdown { gap: 10px; }
+  body.modo-torneo .cd-box { background: rgba(8,10,16,0.7); border: 1.5px solid rgba(200,169,110,0.38); min-width: 78px; padding: 14px 14px; }
+  body.modo-torneo .cd-num { font-size: clamp(2.6rem, 9vw, 3.6rem); color: #e9cd94; text-shadow: 0 0 26px rgba(233,205,148,0.35); }
+  body.modo-torneo .cd-label { color: #8a7549; letter-spacing: 0.18em; }
+  @media (max-width: 540px) {
+    body.modo-torneo .countdown { flex-wrap: nowrap; gap: 6px; width: 100%; }
+    body.modo-torneo .cd-box { flex: 1 1 0; min-width: 0; padding: 11px 3px; }
+    body.modo-torneo .cd-num { font-size: clamp(1.6rem, 8vw, 2.5rem); }
+    body.modo-torneo .cd-label { font-size: 0.5rem; letter-spacing: 0.06em; }
+  }
+  .cd-num.tic { animation: tic 0.45s ease-out; }
+  @keyframes tic { 0% { transform: translateY(-7px); opacity: 0.2; } 100% { transform: none; opacity: 1; } }
+
+  .hero-hoy { display: none; margin-top: 18px; padding: 16px 18px; border: 1.5px solid rgba(233,205,148,0.65); border-radius: 14px;
+    background: rgba(200,169,110,0.10); box-shadow: 0 0 44px rgba(233,205,148,0.18); }
+  .hero-hoy.show { display: block; animation: subir 0.9s ease-out; }
+  .hero-hoy-t { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.9rem, 7vw, 3rem); color: #e9cd94; line-height: 1;
+    letter-spacing: 0.06em; }
+  .hero-hoy-s { font-size: 0.8rem; letter-spacing: 0.16em; color: #a79267; text-transform: uppercase; font-weight: 700; margin-top: 6px; }
+  .punto-vivo { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #e9cd94; margin-right: 8px;
+    box-shadow: 0 0 12px #e9cd94; animation: latido 1.4s ease-in-out infinite; }
+  @keyframes latido { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+
+  body.modo-torneo header h1 { color: #c8a96e; }
+  body.modo-torneo .logo { color: #e9cd94; text-shadow: 0 0 44px rgba(233,205,148,0.45); }
+  body.modo-torneo .subtitle { display: none; }
+  body.modo-torneo header { margin-bottom: 26px; }
+  body.modo-torneo header::after { background: linear-gradient(90deg, transparent, rgba(200,169,110,0.7), transparent); }
+  body.modo-torneo .card-btn { background: rgba(8,10,16,0.72); border-color: rgba(200,169,110,0.22); }
+  body.modo-torneo .card-btn:hover { border-color: rgba(233,205,148,0.6); box-shadow: 0 16px 44px rgba(233,205,148,0.14); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .foco, .hero-tit, .hero-tit::after, .hero-kicker, .hero-lema, .hero-linea, .hero-cd, .cd-num.tic,
+    body.modo-torneo .bg-image { animation: none !important; opacity: 1 !important; width: min(340px,82%); }
+  }
+
+  /* ─── CARTEL DE HORARIOS (semana del torneo) ─── */
+  #horarios-cartel { display: none; width: 100%; margin: 0 0 30px; position: relative; z-index: 2; }
+  #horarios-cartel.show { display: block; }
+  .hc-marco { border: 2px solid rgba(200,169,110,0.55); border-radius: 18px; padding: 26px 20px 22px;
+    background: radial-gradient(120% 90% at 50% 0%, rgba(200,169,110,0.13) 0%, rgba(10,14,26,0.85) 55%, rgba(10,14,26,0.95) 100%);
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.6), 0 14px 44px rgba(0,0,0,0.45);
+    position: relative; overflow: hidden; }
+  .hc-marco::before, .hc-marco::after { content: ''; position: absolute; top: -50px; width: 130px; height: 150px;
+    background: radial-gradient(ellipse at top, rgba(233,205,148,0.22), transparent 70%); pointer-events: none; }
+  .hc-marco::before { left: -20px; transform: rotate(18deg); }
+  .hc-marco::after { right: -20px; transform: rotate(-18deg); }
+  .hc-borde { position: absolute; inset: 7px; border: 1px solid rgba(200,169,110,0.22); border-radius: 12px; pointer-events: none; }
+  .hc-tit { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.4rem, 9vw, 4rem); letter-spacing: 0.09em;
+    color: #d9bc85; line-height: 0.95; text-align: center; text-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 0 34px rgba(217,188,133,0.28); }
+  .hc-sub { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1rem, 3.6vw, 1.5rem); letter-spacing: 0.1em;
+    color: #c8a96e; text-align: center; margin-top: 2px; }
+  .hc-fecha { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.22em; color: #9c8558;
+    text-align: center; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .hc-fecha::before, .hc-fecha::after { content: ''; height: 1px; width: 26px; background: rgba(200,169,110,0.5); }
+  .hc-dias { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 24px; }
+  @media (min-width: 620px) { .hc-dias { grid-template-columns: repeat(3, 1fr); } }
+  .hc-dia { border: 1.5px solid rgba(200,169,110,0.42); border-radius: 12px; padding: 16px 12px 14px;
+    background: rgba(10,14,26,0.55); text-align: center; }
+  .hc-dia.hoy { border-color: rgba(217,188,133,0.95); box-shadow: 0 0 26px rgba(217,188,133,0.22); background: rgba(200,169,110,0.08); }
+  .hc-dia-cal { width: 34px; height: 34px; margin: 0 auto 8px; opacity: 0.85; }
+  .hc-dia-nom { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.08em; color: #d9bc85; line-height: 1; }
+  .hc-dia-fecha { font-size: 0.68rem; letter-spacing: 0.18em; color: #8a7549; font-weight: 700; margin-top: 3px; text-transform: uppercase; }
+  .hc-hito { border-top: 1px solid rgba(200,169,110,0.22); margin-top: 11px; padding-top: 9px; }
+  .hc-hora { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: #e9cd94; line-height: 1; }
+  .hc-que { font-size: 0.72rem; letter-spacing: 0.1em; color: #a79267; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+  .hc-fem { display: inline-block; margin-top: 4px; font-size: 0.6rem; letter-spacing: 0.14em; font-weight: 800;
+    color: #0a0e1a; background: #d9bc85; border-radius: 4px; padding: 2px 7px; }
+  .hc-hoy-tag { display: inline-block; font-size: 0.6rem; letter-spacing: 0.14em; font-weight: 800; color: #0a0e1a;
+    background: #e9cd94; border-radius: 4px; padding: 2px 8px; margin-bottom: 6px; }
+  .hc-pie { text-align: center; margin-top: 18px; font-size: 0.72rem; letter-spacing: 0.14em;
+    color: #8a7549; text-transform: uppercase; font-weight: 700; line-height: 1.7; }
+  .hc-pie-wa a { display: inline-block; margin-top: 6px; color: #25D366; text-decoration: none;
+    font-size: 0.95rem; letter-spacing: 0.1em; }
+  .hc-pie-wa a:hover { color: #4ae68a; }
+  .hc-cta { display: inline-block; margin-top: 14px; padding: 13px 28px; border-radius: 10px;
+    border: 1.5px solid rgba(200,169,110,0.6); background: rgba(200,169,110,0.1); color: #e9cd94; text-decoration: none;
+    font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase;
+    transition: all 0.2s; }
+  .hc-cta:hover { background: rgba(200,169,110,0.22); transform: translateY(-2px); }
+
+  /* ─── Iconos grabados en oro ─── */
+  .card-icon svg { width: 40px; height: 40px; display: block; margin: 0 auto; }
+  @media (min-width: 640px) { .card-icon svg { width: 48px; height: 48px; } }
+  .ic { fill: none; stroke: #c8a96e; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .card-btn:hover .card-icon .ic { stroke: #e9cd94; }
+  .hc-dia.hoy .hc-dia-cal .ic { stroke: #e9cd94; }
+  .card-btn.inscripcion:hover .card-icon .ic { stroke: #90caf9; }
+  .card-btn.ranking:hover .card-icon .ic { stroke: #00c853; }
+  .card-btn.liga:hover .foosball-icon svg .ic { stroke: #ce93d8; }
+
   .inscritos-num { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; color: #00c853; line-height: 1; text-shadow: 0 0 20px rgba(0,200,83,0.4); }
   .inscritos-label { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.18em; text-transform: uppercase; margin-top: 2px; }
   .inscritos-dot { width: 8px; height: 8px; background: #00c853; border-radius: 50%; display: inline-block; margin-right: 6px; animation: blink 1.5s ease-in-out infinite; }
@@ -193,6 +358,8 @@
 <body>
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
+<div class="focos"><div class="foco i"></div><div class="foco d"></div></div>
+<div class="grano"></div>
 <!-- LOADING -->
 <div id="loading-screen">
   <div class="loading-logo">amf</div>
@@ -207,62 +374,126 @@
     <p class="subtitle">IV Máster de Melide · 18-19-20 Septiembre 2026</p>
   </header>
 
-  <!-- ===== INSCRIPCIONES DESTACADAS (arriba del todo) ===== -->
-  <div class="destacado-inscripciones">
-    <div class="di-titulo">🔥 ¡Inscríbete ya al IV Máster!</div>
-    <div class="dual-counter">
-      <div class="dual-box mov">
-        <div class="dual-icon">🔄</div>
-        <div class="dual-num" id="home-mov-counter">--</div>
-        <div class="dual-label"><span class="live-dot" style="background:#f50057"></span>Movimiento</div>
+  <!-- ===== HERO (semana del torneo) ===== -->
+  <div id="hero-torneo">
+    <div class="hero-kicker">18 · 19 · 20 SEPTIEMBRE 2026 · MELIDE</div>
+    <div class="hero-tit">IV MÁSTER<br>DE MELIDE</div>
+    <div class="hero-linea"></div>
+
+    <div class="hero-recuento">
+      <div class="hr-num" id="contador-inscritos">--</div>
+      <div class="hr-lab"><span class="inscritos-dot"></span>Parejas inscritas</div>
+      <div class="hr-split">
+        <div class="hr-mod"><span class="hr-mod-n" id="home-mov-counter">--</span><span class="hr-mod-l">Movimiento</span></div>
+        <div class="hr-sep"></div>
+        <div class="hr-mod"><span class="hr-mod-n" id="home-par-counter">--</span><span class="hr-mod-l">Parado</span></div>
       </div>
-      <div class="dual-box par">
-        <div class="dual-icon">✋</div>
-        <div class="dual-num" id="home-par-counter">--</div>
-        <div class="dual-label"><span class="live-dot" style="background:#1565c0"></span>Parado</div>
+      <div class="hr-botones">
+        <a class="hr-btn pri" href="INSCRIPCIONES.HTML?ver=participantes">🏆 Ver participantes</a>
+      </div>
+      <div class="aviso-wa" id="aviso-wa">
+        <div class="aviso-wa-t">🔒 INSCRIPCIONES CERRADAS</div>
+        <div class="aviso-wa-s">¿Te quieres apuntar todavía? Escríbenos por WhatsApp al <b>633 92 82 55</b> y lo miramos por si queda hueco.</div>
+        <a class="hr-btn wa" style="margin-top:12px" href="https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
       </div>
     </div>
-    <div class="di-contador">
-      <span class="di-contador-num" id="contador-inscritos">--</span>
-      <span class="di-contador-label"><span class="inscritos-dot"></span>Parejas inscritas</span>
+
+    <div class="hero-cd" id="hero-cd"></div>
+    <div class="hero-hoy" id="hero-hoy">
+      <div class="hero-hoy-t" id="hero-hoy-t"></div>
+      <div class="hero-hoy-s"><span class="punto-vivo"></span><span id="hero-hoy-s"></span></div>
     </div>
-    <a class="di-cta" href="INSCRIPCIONES.HTML">📝 INSCRIBIR MI EQUIPO</a>
+  </div>
+
+  <!-- ===== CARTEL DE HORARIOS (sale al cerrarse las inscripciones) ===== -->
+  <div id="horarios-cartel">
+    <div class="hc-marco">
+      <div class="hc-borde"></div>
+      <div class="hc-tit">HORARIOS</div>
+      <div class="hc-sub">IV MÁSTER DE MELIDE</div>
+      <div class="hc-fecha">18 · 19 · 20 SEPTIEMBRE 2026</div>
+
+      <div class="hc-dias">
+        <div class="hc-dia" data-dia="2026-09-18">
+          <svg class="hc-dia-cal" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><rect x="7" y="13.5" width="10" height="4.5" rx="1"/></g></svg>
+          <div class="hc-dia-nom">VIERNES</div>
+          <div class="hc-dia-fecha">18 Sept</div>
+          <div class="hc-hito">
+            <div class="hc-hora">22H</div>
+            <div class="hc-que">Ciego más local</div>
+          </div>
+        </div>
+
+        <div class="hc-dia" data-dia="2026-09-19">
+          <svg class="hc-dia-cal" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><rect x="7" y="13.5" width="10" height="4.5" rx="1"/></g></svg>
+          <div class="hc-dia-nom">SÁBADO</div>
+          <div class="hc-dia-fecha">19 Sept</div>
+          <div class="hc-hito">
+            <div class="hc-hora">10H</div>
+            <div class="hc-que">Fase de grupos</div>
+          </div>
+          <div class="hc-hito">
+            <div class="hc-hora">15H</div>
+            <div class="hc-que">Eliminatorias</div>
+          </div>
+        </div>
+
+        <div class="hc-dia" data-dia="2026-09-20">
+          <svg class="hc-dia-cal" viewBox="0 0 24 24"><g class="ic"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><rect x="7" y="13.5" width="10" height="4.5" rx="1"/></g></svg>
+          <div class="hc-dia-nom">DOMINGO</div>
+          <div class="hc-dia-fecha">20 Sept</div>
+          <div class="hc-hito">
+            <div class="hc-hora">10H</div>
+            <div class="hc-que">Fase de grupos</div>
+            <span class="hc-fem">TAMBIÉN FEMENINO</span>
+          </div>
+          <div class="hc-hito">
+            <div class="hc-hora">15H</div>
+            <div class="hc-que">Eliminatorias</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hc-pie hc-pie-wa">¿Te quieres apuntar? Escríbenos por WhatsApp<br>
+        <a href="https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 633 92 82 55</a>
+      </div>
+      <div style="text-align:center"><a class="hc-cta" href="INSCRIPCIONES.HTML?ver=participantes">Ver parejas inscritas</a></div>
+    </div>
   </div>
 
   <div class="grid">
     <a class="card-btn inscripcion" href="INSCRIPCIONES.HTML">
-      <div class="card-icon">📝</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 12h8M8 16h5"/></g></svg></div>
       <div class="card-title">Inscripción<br>IV Máster</div>
       <div class="card-desc">Apúntate al torneo y gestiona tu inscripción</div>
     </a>
     <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html" target="_blank">
       <div class="badge-nuevo">Nuevo</div>
-      <div class="card-icon">👕</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><path d="M9 3 4 5.5 5.5 10 8 9.2V21h8V9.2l2.5.8L20 5.5 15 3"/><path d="M9 3a3 3 0 0 0 6 0"/></g></svg></div>
       <div class="card-title">Camiseta<br>Zico <span class="zico-x">✕</span> AMF</div>
       <div class="card-desc">Reserva tu camiseta oficial. Edición limitada</div>
     </a>
     <!-- ✅ RANKING enlazado al proyecto del companero -->
     <a class="card-btn ranking" href="https://amfmelidefutbolin.github.io/ranking-evo-amf/" target="_blank">
-      <div class="card-icon">🏆</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 14v3M9 20h6M10 17h4l1 3H9z"/></g></svg></div>
       <div class="card-title">Ranking<br>Jugadores</div>
       <div class="card-desc">Clasificación oficial por categoría</div>
     </a>
     <a class="card-btn liga" href="liga.html">
       <div class="foosball-icon">
-        <svg width="50" height="50" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-          <rect x="28" y="0" width="4" height="60" rx="2" fill="#4a6080"/>
-          <circle cx="30" cy="14" r="6" fill="#ce93d8"/>
-          <rect x="22" y="20" width="16" height="13" rx="4" fill="#ce93d8"/>
-          <rect x="4" y="26" width="52" height="4" rx="2" fill="#7a8fa8" opacity="0.7"/>
-          <rect x="23" y="33" width="4.5" height="12" rx="2" fill="#ce93d8" transform="rotate(-5 23 33)"/>
-          <rect x="33" y="33" width="4.5" height="12" rx="2" fill="#ce93d8" transform="rotate(5 36 33)"/>
-        </svg>
+        <svg width="44" height="44" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g class="ic" stroke-width="3">
+          <path d="M30 2v56"/>
+          <circle cx="30" cy="15" r="6"/>
+          <rect x="21" y="24" width="18" height="14" rx="5"/>
+          <path d="M6 28h13M41 28h13"/>
+          <path d="M24 38 22 50M36 38l2 12"/>
+        </g></svg>
       </div>
       <div class="card-title">Liga Melide<br>2026</div>
       <div class="card-desc">Resultados y clasificaciones de la liga</div>
     </a>
     <a class="card-btn bases" href="bases_ranking.html">
-      <div class="card-icon">📋</div>
+      <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><rect x="4" y="4" width="16" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M8 11h8M8 15h8M8 18h5"/></g></svg></div>
       <div class="card-title">Bases del<br>Ranking</div>
       <div class="card-desc">Reglamento y estatutos oficiales</div>
     </a>
@@ -349,6 +580,85 @@
   </div>
 </div>
 <script>
+/* ─── Modo "semana del torneo" ───
+   A partir del cierre de inscripciones la portada deja de pedir altas y
+   muestra el cartel de horarios. El dia en curso se resalta en oro. */
+var FECHA_CIERRE_WEB = new Date('2026-09-11T18:00:00+02:00');
+function aplicarModoTorneo() {
+  var cerrado = Date.now() > FECHA_CIERRE_WEB.getTime();
+
+  // El botón de inscribirse solo mientras el plazo siga abierto
+  var avisoWa = document.getElementById('aviso-wa');
+  if (avisoWa && cerrado) avisoWa.classList.add('show');
+
+  var hc = document.getElementById('horarios-cartel');
+  if (hc) hc.classList.add('show');
+
+
+  var hoy = new Date();
+  var clave = hoy.getFullYear() + '-' +
+    ('0' + (hoy.getMonth()+1)).slice(-2) + '-' + ('0' + hoy.getDate()).slice(-2);
+
+  var dia = document.querySelector('.hc-dia[data-dia="' + clave + '"]');
+  if (dia) {
+    dia.classList.add('hoy');
+    var t = document.createElement('div');
+    t.className = 'hc-hoy-tag';
+    t.textContent = 'HOY';
+    dia.insertBefore(t, dia.firstChild);
+  }
+  var ca = document.querySelector('.card-btn.inscripcion');
+  if (ca) ca.setAttribute('href', 'INSCRIPCIONES.HTML?ver=participantes');
+  document.body.classList.add('modo-torneo');
+  var hero = document.getElementById('hero-torneo');
+  if (hero) hero.classList.add('show');
+
+  // La cuenta atras sube al hero (reutiliza el reloj que ya existe)
+  var bloqueCd = document.querySelector('.countdown');
+  var destino = document.getElementById('hero-cd');
+  if (bloqueCd && destino) {
+    var cabecera = bloqueCd.previousElementSibling;
+    var viejo = bloqueCd.parentElement;
+    if (cabecera && cabecera.classList.contains('cd-title')) {
+      cabecera.textContent = 'FALTA PARA EL PISTOLETAZO';
+      destino.appendChild(cabecera);
+    }
+    destino.appendChild(bloqueCd);
+    if (viejo && !viejo.children.length) viejo.style.display = 'none';
+  }
+
+  // Que hay hoy
+  var PROGRAMA = {
+    '2026-09-18': ['HOY EMPIEZA EL M\u00c1STER', '22H \u00b7 Ciego m\u00e1s local'],
+    '2026-09-19': ['HOY SE JUEGA', '10H fase de grupos \u00b7 15H eliminatorias'],
+    '2026-09-20': ['\u00daLTIMO D\u00cdA', '10H grupos y femenino \u00b7 15H eliminatorias']
+  };
+  var prog = PROGRAMA[clave];
+  if (prog) {
+    document.getElementById('hero-hoy-t').textContent = prog[0];
+    document.getElementById('hero-hoy-s').textContent = prog[1];
+    document.getElementById('hero-hoy').classList.add('show');
+    var t = document.querySelector('.cd-title');
+    if (t) t.textContent = 'EL M\u00c1STER YA EST\u00c1 EN MARCHA';
+  }
+
+  // Los segundos laten al cambiar
+  var seg = document.getElementById('cd-seg');
+  if (seg && window.MutationObserver) {
+    new MutationObserver(function(){
+      seg.classList.remove('tic');
+      void seg.offsetWidth;
+      seg.classList.add('tic');
+    }).observe(seg, { childList: true, characterData: true, subtree: true });
+  }
+
+  var ci = document.querySelector('.card-btn.inscripcion .card-title');
+  if (ci) ci.innerHTML = 'Parejas<br>inscritas';
+  var cd = document.querySelector('.card-btn.inscripcion .card-desc');
+  if (cd) cd.textContent = 'Consulta el listado de equipos del M\u00e1ster';
+}
+document.addEventListener('DOMContentLoaded', aplicarModoTorneo);
+
 window.addEventListener('load', () => {
   setTimeout(() => {
     const screen = document.getElementById('loading-screen');
@@ -429,6 +739,8 @@ function loadContador() {
       const totalMov = rows.filter(r => r[11]).length;
       const totalPar = rows.filter(r => r[12]).length;
       animarNum(document.getElementById('contador-inscritos'), total);
+      var hcp = document.getElementById('hc-parejas');
+      if (hcp) hcp.textContent = total;
       animarNum(document.getElementById('home-mov-counter'), totalMov);
       animarNum(document.getElementById('home-par-counter'), totalPar);
     })
