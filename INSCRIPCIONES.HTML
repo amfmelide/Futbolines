@@ -576,7 +576,60 @@
 <script>
 'use strict';
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
-var ADMIN_PASS = 'amf2025';
+/* La contrasena ya no se guarda en el codigo: solo su huella SHA-256.
+   De aqui no se puede sacar la contrasena original. */
+var ADMIN_SALT = 'amf-melide-2026::';
+var ADMIN_HASH = 'c3852e736bddfecce922ec5cf96fb489439efd140562f69da91577c8aff58afe';
+
+function sha256Hex(msg) {
+  function rotr(n, x) { return (x >>> n) | (x << (32 - n)); }
+  var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+           0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+           0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+           0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+           0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+           0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+           0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+           0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+
+  var bytes = [], i, c;
+  var u = unescape(encodeURIComponent(msg));
+  for (i = 0; i < u.length; i++) bytes.push(u.charCodeAt(i) & 0xff);
+  var bitLen = bytes.length * 8;
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+  for (i = 7; i >= 0; i--) bytes.push((i < 4 ? Math.floor(bitLen / Math.pow(2, 8 * i)) : 0) & 0xff);
+
+  var w = new Array(64);
+  for (var off = 0; off < bytes.length; off += 64) {
+    for (i = 0; i < 16; i++) {
+      w[i] = (bytes[off+i*4] << 24) | (bytes[off+i*4+1] << 16) | (bytes[off+i*4+2] << 8) | bytes[off+i*4+3];
+    }
+    for (i = 16; i < 64; i++) {
+      var s0 = rotr(7, w[i-15]) ^ rotr(18, w[i-15]) ^ (w[i-15] >>> 3);
+      var s1 = rotr(17, w[i-2]) ^ rotr(19, w[i-2]) ^ (w[i-2] >>> 10);
+      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+    }
+    var a=H[0],b=H[1],cc=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for (i = 0; i < 64; i++) {
+      var S1 = rotr(6,e) ^ rotr(11,e) ^ rotr(25,e);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+      var S0 = rotr(2,a) ^ rotr(13,a) ^ rotr(22,a);
+      var mj = (a & b) ^ (a & cc) ^ (b & cc);
+      var t2 = (S0 + mj) | 0;
+      h=g; g=f; f=e; e=(d+t1)|0; d=cc; cc=b; b=a; a=(t1+t2)|0;
+    }
+    H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+cc)|0; H[3]=(H[3]+d)|0;
+    H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+  }
+  var out = '';
+  for (i = 0; i < 8; i++) out += ('00000000' + (H[i] >>> 0).toString(16)).slice(-8);
+  return out;
+}
+
+function passCorrecta(txt) { return sha256Hex(ADMIN_SALT + txt) === ADMIN_HASH; }
 /* ─── CIERRE DE INSCRIPCIONES ───
    A partir de esta fecha y hora la web deja de admitir altas, cambios y
    cancelaciones: se muestra un aviso con el WhatsApp y no se envia nada
@@ -616,6 +669,14 @@ var CICLO_PAGO   = ['No','Si','OtraPareja','Gratis','Staff'];
 var LABEL_PAGO   = { 'No':'❌', 'Si':'✅', 'OtraPareja':'🔁', 'Gratis':'🎁', 'Staff':'🎽' };
 var CLASE_PAGO   = { 'No':'no', 'Si':'si', 'OtraPareja':'otra', 'Gratis':'gratis', 'Staff':'staff' };
 var TITULO_PAGO  = { 'No':'Pendiente', 'Si':'Pagado ('+PRECIO+'€)', 'OtraPareja':'Ya pagó en otra pareja (0€)', 'Gratis':'Gratis (0€)', 'Staff':'Staff ('+PRECIO_STAFF+'€)' };
+/* Todo dato que venga de la hoja pasa por aqui antes de entrar en el HTML.
+   Sin esto, un nombre de equipo con etiquetas se ejecutaria como codigo. */
+function esc(t) {
+  return (t == null ? '' : String(t))
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function estadoPago(v){ return CICLO_PAGO.indexOf(v) >= 0 ? v : 'No'; }
 function importePago(v){ var e = estadoPago(v); return e === 'No' ? 0 : IMPORTE_PAGO[e]; }
 
@@ -981,7 +1042,7 @@ function loadParticipantes() {
         '<div class="stats-box"><div class="slabel">🔄 Movimiento</div><div class="snum" style="color:#f50057;">'+totalMov+'</div></div>' +
         '<div class="stats-box"><div class="slabel">✋ Parado</div><div class="snum" style="color:#4a86e8;">'+totalPar+'</div></div>' +
         '<div class="stats-box"><div class="slabel">Zonas</div><div class="snum" style="color:#ffc107;">'+zonasUnicas.length+'</div></div>' +
-        '<div class="stats-box"><div class="slabel">Zona con más parejas</div><div class="snum" style="color:#00c853;font-size:1.3rem;">📍 '+zonaTop+(zonaTopN>1?' <span style="color:#7a8fa8;font-size:0.9rem;">('+zonaTopN+')</span>':'')+'</div></div>';
+        '<div class="stats-box"><div class="slabel">Zona con más parejas</div><div class="snum" style="color:#00c853;font-size:1.3rem;">📍 '+esc(zonaTop)+(zonaTopN>1?' <span style="color:#7a8fa8;font-size:0.9rem;">('+zonaTopN+')</span>':'')+'</div></div>';
 
       renderParticipantes(rows);
     })
@@ -1047,9 +1108,9 @@ function renderParticipantes(rows) {
 
 function equipoCard(r, n) {
   var badges = '';
-  if (r[11]) badges += '<span class="mod-badge"><span class="mod-tag">🔄 Movimiento</span> <b style="color:'+(CAT_COLORS[r[11]]||'#e8edf5')+'">'+r[11]+'</b></span>';
-  if (r[12]) badges += '<span class="mod-badge"><span class="mod-tag">✋ Parado</span> <b style="color:'+(CAT_COLORS[r[12]]||'#e8edf5')+'">'+r[12]+'</b></span>';
-  return '<div class="equipo-card"><div class="equipo-num">'+String(n).padStart(2,'0')+'</div><div class="equipo-info"><div class="equipo-nombre">'+(r[1]||'')+'</div><div class="equipo-jugadores">'+(r[2]||'')+' · '+(r[4]||'')+'</div><div class="equipo-zona">📍 '+(r[6]||'')+'</div>'+(badges?'<div class="mod-badges">'+badges+'</div>':'')+'</div></div>';
+  if (r[11]) badges += '<span class="mod-badge"><span class="mod-tag">🔄 Movimiento</span> <b style="color:'+(CAT_COLORS[r[11]]||'#e8edf5')+'">'+esc(r[11])+'</b></span>';
+  if (r[12]) badges += '<span class="mod-badge"><span class="mod-tag">✋ Parado</span> <b style="color:'+(CAT_COLORS[r[12]]||'#e8edf5')+'">'+esc(r[12])+'</b></span>';
+  return '<div class="equipo-card"><div class="equipo-num">'+String(n).padStart(2,'0')+'</div><div class="equipo-info"><div class="equipo-nombre">'+esc(r[1])+'</div><div class="equipo-jugadores">'+esc(r[2])+' · '+esc(r[4])+'</div><div class="equipo-zona">📍 '+esc(r[6])+'</div>'+(badges?'<div class="mod-badges">'+badges+'</div>':'')+'</div></div>';
 }
 
 function compartir() {
@@ -1067,7 +1128,7 @@ function desbloquearAdmin() {
 }
 
 function checkPass() {
-  if (document.getElementById('admin-pass').value === ADMIN_PASS) {
+  if (passCorrecta(document.getElementById('admin-pass').value)) {
     desbloquearAdmin();
   } else { showToast('❌ Contraseña incorrecta'); }
 }
@@ -1170,18 +1231,18 @@ function renderTable() {
     var cc = function(c){ return (c||'').toLowerCase(); };
     return '<tr>' +
       '<td style="color:var(--text-dim);font-weight:700">'+(ri+1)+'</td>' +
-      '<td style="font-weight:700">'+(r[1]||'')+'</td>' +
-      '<td>'+(r[2]||'')+'</td>' +
-      '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+t1+(d1?' ⚠️':'')+'</td>' +
+      '<td style="font-weight:700">'+esc(r[1])+'</td>' +
+      '<td>'+esc(r[2])+'</td>' +
+      '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+esc(t1)+(d1?' ⚠️':'')+'</td>' +
       '<td><button class="btn-pago '+CLASE_PAGO[e1]+'" data-idx="'+ri+'" data-jug="1" title="'+TITULO_PAGO[e1]+'" onclick="togglePago('+ri+',1)">'+LABEL_PAGO[e1]+'</button></td>' +
-      '<td>'+(r[4]||'')+'</td>' +
-      '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+t2+(d2?' ⚠️':'')+'</td>' +
+      '<td>'+esc(r[4])+'</td>' +
+      '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+esc(t2)+(d2?' ⚠️':'')+'</td>' +
       '<td><button class="btn-pago '+CLASE_PAGO[e2]+'" data-idx="'+ri+'" data-jug="2" title="'+TITULO_PAGO[e2]+'" onclick="togglePago('+ri+',2)">'+LABEL_PAGO[e2]+'</button></td>' +
-      '<td style="color:var(--text-dim)">'+(r[6]||'')+'</td>' +
-      '<td><span class="badge '+cc(r[11])+'">'+(r[11]||'-')+'</span></td>' +
-      '<td><span class="badge '+cc(r[12])+'">'+(r[12]||'-')+'</span></td>' +
-      '<td style="color:var(--text-dim);font-size:0.75rem">'+((r[0]||'').toString().substring(0,10))+'</td>' +
-      '<td><input class="notas-input" value="'+(r[14]||'')+'" placeholder="Notas..." onblur="guardarNotas('+ri+',this.value)"></td>' +
+      '<td style="color:var(--text-dim)">'+esc(r[6])+'</td>' +
+      '<td><span class="badge '+esc(cc(r[11]))+'">'+esc(r[11]||'-')+'</span></td>' +
+      '<td><span class="badge '+esc(cc(r[12]))+'">'+esc(r[12]||'-')+'</span></td>' +
+      '<td style="color:var(--text-dim);font-size:0.75rem">'+esc((r[0]||'').toString().substring(0,10))+'</td>' +
+      '<td><input class="notas-input" value="'+esc(r[14])+'" placeholder="Notas..." onblur="guardarNotas('+ri+',this.value)"></td>' +
       '<td><button class="btn-edit" onclick="abrirModal('+ri+')">✏️</button><button class="btn-delete" onclick="eliminarInscrito('+ri+')">🗑️</button></td>' +
       '</tr>';
   }).join('');
@@ -1190,22 +1251,22 @@ function renderTable() {
     var ri = allData.indexOf(r);
     var e1 = estadoPago(r[3]), e2 = estadoPago(r[5]);
     var cats = [];
-    if (r[11]) cats.push('Mov · ' + r[11]);
-    if (r[12]) cats.push('Par · ' + r[12]);
+    if (r[11]) cats.push('Mov · ' + esc(r[11]));
+    if (r[12]) cats.push('Par · ' + esc(r[12]));
     function jug(nombre, tel, est, n) {
       var t = (tel == null ? '' : String(tel)).trim();
       return '<div class="pcard-jug">' +
         '<div class="pcard-jug-info">' +
-          '<div class="pcard-jug-nom">' + (nombre||'') + '</div>' +
-          (t ? '<div class="pcard-jug-tel">📞 <a href="tel:'+t+'">'+t+'</a> · <a href="https://wa.me/34'+t.replace(/\D/g,'')+'" target="_blank" rel="noopener">WhatsApp</a></div>' : '') +
+          '<div class="pcard-jug-nom">' + esc(nombre) + '</div>' +
+          (t ? '<div class="pcard-jug-tel">📞 <a href="tel:'+esc(t.replace(/[^0-9+]/g,''))+'">'+esc(t)+'</a> · <a href="https://wa.me/34'+t.replace(/\D/g,'')+'" target="_blank" rel="noopener">WhatsApp</a></div>' : '') +
         '</div>' +
         '<button class="btn-pago '+CLASE_PAGO[est]+'" data-idx="'+ri+'" data-jug="'+n+'" title="'+TITULO_PAGO[est]+'" onclick="togglePago('+ri+','+n+')">'+LABEL_PAGO[est]+'</button>' +
       '</div>';
     }
     return '<div class="pcard">' +
       '<div class="pcard-top">' +
-        '<div><div class="pcard-eq">'+(r[1]||'')+'</div>' +
-        '<div class="pcard-meta">'+(r[6]||'Sin zona')+(cats.length ? ' · '+cats.join(' · ') : '')+'</div></div>' +
+        '<div><div class="pcard-eq">'+esc(r[1])+'</div>' +
+        '<div class="pcard-meta">'+esc(r[6]||'Sin zona')+(cats.length ? ' · '+cats.join(' · ') : '')+'</div></div>' +
         '<div class="pcard-num">#'+(ri+1)+'</div>' +
       '</div>' +
       jug(r[2], r[7], e1, 1) +
@@ -1425,8 +1486,8 @@ function checkDuplicados() {
   var banner = document.getElementById('duplicados-banner');
   if (!dups.length && !dupsJug.length) { banner.style.display='none'; return; }
   banner.style.display = 'block';
-  var lineas = dups.map(function(tel){ return '📞 <strong>'+tel+'</strong>: '+porTel[tel].nombres.join(' · '); })
-    .concat(dupsJug.map(function(k){ return '👤 <strong>'+porJug[k].visible+'</strong>: '+porJug[k].equipos.join(' · '); }));
+  var lineas = dups.map(function(tel){ return '📞 <strong>'+esc(tel)+'</strong>: '+porTel[tel].nombres.map(esc).join(' · '); })
+    .concat(dupsJug.map(function(k){ return '👤 <strong>'+esc(porJug[k].visible)+'</strong>: '+porJug[k].equipos.map(esc).join(' · '); }));
   document.getElementById('duplicados-lista').innerHTML = lineas.join('<br>');
 }
 
@@ -1445,7 +1506,7 @@ function loadHistorial() {
       document.getElementById('historial-lista').innerHTML = rows.slice().reverse().map(function(r){
         return '<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;gap:12px;">' +
         '<div style="min-width:100px;color:var(--text-dim);font-size:0.75rem;">'+(r[0]||'').toString().substring(0,16)+'</div>' +
-        '<div><span style="font-weight:700;color:'+(r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)')+';">'+(r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅')+' '+(r[1]||'')+'</span><span style="margin-left:8px;">'+(r[2]||'')+'</span></div></div>';
+        '<div><span style="font-weight:700;color:'+(r[1]==='CANCELAR'?'var(--ocupado)':r[1]==='MODIFICAR'?'#ffc107':'var(--libre)')+';">'+(r[1]==='CANCELAR'?'❌':r[1]==='MODIFICAR'?'✏️':'✅')+' '+esc(r[1])+'</span><span style="margin-left:8px;">'+esc(r[2])+'</span></div></div>';
       }).join('');
     })
     .catch(function(){ document.getElementById('historial-lista').innerHTML = '<p>Error cargando historial.</p>'; });
@@ -1496,7 +1557,7 @@ function hojaCobro() {
   });
   zs.sort(function(a,b){ return a.localeCompare(b, 'es'); });
   sel.innerHTML = '<option value="">Todas las zonas</option>' + zs.map(function(z){
-    return '<option value="' + z + '">' + z + '</option>';
+    return '<option value="' + esc(z) + '">' + esc(z) + '</option>';
   }).join('');
   sel.value = zs.indexOf(previa) >= 0 ? previa : '';
   renderCobro();
@@ -1534,11 +1595,6 @@ function renderCobro() {
     zonas[z].push(r);
   });
   var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
-
-  function esc(t) {
-    return (t == null ? '' : String(t))
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
 
   var cobrado = 0, pendiente = 0, nPend = 0, nJug = 0, html = '';
 
