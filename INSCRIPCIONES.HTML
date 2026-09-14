@@ -1753,6 +1753,8 @@ function informeZonas() {
     '.sub{color:#555;font-size:11px;margin-bottom:6px}' +
     '.tot{font-size:11px;color:#111;font-weight:bold;margin-bottom:18px;border-bottom:2px solid #111;padding-bottom:10px}' +
     '.zona{margin-bottom:22px;page-break-inside:avoid}' +
+    '@media print{.zona{page-break-after:always;break-after:page;margin-bottom:0}' +
+    '.zona:last-of-type{page-break-after:auto;break-after:auto}}' +
     'h2{font-size:14px;margin:0 0 6px;background:#111;color:#fff;padding:6px 10px;letter-spacing:.05em}' +
     '.cuenta{float:right;font-weight:normal;font-size:11px}' +
     'table{width:100%;border-collapse:collapse}' +
