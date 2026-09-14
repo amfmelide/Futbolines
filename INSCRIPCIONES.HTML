@@ -576,60 +576,12 @@
 <script>
 'use strict';
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp98EOjSLA3c_oxz-Q17LgbsEfRpeEwwXUL4W_AVZ6ICjkXJaIONkLw85u2wKz1TDN/exec';
-/* La contrasena ya no se guarda en el codigo: solo su huella SHA-256.
-   De aqui no se puede sacar la contrasena original. */
-var ADMIN_SALT = 'amf-melide-2026::';
-var ADMIN_HASH = 'c3852e736bddfecce922ec5cf96fb489439efd140562f69da91577c8aff58afe';
+/* La contrasena NO esta en este fichero, ni siquiera su huella: la
+   comprueba el Apps Script. Lo que escribes se guarda solo en esta
+   pestana (sessionStorage) y viaja en cada peticion del panel. */
+var adminKey = '';
+try { adminKey = sessionStorage.getItem('amf_admin_key') || ''; } catch(e) { adminKey = ''; }
 
-function sha256Hex(msg) {
-  function rotr(n, x) { return (x >>> n) | (x << (32 - n)); }
-  var K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-           0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-           0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-           0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-           0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-           0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-           0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-           0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
-  var H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
-
-  var bytes = [], i, c;
-  var u = unescape(encodeURIComponent(msg));
-  for (i = 0; i < u.length; i++) bytes.push(u.charCodeAt(i) & 0xff);
-  var bitLen = bytes.length * 8;
-  bytes.push(0x80);
-  while (bytes.length % 64 !== 56) bytes.push(0);
-  for (i = 7; i >= 0; i--) bytes.push((i < 4 ? Math.floor(bitLen / Math.pow(2, 8 * i)) : 0) & 0xff);
-
-  var w = new Array(64);
-  for (var off = 0; off < bytes.length; off += 64) {
-    for (i = 0; i < 16; i++) {
-      w[i] = (bytes[off+i*4] << 24) | (bytes[off+i*4+1] << 16) | (bytes[off+i*4+2] << 8) | bytes[off+i*4+3];
-    }
-    for (i = 16; i < 64; i++) {
-      var s0 = rotr(7, w[i-15]) ^ rotr(18, w[i-15]) ^ (w[i-15] >>> 3);
-      var s1 = rotr(17, w[i-2]) ^ rotr(19, w[i-2]) ^ (w[i-2] >>> 10);
-      w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
-    }
-    var a=H[0],b=H[1],cc=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
-    for (i = 0; i < 64; i++) {
-      var S1 = rotr(6,e) ^ rotr(11,e) ^ rotr(25,e);
-      var ch = (e & f) ^ (~e & g);
-      var t1 = (h + S1 + ch + K[i] + w[i]) | 0;
-      var S0 = rotr(2,a) ^ rotr(13,a) ^ rotr(22,a);
-      var mj = (a & b) ^ (a & cc) ^ (b & cc);
-      var t2 = (S0 + mj) | 0;
-      h=g; g=f; f=e; e=(d+t1)|0; d=cc; cc=b; b=a; a=(t1+t2)|0;
-    }
-    H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+cc)|0; H[3]=(H[3]+d)|0;
-    H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
-  }
-  var out = '';
-  for (i = 0; i < 8; i++) out += ('00000000' + (H[i] >>> 0).toString(16)).slice(-8);
-  return out;
-}
-
-function passCorrecta(txt) { return sha256Hex(ADMIN_SALT + txt) === ADMIN_HASH; }
 /* ─── CIERRE DE INSCRIPCIONES ───
    A partir de esta fecha y hora la web deja de admitir altas, cambios y
    cancelaciones: se muestra un aviso con el WhatsApp y no se envia nada
@@ -704,6 +656,8 @@ function filaDeCodigo(cod, idxFallback) {
   return f ? f : (idxFallback + 2);
 }
 
+function pedirDatosAdmin() { return pedirDatos('admin', { key: adminKey }); }
+
 function indicePorCodigo(cod) {
   for (var i = 0; i < allData.length; i++) {
     if (String(allData[i][13]) === String(cod)) return i;
@@ -711,7 +665,7 @@ function indicePorCodigo(cod) {
   return -1;
 }
 function refrescarDatos() {
-  return pedirDatos('get').then(function(d){
+  return pedirDatosAdmin().then(function(d){
     allData = d.rows || [];
     ultimaCarga = Date.now();
     registrarFilas(allData);
@@ -719,6 +673,7 @@ function refrescarDatos() {
   });
 }
 function enviarAlServidor(payload) {
+  payload.key = adminKey;
   return fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .catch(function(){
       // Sin conexion: la verificacion posterior avisara de lo que no llego
@@ -743,7 +698,7 @@ function verificarGuardado() {
     if (!r[13]) return;
     esperado[String(r[13])] = [estadoPago(r[3]), estadoPago(r[5]), (r[14] == null ? '' : String(r[14]))];
   });
-  pedirDatos('get').then(function(d){
+  pedirDatosAdmin().then(function(d){
     // Si has seguido tocando botones mientras se leia la hoja, esta
     // respuesta ya no vale: se descarta y se vuelve a comprobar luego.
     if (ultimaEscritura > tsPeticion) { programarVerificacion(); return; }
@@ -834,7 +789,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 function sesionAdminActiva() {
-  try { return sessionStorage.getItem('amf_admin_ok') === '1'; } catch(e) { return false; }
+  return !!adminKey;
 }
 
 function abrirAdminDirecto() {
@@ -877,15 +832,24 @@ function animCounter(el, target) {
 }
 
 // ─── FETCH ROBUSTO (texto -> JSON, error visible) ───
-function pedirDatos(action) {
+function pedirDatos(action, extra) {
   var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var opts = ctrl ? { signal: ctrl.signal } : {};
   var limite = setTimeout(function(){ if (ctrl) ctrl.abort(); }, TIMEOUT_RED);
-  return fetch(SCRIPT_URL + '?action=' + action, opts)
+  var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
+  if (extra) {
+    Object.keys(extra).forEach(function(k){
+      url += '&' + k + '=' + encodeURIComponent(extra[k]);
+    });
+  }
+  return fetch(url, opts)
     .then(function(r){ clearTimeout(limite); return r.text(); })
     .then(function(txt){
       try { return JSON.parse(txt); }
-      catch(e){ throw new Error('El servidor no devolvió datos válidos. Respuesta: ' + txt.slice(0,200)); }
+      catch(e){
+        if (window.console) console.warn('Respuesta no válida del servidor:', txt.slice(0,300));
+        throw new Error('El servidor no devolvió datos válidos.');
+      }
     })
     .catch(function(e){ clearTimeout(limite); throw e; });
 }
@@ -1049,7 +1013,7 @@ function loadParticipantes() {
     .catch(function(err){
       var mc = document.getElementById('part-mov-counter'); if (mc) mc.textContent = '0';
       var pc = document.getElementById('part-par-counter'); if (pc) pc.textContent = '0';
-      document.getElementById('participantes-content').innerHTML = '<div class="error-box"><strong>No se pudieron cargar los participantes.</strong><br>'+ (err && err.message ? err.message : 'Error de conexión') +'</div>';
+      document.getElementById('participantes-content').innerHTML = '<div class="error-box"><strong>No se pudieron cargar los participantes.</strong><br>'+ esc(err && err.message ? err.message : 'Error de conexión') +'</div>';
     });
 }
 
@@ -1123,21 +1087,45 @@ function compartir() {
 function desbloquearAdmin() {
   document.getElementById('admin-login').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
-  try { sessionStorage.setItem('amf_admin_ok', '1'); } catch(e) {}
   loadData();
 }
 
 function checkPass() {
-  if (passCorrecta(document.getElementById('admin-pass').value)) {
-    desbloquearAdmin();
-  } else { showToast('❌ Contraseña incorrecta'); }
+  var inp = document.getElementById('admin-pass');
+  var clave = inp ? inp.value : '';
+  if (!clave) { showToast('❌ Escribe la contraseña'); return; }
+  var btn = document.querySelector('.btn-login');
+  if (btn) { btn.disabled = true; btn.textContent = 'Comprobando…'; }
+  function fin() { if (btn) { btn.disabled = false; btn.textContent = 'ENTRAR'; } }
+  pedirDatos('auth', { key: clave }).then(function(r){
+    fin();
+    if (r && r.ok) {
+      adminKey = clave;
+      try { sessionStorage.setItem('amf_admin_key', clave); } catch(e) {}
+      if (inp) inp.value = '';
+      desbloquearAdmin();
+    } else {
+      showToast('❌ Contraseña incorrecta');
+    }
+  }).catch(function(){
+    fin();
+    showToast('❌ No se pudo comprobar la contraseña (sin conexión)');
+  });
 }
 
 function loadData() {
   showToast('🔄 Cargando...');
   document.getElementById('admin-error').style.display = 'none';
-  pedirDatos('get')
+  pedirDatosAdmin()
     .then(function(data){
+      if (data && data.ok === false) {
+        adminKey = '';
+        try { sessionStorage.removeItem('amf_admin_key'); } catch(e) {}
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('admin-login').style.display = '';
+        showToast('❌ La sesión caducó, vuelve a entrar');
+        return;
+      }
       allData = data.rows || [];
       ultimaCarga = Date.now();
       registrarFilas(allData);
@@ -1149,7 +1137,7 @@ function loadData() {
     .catch(function(err){
       var box = document.getElementById('admin-error');
       box.style.display = 'block';
-      box.innerHTML = '<strong>No se pudieron cargar las inscripciones.</strong><br>'+ (err && err.message ? err.message : 'Error de conexión');
+      box.innerHTML = '<strong>No se pudieron cargar las inscripciones.</strong><br>'+ esc(err && err.message ? err.message : 'Error de conexión');
     });
 }
 
@@ -1499,7 +1487,7 @@ function toggleHistorial() {
 }
 
 function loadHistorial() {
-  pedirDatos('historial')
+  pedirDatos('historial', { key: adminKey })
     .then(function(data){
       var rows = data.rows || [];
       if (!rows.length) { document.getElementById('historial-lista').innerHTML = '<p>No hay cambios registrados todavía.</p>'; return; }
