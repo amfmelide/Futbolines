@@ -196,6 +196,40 @@
   .cobro-sub { text-align: right; font-size: 0.76rem; color: var(--text-dim); padding: 6px 4px 0; border-top: 1px solid var(--border); margin-top: 4px; }
   .solo-print { display: none; }
 
+  /* ─── Informe por zonas (misma mecanica que la hoja de cobro) ─── */
+  #informe-view { display: none; position: fixed; inset: 0; z-index: 10100; background: var(--bg); overflow-y: auto; }
+  #informe-view.show { display: block; }
+  .izona { margin-bottom: 26px; }
+  .izona h3 { font-family: 'Barlow', sans-serif; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; gap: 10px; }
+  .izona h3 span { font-weight: 600; font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.04em; }
+  .ifila { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 7px; }
+  .ifila-n { color: var(--text-dim); font-size: 0.78rem; font-weight: 800; min-width: 22px; }
+  .ifila-eq { flex: 1.1; font-weight: 700; font-size: 0.9rem; min-width: 0; }
+  .ifila-mod { flex: 1; color: var(--text-dim); font-size: 0.75rem; }
+  .ifila-jug { flex: 1.1; font-size: 0.85rem; }
+
+  @media print {
+    body.print-informe > *:not(#informe-view) { display: none !important; }
+    body.print-informe { background: #fff !important; }
+    body.print-informe #informe-view { position: static !important; overflow: visible !important; background: #fff !important; color: #000 !important; }
+    body.print-informe .cobro-bar, body.print-informe .no-print { display: none !important; }
+    body.print-informe .cobro-body { padding: 0; max-width: none; }
+    body.print-informe #informe-print-head { display: block !important; }
+    body.print-informe .izona { page-break-inside: auto; margin-bottom: 14px; }
+    /* Una zona corta no se parte: si no cabe, salta entera a la hoja siguiente.
+       Las largas fluyen y llenan la página. */
+    body.print-informe .izona-corta { page-break-inside: avoid; break-inside: avoid; }
+    /* La cabecera de zona nunca se queda sola al final de una hoja */
+    body.print-informe .izona h3 { page-break-after: avoid; break-after: avoid; }
+    body.print-informe .izona h3 { background: #111 !important; color: #fff !important; border: 0; border-radius: 0; font-size: 12px; padding: 5px 8px; }
+    body.print-informe .izona h3 span { color: #ddd !important; }
+    body.print-informe .ifila { background: #fff !important; border: 1px solid #999 !important; border-radius: 0; padding: 5px 8px; margin-bottom: -1px; page-break-inside: avoid; }
+    body.print-informe .ifila-n { color: #666 !important; font-size: 10px; }
+    body.print-informe .ifila-eq { color: #000 !important; font-size: 11px; }
+    body.print-informe .ifila-mod { color: #444 !important; font-size: 10px; }
+    body.print-informe .ifila-jug { color: #000 !important; font-size: 11px; }
+  }
+
   @media print {
     body.print-cobro > *:not(#cobro-view) { display: none !important; }
     body.print-cobro { background: #fff !important; }
@@ -480,6 +514,19 @@
 <div id="toast"></div>
 
 <!-- Hoja de cobro interactiva -->
+<div id="informe-view">
+  <div class="cobro-bar no-print">
+    <button onclick="cerrarInforme()">← Volver</button>
+    <div class="cobro-tot" id="informe-tot"></div>
+    <button onclick="imprimirInforme()" class="pri">🖨️ Imprimir / PDF</button>
+  </div>
+  <div id="informe-print-head" style="display:none;padding:0 0 10px;border-bottom:2px solid #000;margin-bottom:14px;">
+    <div style="font-family:Barlow,sans-serif;font-weight:800;font-size:16px;text-transform:uppercase;">Parejas por zona — IV Máster de Melide</div>
+    <div id="informe-print-sub" style="font-size:11px;color:#333;margin-top:3px;"></div>
+  </div>
+  <div class="cobro-body" id="informe-body"></div>
+</div>
+
 <div id="cobro-view">
   <div class="cobro-bar no-print">
     <button onclick="cerrarCobro()">← Volver</button>
@@ -639,7 +686,9 @@ function importePago(v){ var e = estadoPago(v); return e === 'No' ? 0 : IMPORTE_
    3) despues de escribir se relee la hoja y se comprueba que se guardo. */
 var ultimaCarga = 0;
 var ESPERA_VERIF   = 4000;    // ms de espera antes de comprobar la hoja
-var TIMEOUT_RED    = 15000;   // ms: ninguna peticion puede colgarse mas que esto
+var TIMEOUT_RED    = 45000;   // ms: ninguna peticion puede colgarse mas que esto
+var REINTENTOS_RED = 3;       // Google falla de vez en cuando: se reintenta
+var ESPERA_REINTENTO = 900;   // ms entre intento e intento
 var verifTimer = null;
 var ultimaEscritura = 0;
 var filasHoja = {};           // codigo -> numero de fila real en la hoja
@@ -832,10 +881,12 @@ function animCounter(el, target) {
 }
 
 // ─── FETCH ROBUSTO (texto -> JSON, error visible) ───
-function pedirDatos(action, extra) {
+function pedirDatos(action, extra, intento) {
+  intento = intento || 0;
   var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var opts = ctrl ? { signal: ctrl.signal } : {};
-  var limite = setTimeout(function(){ if (ctrl) ctrl.abort(); }, TIMEOUT_RED);
+  var caducado = false;
+  var limite = setTimeout(function(){ caducado = true; if (ctrl) ctrl.abort(); }, TIMEOUT_RED);
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
   if (extra) {
     Object.keys(extra).forEach(function(k){
@@ -847,11 +898,28 @@ function pedirDatos(action, extra) {
     .then(function(txt){
       try { return JSON.parse(txt); }
       catch(e){
-        if (window.console) console.warn('Respuesta no válida del servidor:', txt.slice(0,300));
-        throw new Error('El servidor no devolvió datos válidos.');
+        if (window.console) console.warn('Respuesta no válida del servidor:', txt.slice(0,600));
+        var pista = (txt || '').replace(/\s+/g, ' ').trim().slice(0, 110);
+        var err = new Error(
+          /^</.test(pista)
+            ? 'Google devolvió una página en vez de datos. Suele arreglarse pulsando Actualizar. Si sigue, cierra sesión de las otras cuentas de Google. [' + pista + ']'
+            : 'El servidor no devolvió datos válidos. [' + pista + ']');
+        err.respuestaMala = true;
+        throw err;
       }
     })
-    .catch(function(e){ clearTimeout(limite); throw e; });
+    .catch(function(e){
+      clearTimeout(limite);
+      // Google falla de vez en cuando (arranque en frio, redirecciones raras).
+      // Se reintenta en silencio antes de dar el aviso por bueno.
+      if (intento < REINTENTOS_RED) {
+        if (intento === 0) showToast('⏳ El servidor tarda, reintentando…');
+        return new Promise(function(res){ setTimeout(res, ESPERA_REINTENTO); })
+          .then(function(){ return pedirDatos(action, extra, intento + 1); });
+      }
+      if (caducado) throw new Error('El servidor de Google tardó demasiado. Pulsa Actualizar para reintentar.');
+      throw e;
+    });
 }
 
 // ─── FORM ───
@@ -1687,56 +1755,61 @@ function cobroCambiarEstado(idx, jugador, valor) {
 }
 
 function informeZonas() {
-  var mf = window._adminModFilter || '';
   var datos = window._adminFiltered || allData;
   if (!datos.length) { showToast('No hay datos para el informe'); return; }
+  document.getElementById('informe-view').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  renderInforme();
+}
+function cerrarInforme() {
+  document.getElementById('informe-view').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function imprimirInforme() {
+  document.body.classList.add('print-informe');
+  window.print();
+  setTimeout(function(){ document.body.classList.remove('print-informe'); }, 600);
+}
 
-  // Agrupar por zona
+function renderInforme() {
+  var mf = window._adminModFilter || '';
+  var datos = window._adminFiltered || allData;
+
   var zonas = {};
   datos.forEach(function(r){
-    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
     if (mf === 'mov' && !r[11]) return;
     if (mf === 'par' && !r[12]) return;
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
     if (!zonas[z]) zonas[z] = [];
     zonas[z].push(r);
   });
   var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
-  if (!nombresZona.length) { showToast('No hay datos para el informe'); return; }
 
-  function esc(t) {
-    return (t == null ? '' : String(t))
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
   function modalidadesDe(r) {
     var m = [];
-    if (r[11] && mf !== 'par') m.push('Movimiento · ' + r[11]);
-    if (r[12] && mf !== 'mov') m.push('Parado · ' + r[12]);
-    return m.length ? m.join('<br>') : '—';
+    if (r[11] && mf !== 'par') m.push('Movimiento \u00b7 ' + esc(r[11]));
+    if (r[12] && mf !== 'mov') m.push('Parado \u00b7 ' + esc(r[12]));
+    return m.length ? m.join('<br>') : '\u2014';
   }
 
-  var totalParejas = 0, totalJug = 0;
-  var cuerpo = '';
+  var totalParejas = 0, html = '';
   nombresZona.forEach(function(z){
     var filas = zonas[z].slice().sort(function(a,b){
       return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
     });
     totalParejas += filas.length;
-    totalJug += filas.length * 2;
-    cuerpo += '<section class="zona">';
-    cuerpo += '<h2>' + esc(z) + ' <span class="cuenta">' + filas.length +
-              (filas.length === 1 ? ' pareja' : ' parejas') + '</span></h2>';
-    cuerpo += '<table><thead><tr>' +
-              '<th class="n">#</th><th>Equipo</th><th>Modalidad y categoría</th><th>Jugadores</th>' +
-              '</tr></thead><tbody>';
+    var corta = filas.length <= 12;   // cabe entera en media hoja: no se parte
+    html += '<div class="izona' + (corta ? ' izona-corta' : '') + '"><h3>' + esc(z) +
+      '<span>' + filas.length + (filas.length === 1 ? ' pareja' : ' parejas') + '</span></h3>';
     filas.forEach(function(r, i){
-      cuerpo += '<tr>' +
-        '<td class="n">' + (i+1) + '</td>' +
-        '<td class="eq">' + esc(r[1]) + '</td>' +
-        '<td class="mod">' + modalidadesDe(r) + '</td>' +
-        '<td class="jug">' + esc(r[2]) + '<br>' + esc(r[4]) + '</td>' +
-        '</tr>';
+      html += '<div class="ifila">' +
+        '<div class="ifila-n">' + (i+1) + '</div>' +
+        '<div class="ifila-eq">' + esc(r[1]) + '</div>' +
+        '<div class="ifila-mod">' + modalidadesDe(r) + '</div>' +
+        '<div class="ifila-jug">' + esc(r[2]) + '<br>' + esc(r[4]) + '</div>' +
+      '</div>';
     });
-    cuerpo += '</tbody></table></section>';
+    html += '</div>';
   });
 
   var sub = 'Todas las modalidades';
@@ -1744,45 +1817,14 @@ function informeZonas() {
   if (mf === 'par') sub = 'Solo PARADO';
   var hoy = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
 
-  var doc = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">' +
-    '<title>Parejas por zona — AMF Melide</title>' +
-    '<style>' +
-    '*{box-sizing:border-box}' +
-    'body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff;margin:0;padding:28px 32px;font-size:12px}' +
-    'h1{font-size:19px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.04em}' +
-    '.sub{color:#555;font-size:11px;margin-bottom:6px}' +
-    '.tot{font-size:11px;color:#111;font-weight:bold;margin-bottom:18px;border-bottom:2px solid #111;padding-bottom:10px}' +
-    '.zona{margin-bottom:22px;page-break-inside:avoid}' +
-    '@media print{.zona{page-break-after:always;break-after:page;margin-bottom:0}' +
-    '.zona:last-of-type{page-break-after:auto;break-after:auto}}' +
-    'h2{font-size:14px;margin:0 0 6px;background:#111;color:#fff;padding:6px 10px;letter-spacing:.05em}' +
-    '.cuenta{float:right;font-weight:normal;font-size:11px}' +
-    'table{width:100%;border-collapse:collapse}' +
-    'th{background:#eee;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:5px 8px;border:1px solid #bbb}' +
-    'td{padding:6px 8px;border:1px solid #bbb;vertical-align:top}' +
-    'td.n,th.n{width:26px;text-align:center;color:#666}' +
-    'td.eq{font-weight:bold;width:27%}' +
-    'td.mod{width:27%;font-size:11px}' +
-    'td.jug{width:32%}' +
-    'tbody tr:nth-child(even){background:#f7f7f7}' +
-    '.barra{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:9px;text-align:center}' +
-    '.barra button{font-size:13px;padding:7px 20px;margin:0 5px;cursor:pointer;border:0;border-radius:5px;font-weight:bold}' +
-    '@media print{.barra{display:none}body{padding:0;font-size:11px}}' +
-    '</style></head><body>' +
-    '<div class="barra"><button onclick="window.print()">🖨️ Imprimir o guardar en PDF</button>' +
-    '<button onclick="window.close()">Cerrar</button></div>' +
-    '<div style="height:44px"></div>' +
-    '<h1>Parejas por zona — IV Máster de Melide</h1>' +
-    '<div class="sub">' + esc(sub) + ' · Listado generado el ' + esc(hoy) + '</div>' +
-    '<div class="tot">' + nombresZona.length + ' zonas · ' + totalParejas +
-    ' parejas · ' + totalJug + ' jugadores</div>' +
-    cuerpo + '</body></html>';
-
-  var win = window.open('', '_blank');
-  if (!win) { showToast('⚠️ El navegador bloqueó la ventana. Permite las ventanas emergentes.'); return; }
-  win.document.write(doc);
-  win.document.close();
-  showToast('🗺️ Informe generado (' + totalParejas + ' parejas en ' + nombresZona.length + ' zonas)');
+  document.getElementById('informe-body').innerHTML = html ||
+    '<div class="empty-state"><p>No hay parejas que mostrar</p></div>';
+  document.getElementById('informe-tot').innerHTML =
+    '<b>' + nombresZona.length + '</b> zonas \u00b7 <b>' + totalParejas + '</b> parejas \u00b7 <b>' +
+    (totalParejas*2) + '</b> jugadores \u00b7 ' + esc(sub);
+  document.getElementById('informe-print-sub').textContent =
+    sub + ' \u00b7 ' + nombresZona.length + ' zonas \u00b7 ' + totalParejas + ' parejas \u00b7 ' +
+    (totalParejas*2) + ' jugadores \u00b7 Listado generado el ' + hoy;
 }
 
 function exportCSV() {
