@@ -37,11 +37,27 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
     transition: opacity 0.6s ease;
   }
-  .loading-logo { font-family: 'Permanent Marker', cursive; font-size: 6rem; color: white; text-shadow: 0 0 40px rgba(21,101,192,0.6); animation: pulse-logo 1.5s ease-in-out infinite; }
+  .loading-logo { font-family: 'Bebas Neue', sans-serif; font-size: 6.4rem; line-height: 1;
+    letter-spacing: 0.2em; text-indent: 0.2em;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 34%, #b08d4f 68%, #8a6d38 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: pulse-logo 1.5s ease-in-out infinite; }
   .loading-bar-wrap { width: 200px; height: 3px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
   .loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 3px; animation: loading-fill 1.8s ease-out forwards; }
   .loading-text { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; }
-  @keyframes pulse-logo { 0%,100%{text-shadow:0 0 40px rgba(21,101,192,0.4);} 50%{text-shadow:0 0 60px rgba(21,101,192,0.8), 0 0 80px rgba(255,193,7,0.2);} }
+  .carga-edicion { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.4rem, 5vw, 2.1rem);
+    letter-spacing: 0.24em; color: #c8a96e; text-indent: 0.24em; margin-top: -4px; }
+  .carga-anyo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.4rem, 13vw, 5.4rem);
+    line-height: 0.9; letter-spacing: 0.06em; margin-top: -6px;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 34%, #b08d4f 66%, #8a6d38 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 30px rgba(233,205,148,0.35)); }
+  .loading-bar-wrap { width: 260px; }
+  .loading-bar { background: linear-gradient(90deg, #8a6d38, #e9cd94, #fdf0d0); }
+  @keyframes pulse-logo {
+    0%,100% { filter: drop-shadow(0 0 26px rgba(233,205,148,0.35)); }
+    50%     { filter: drop-shadow(0 0 48px rgba(233,205,148,0.75)) drop-shadow(0 0 80px rgba(200,169,110,0.35)); }
+  }
   @keyframes loading-fill { 0%{width:0%} 100%{width:100%} }
   #main { opacity: 0; transition: opacity 0.5s ease; position: relative; z-index: 2; width: 100%; max-width: 960px; }
   #main.visible { opacity: 1; }
@@ -50,7 +66,11 @@
     content: ''; display: block; height: 2px; margin-top: 20px;
     background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
   }
-  .logo { font-family: 'Permanent Marker', cursive; font-size: clamp(4rem, 15vw, 8rem); color: white; letter-spacing: 0.05em; line-height: 1; text-shadow: 0 0 40px rgba(21,101,192,0.5); text-decoration: none; display: block; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.6rem, 13vw, 7rem);
+    letter-spacing: 0.2em; text-indent: 0.2em; line-height: 1; text-decoration: none; display: block;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 34%, #b08d4f 68%, #8a6d38 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 38px rgba(233,205,148,0.32)); }
   h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.2rem, 3.5vw, 2.2rem); letter-spacing: 0.08em; color: #fff; margin-top: 8px; line-height: 1; }
   .subtitle { font-size: 0.82rem; color: var(--text-dim); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 8px; }
   .grid {
@@ -208,6 +228,29 @@
   .aviso-wa-s b { color: #25D366; }
   .hr-btn.pri:hover { background: rgba(200,169,110,0.28); }
 
+  .hero-anyo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.6rem, 11vw, 4.6rem);
+    line-height: 0.9; letter-spacing: 0.14em; text-indent: 0.14em; margin-top: 2px;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 36%, #a8823f 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    opacity: 0; animation: subir 1s 0.4s ease-out forwards; }
+
+  .cargando-bloque { margin: 26px auto 0; max-width: 520px; width: 100%;
+    opacity: 0; animation: subir 0.9s 0.7s ease-out forwards; }
+  .cargando-fila { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .cargando-txt { font-size: 0.68rem; letter-spacing: 0.2em; color: #9c8558; font-weight: 700; text-transform: uppercase; }
+  .cargando-pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #e9cd94; }
+  .cargando-pista { height: 8px; border-radius: 6px; background: rgba(200,169,110,0.12);
+    border: 1px solid rgba(200,169,110,0.25); overflow: hidden; position: relative; }
+  .cargando-relleno { height: 100%; width: 0%; border-radius: 6px;
+    background: linear-gradient(90deg, #8a6d38, #e9cd94 60%, #fdf0d0);
+    box-shadow: 0 0 22px rgba(233,205,148,0.45); transition: width 0.9s cubic-bezier(.2,.8,.2,1); }
+  .cargando-relleno::after { content: ''; position: absolute; top: 0; bottom: 0; width: 70px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.38), transparent);
+    animation: barrido-luz 2.4s linear infinite; }
+  @keyframes barrido-luz { from { transform: translateX(-80px); } to { transform: translateX(560px); } }
+  .cargando-pie { margin-top: 9px; font-size: 0.72rem; letter-spacing: 0.1em; color: #7a6540;
+    text-transform: uppercase; font-weight: 700; min-height: 16px; }
+
   .hero-cd { margin-top: 20px; opacity: 0; animation: subir 0.9s 0.85s ease-out forwards; }
   body.modo-torneo .cd-title { color: #9c8558; letter-spacing: 0.24em; font-weight: 700; }
   body.modo-torneo .countdown { gap: 10px; }
@@ -234,7 +277,7 @@
   @keyframes latido { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
 
   body.modo-torneo header h1 { color: #c8a96e; }
-  body.modo-torneo .logo { color: #e9cd94; text-shadow: 0 0 44px rgba(233,205,148,0.45); }
+  body.modo-torneo .logo { filter: drop-shadow(0 3px 0 rgba(0,0,0,0.5)) drop-shadow(0 0 48px rgba(233,205,148,0.45)); }
   body.modo-torneo .subtitle { display: none; }
   body.modo-torneo header { margin-bottom: 26px; }
   body.modo-torneo header::after { background: linear-gradient(90deg, transparent, rgba(200,169,110,0.7), transparent); }
@@ -362,41 +405,35 @@
 <div class="grano"></div>
 <!-- LOADING -->
 <div id="loading-screen">
-  <div class="loading-logo">amf</div>
+  <div class="loading-logo">AMF</div>
+  <div class="carga-edicion">V MÁSTER DE MELIDE</div>
+  <div class="carga-anyo">2027</div>
   <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-text">Asociación Melide Futbolín</div>
+  <div class="loading-text"><span id="carga-pct">0</span>% · Cargando la próxima edición…</div>
 </div>
 <!-- MAIN -->
 <div id="main">
   <header>
-    <a href="index.html" class="logo" id="logo-amf" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">amf</a>
+    <a href="index.html" class="logo" id="logo-amf" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">AMF</a>
     <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
-    <p class="subtitle">IV Máster de Melide · 18-19-20 Septiembre 2026</p>
+    <p class="subtitle">V Máster de Melide · Septiembre 2027</p>
   </header>
 
   <!-- ===== HERO (semana del torneo) ===== -->
   <div id="hero-torneo">
-    <div class="hero-kicker">18 · 19 · 20 SEPTIEMBRE 2026 · MELIDE</div>
-    <div class="hero-tit">IV MÁSTER<br>DE MELIDE</div>
-    <div class="hero-linea"></div>
+    <div class="hero-kicker">PRÓXIMA EDICIÓN · MELIDE</div>
+    <div class="hero-tit">V MÁSTER<br>DE MELIDE</div>
+    <div class="hero-anyo">2027</div>
 
-    <div class="hero-recuento">
-      <div class="hr-num" id="contador-inscritos">--</div>
-      <div class="hr-lab"><span class="inscritos-dot"></span>Parejas inscritas</div>
-      <div class="hr-split">
-        <div class="hr-mod"><span class="hr-mod-n" id="home-mov-counter">--</span><span class="hr-mod-l">Movimiento</span></div>
-        <div class="hr-sep"></div>
-        <div class="hr-mod"><span class="hr-mod-n" id="home-par-counter">--</span><span class="hr-mod-l">Parado</span></div>
+    <div class="cargando-bloque">
+      <div class="cargando-fila">
+        <span class="cargando-txt">CARGANDO LA PRÓXIMA EDICIÓN</span>
+        <span class="cargando-pct" id="hero-pct">…</span>
       </div>
-      <div class="hr-botones">
-        <a class="hr-btn pri" href="INSCRIPCIONES.HTML?ver=participantes">🏆 Ver participantes</a>
-      </div>
-      <div class="aviso-wa" id="aviso-wa">
-        <div class="aviso-wa-t">🔒 INSCRIPCIONES CERRADAS</div>
-        <div class="aviso-wa-s">¿Te quieres apuntar todavía? Escríbenos por WhatsApp al <b>633 92 82 55</b> y lo miramos por si queda hueco.</div>
-        <a class="hr-btn wa" style="margin-top:12px" href="https://wa.me/34633928255?text=Hola%2C%20quiero%20apuntarme%20al%20IV%20M%C3%A1ster%20de%20Melide" target="_blank" rel="noopener">💬 Escribir por WhatsApp</a>
-      </div>
+      <div class="cargando-pista"><div class="cargando-relleno" id="hero-relleno"></div></div>
+      <div class="cargando-pie" id="hero-pie">Preparando bombo, mesas y sorteos…</div>
     </div>
+    <div class="hero-linea"></div>
 
     <div class="hero-cd" id="hero-cd"></div>
     <div class="hero-hoy" id="hero-hoy">
@@ -462,10 +499,10 @@
   </div>
 
   <div class="grid">
-    <a class="card-btn inscripcion" href="INSCRIPCIONES.HTML">
+    <a class="card-btn inscripcion" href="https://amfmelide.es">
       <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8 12h8M8 16h5"/></g></svg></div>
-      <div class="card-title">Inscripción<br>IV Máster</div>
-      <div class="card-desc">Apúntate al torneo y gestiona tu inscripción</div>
+      <div class="card-title">Inscripción<br>2027</div>
+      <div class="card-desc">Aún no abiertas · se abrirán el próximo año</div>
     </a>
     <a class="card-btn camisetas" href="https://amfmelide.github.io/amf-zico/index.html" target="_blank">
       <div class="badge-nuevo">Nuevo</div>
@@ -580,6 +617,18 @@
   </div>
 </div>
 <script>
+/* El contador de la pantalla de carga sube al ritmo de la barra */
+(function(){
+  var ini = Date.now(), dur = 1800;
+  var t = setInterval(function(){
+    var el = document.getElementById('carga-pct');
+    if (!el) { clearInterval(t); return; }
+    var pct = Math.min(100, Math.round((Date.now() - ini) / dur * 100));
+    el.textContent = pct;
+    if (pct >= 100) clearInterval(t);
+  }, 60);
+})();
+
 /* ─── Modo "semana del torneo" ───
    A partir del cierre de inscripciones la portada deja de pedir altas y
    muestra el cartel de horarios. El dia en curso se resalta en oro. */
@@ -607,8 +656,6 @@ function aplicarModoTorneo() {
     t.textContent = 'HOY';
     dia.insertBefore(t, dia.firstChild);
   }
-  var ca = document.querySelector('.card-btn.inscripcion');
-  if (ca) ca.setAttribute('href', 'INSCRIPCIONES.HTML?ver=participantes');
   document.body.classList.add('modo-torneo');
   var hero = document.getElementById('hero-torneo');
   if (hero) hero.classList.add('show');
@@ -652,12 +699,56 @@ function aplicarModoTorneo() {
     }).observe(seg, { childList: true, characterData: true, subtree: true });
   }
 
-  var ci = document.querySelector('.card-btn.inscripcion .card-title');
-  if (ci) ci.innerHTML = 'Parejas<br>inscritas';
-  var cd = document.querySelector('.card-btn.inscripcion .card-desc');
-  if (cd) cd.textContent = 'Consulta el listado de equipos del M\u00e1ster';
 }
-document.addEventListener('DOMContentLoaded', aplicarModoTorneo);
+/* La barra no es decorativa: marca cuanto se ha recorrido del camino
+   entre una edicion y la siguiente. En septiembre llega al 100%. */
+/* Cuando la edicion ya paso, lo de 2026 se retira para que no quede
+   una cuenta atras a cero ni unos horarios viejos bajo el teaser. */
+var FIN_EDICION = new Date('2026-09-21T06:00:00+02:00');
+
+function edicionTerminada() { return Date.now() > FIN_EDICION.getTime(); }
+
+function limpiarEdicionPasada() {
+  if (!edicionTerminada()) return;
+  ['hero-cd', 'hero-hoy', 'horarios-cartel', 'aviso-wa'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  var cd = document.querySelector('.cd-title');
+  if (cd) cd.style.display = 'none';
+}
+
+function arrancarCarga2027() {
+  var desde = new Date('2026-09-21T00:00:00+02:00').getTime();
+  var hasta = new Date('2027-09-17T00:00:00+02:00').getTime();
+  var pct = Math.max(0, Math.min(99, ((Date.now() - desde) / (hasta - desde)) * 100));
+
+  var rel = document.getElementById('hero-relleno');
+  var elP = document.getElementById('hero-pct');
+  var elF = document.getElementById('hero-pie');
+  if (!rel || !elP) return;
+
+  var dias = Math.max(0, Math.ceil((hasta - Date.now()) / 86400000));
+  if (elF) {
+    elF.textContent = dias > 1 ? 'Faltan ' + dias + ' d\u00edas' :
+                      dias === 1 ? 'Falta 1 d\u00eda' : '\u00a1Ya casi!';
+  }
+
+  // Sube poco a poco hasta su valor real, para que se vea el gesto
+  var n = 0, objetivo = pct;
+  var t = setInterval(function(){
+    n += Math.max(0.4, (objetivo - n) * 0.09);
+    if (n >= objetivo - 0.15) { n = objetivo; clearInterval(t); }
+    rel.style.width = n.toFixed(1) + '%';
+    elP.textContent = n.toFixed(1) + '%';
+  }, 28);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  aplicarModoTorneo();
+  limpiarEdicionPasada();
+  arrancarCarga2027();
+});
 
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -790,7 +881,8 @@ function loadContador() {
       const total = rows.length;
       const totalMov = rows.filter(r => r[11]).length;
       const totalPar = rows.filter(r => r[12]).length;
-      animarNum(document.getElementById('contador-inscritos'), total);
+      var ci = document.getElementById('contador-inscritos');
+      if (ci) animarNum(ci, total);
       var hcp = document.getElementById('hc-parejas');
       if (hcp) hcp.textContent = total;
       animarNum(document.getElementById('home-mov-counter'), totalMov);
