@@ -176,7 +176,7 @@
   .cobro-tot b { color: var(--text); font-size: 0.95rem; }
   .cobro-tot .vd { color: var(--libre); }
   .cobro-tot .rj { color: var(--ocupado); }
-  .cobro-body { padding: 16px; max-width: 900px; margin: 0 auto; }
+  .cobro-body { padding: 16px; max-width: 1600px; margin: 0 auto; }
   .cobro-zona { margin-bottom: 26px; }
   .cobro-zona h3 { font-family: 'Barlow', sans-serif; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; margin-bottom: 10px; display: flex; justify-content: space-between; gap: 10px; }
   .cobro-zona h3 span { font-weight: 600; font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.04em; }
@@ -185,14 +185,30 @@
   .crow-info { flex: 1; min-width: 0; }
   .crow-nom { font-weight: 700; font-size: 0.92rem; }
   .crow.pagado .crow-nom { color: var(--libre); }
-  .crow-eq { color: var(--text-dim); font-size: 0.72rem; margin-top: 2px; }
+  .crow-eq { color: var(--text-dim); font-size: 0.7rem; margin-top: 3px; line-height: 1.45; }
+  .crow-pareja { color: var(--text); font-weight: 700; }
+  .crow-con { color: var(--text-dim); }
+  .crow-zona { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 4px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+    font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; }
+  .crow.homonimo { border-left: 4px solid #ffab40; }
+  .cobro-zona { border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+    background: rgba(8,10,16,0.45); margin-bottom: 0; }
+  /* Las zonas se reparten en cuadricula: mas de un modulo por fila en pantallas anchas */
+  #cobro-body { display: grid; gap: 16px; align-items: start;
+    grid-template-columns: repeat(auto-fill, minmax(470px, 1fr)); }
+  #cobro-body > .aviso-homonimos, #cobro-body > .empty-state { grid-column: 1 / -1; }
+  @media (max-width: 900px) { #cobro-body { grid-template-columns: 1fr; } }
   .crow-dup { color: #ffab40; font-size: 0.72rem; margin-top: 3px; font-weight: 700; }
-  .crow select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 6px; font-size: 0.78rem; font-family: inherit; max-width: 130px; }
+  .crow select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 5px; font-size: 0.74rem; font-family: inherit; width: 118px; flex-shrink: 0; }
   .crow-imp { font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 1rem; min-width: 48px; text-align: right; }
   .crow.pagado .crow-imp { color: var(--libre); }
   .crow-imp.manual { color: #ffab40; }
   .crow-tick { width: 46px; height: 42px; border-radius: 9px; border: 2px solid var(--border); background: var(--surface2); color: var(--text-dim); font-size: 1.2rem; cursor: pointer; flex-shrink: 0; }
   .crow.pagado .crow-tick { background: var(--libre); border-color: var(--libre); color: #06210f; }
+  .aviso-homonimos { background: rgba(255,171,64,0.12); border: 1px solid rgba(255,171,64,0.4);
+    color: #ffab40; border-radius: 10px; padding: 11px 14px; margin-bottom: 14px;
+    font-size: 0.82rem; font-weight: 700; }
   .cobro-sub { text-align: right; font-size: 0.76rem; color: var(--text-dim); padding: 6px 4px 0; border-top: 1px solid var(--border); margin-top: 4px; }
   .solo-print { display: none; }
 
@@ -237,6 +253,7 @@
     body.print-cobro .cobro-bar, body.print-cobro .crow select, body.print-cobro .no-print { display: none !important; }
     body.print-cobro .solo-print { display: inline !important; }
     body.print-cobro .cobro-body { padding: 0; max-width: none; }
+    body.print-cobro #cobro-body { display: block !important; }
     body.print-cobro .cobro-zona { page-break-inside: avoid; margin-bottom: 16px; }
     body.print-cobro .cobro-zona h3 { background: #111 !important; color: #fff !important; border: 0; border-radius: 0; font-size: 12px; padding: 5px 8px; }
     body.print-cobro .cobro-zona h3 span { color: #ddd !important; }
@@ -266,6 +283,10 @@
   .btn-pago { padding: 4px 10px; border: none; border-radius: 20px; font-family: 'Barlow', sans-serif; font-weight: 800; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .btn-pago.no { background: rgba(245,0,87,0.15); color: var(--ocupado); border: 1px solid rgba(245,0,87,0.3); }
   .btn-pago.si { background: rgba(0,200,83,0.15); color: var(--libre); border: 1px solid rgba(0,200,83,0.3); }
+  .btn-pago.sin-confirmar { border-style: dashed !important; opacity: 0.72; }
+  .btn-pago.fallo { border: 2px solid #f50057 !important; box-shadow: 0 0 0 3px rgba(245,0,87,0.22); }
+  .crow.sin-confirmar { opacity: 0.72; }
+  .crow.fallo { border-color: #f50057 !important; }
   .btn-pago.otra { background: rgba(124,179,255,0.15); color: #7cb3ff; border: 1px solid rgba(124,179,255,0.35); }
   .btn-pago.gratis { background: rgba(206,147,216,0.15); color: #ce93d8; border: 1px solid rgba(206,147,216,0.35); }
   .btn-pago.staff { background: rgba(255,171,64,0.15); color: #ffab40; border: 1px solid rgba(255,171,64,0.35); }
@@ -390,6 +411,12 @@
           </select>
         </div>
         <div class="form-group">
+          <label>Categoría femenino <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
+          <select id="catFemenino">
+            <option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>Categoría parado <span style="color:var(--text-dim);font-weight:400;">(opcional)</span></label>
           <select id="catParado">
             <option value="">Seleccionar...</option>
@@ -441,7 +468,7 @@
       </select>
       <select id="filter-part-mod" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="">Ambas modalidades</option>
-        <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option>
+        <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option><option value="fem">🌹 Femenino</option>
       </select>
       <select id="sort-part" onchange="renderParticipantes(window._partRows)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Barlow',sans-serif;font-size:0.8rem;padding:8px 12px;border-radius:8px;outline:none;cursor:pointer;">
         <option value="cat">Ordenar por categoría</option><option value="fecha">Ordenar por fecha</option><option value="alfa">Ordenar alfabético</option>
@@ -466,7 +493,12 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-refresh" onclick="loadData()">🔄 Actualizar</button>
           <button class="btn-export" onclick="exportCSV()">⬇️ CSV</button>
+          <button class="btn-refresh" id="quien-cobra" onclick="pedirCobrador(true)" title="Cambiar quién cobra">👤</button>
+          <button class="btn-refresh" id="btn-deshacer" style="display:none" onclick="deshacerUltimo()">↩️ Deshacer</button>
+          <button class="btn-refresh" id="btn-reintentar" style="display:none;background:rgba(245,0,87,0.2);border-color:#f50057;color:#ff5c8a" onclick="reintentarFallidas()">🔁 Reintentar lo que falló</button>
           <button class="btn-refresh" onclick="informeZonas()">🗺️ Informe por zonas</button>
+          <button class="btn-refresh" onclick="abrirSorteo()" style="background:rgba(206,147,216,0.16);border-color:rgba(206,147,216,0.5);color:#ce93d8">🎲 Sorteo</button>
+          <button class="btn-refresh" onclick="cierreCaja()" style="background:rgba(0,200,83,0.16);border-color:rgba(0,200,83,0.5);color:var(--libre)">🔒 Cierre de caja</button>
           <button class="btn-refresh" onclick="hojaCobro()">💶 Hoja de cobro</button>
           <button class="btn-refresh" onclick="toggleHistorial()">📋 Historial</button>
         </div>
@@ -490,7 +522,7 @@
         </select>
         <select class="filter-select" id="filter-mod-admin" onchange="renderTable()">
           <option value="">Todas las modalidades</option>
-          <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option>
+          <option value="mov">🔄 Movimiento</option><option value="par">✋ Parado</option><option value="fem">🌹 Femenino</option>
         </select>
         <select class="filter-select" id="filter-pago" onchange="renderTable()">
           <option value="">Todos los pagos</option>
@@ -502,7 +534,7 @@
       <div class="cards-wrap" id="cards-wrap"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>#</th><th>Equipo</th><th>Jugador 1</th><th>📞</th><th>💰 J1</th><th>Jugador 2</th><th>📞</th><th>💰 J2</th><th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th><th>Fecha</th><th>Notas</th><th>Acc.</th></tr></thead>
+          <thead><tr><th>#</th><th>Equipo</th><th>Jugador 1</th><th>📞</th><th>💰 J1</th><th>Jugador 2</th><th>📞</th><th>💰 J2</th><th>Zona</th><th>Cat.Mov</th><th>Cat.Par</th><th>Cat.Fem</th><th>Fecha</th><th>Notas</th><th>Acc.</th></tr></thead>
           <tbody id="table-body"></tbody>
         </table>
         <div class="empty-state" id="empty-state" style="display:none"><p>No hay inscripciones todavía</p></div>
@@ -530,8 +562,15 @@
 <div id="cobro-view">
   <div class="cobro-bar no-print">
     <button onclick="cerrarCobro()">← Volver</button>
-    <input type="text" id="cobro-search" class="cobro-filtro" placeholder="🔍 Buscar jugador o equipo…" oninput="renderCobro()">
+    <button id="quien-cobra-barra" onclick="pedirCobrador(true)">👤</button>
+    <button id="btn-deshacer-cobro" style="display:none" onclick="deshacerUltimo()">↩️ Deshacer</button>
+    <input type="text" id="cobro-search" class="cobro-filtro" placeholder="🔍 Jugador, equipo, zona, teléfono o código…" oninput="renderCobro()">
     <select id="cobro-zona" class="cobro-filtro" onchange="renderCobro()"><option value="">Todas las zonas</option></select>
+    <select id="cobro-estado" class="cobro-filtro" onchange="renderCobro()">
+      <option value="">Cobrados y pendientes</option>
+      <option value="pend">❌ Solo pendientes de cobro</option>
+      <option value="hecho">✅ Solo ya resueltos</option>
+    </select>
     <button onclick="limpiarFiltrosCobro()" id="cobro-limpiar" style="display:none">✕ Quitar filtros</button>
     <div class="cobro-tot" id="cobro-tot"></div>
     <button onclick="imprimirCobro()" class="pri">🖨️ Imprimir / PDF</button>
@@ -541,6 +580,37 @@
     <div id="cobro-print-sub" style="font-size:11px;color:#333;margin-top:3px;"></div>
   </div>
   <div class="cobro-body" id="cobro-body"></div>
+</div>
+
+<!-- Sorteo -->
+<div class="confirm-overlay" id="sorteo-modal">
+  <div class="confirm-box" style="max-width:520px">
+    <div class="confirm-title">🎲 SORTEO</div>
+    <div class="form-group" style="margin-top:16px">
+      <label>Premio</label>
+      <input type="text" id="sorteo-premio" placeholder="Ej: PlayStation 5" maxlength="120">
+    </div>
+    <div class="form-group">
+      <label>Entre quiénes</label>
+      <select id="sorteo-ambito">
+        <option value="pagados">Solo los que han pagado</option>
+        <option value="todos">Todos los inscritos</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Zona</label>
+      <select id="sorteo-zona"><option value="">Todas las zonas</option></select>
+    </div>
+    <div id="sorteo-cuenta" style="color:var(--text-dim);font-size:0.82rem;margin-bottom:14px"></div>
+
+    <div id="sorteo-bombo" style="display:none;text-align:center;padding:26px 10px;border:1px solid var(--border);border-radius:12px;margin-bottom:16px;background:var(--surface2)">
+      <div id="sorteo-nombre" style="font-family:'Barlow',sans-serif;font-weight:800;font-size:1.6rem;line-height:1.2">—</div>
+      <div id="sorteo-equipo" style="color:var(--text-dim);font-size:0.85rem;margin-top:6px"></div>
+    </div>
+
+    <button class="confirm-btn-ok" id="sorteo-btn" style="width:100%" onclick="lanzarSorteo()">🎲 Sortear</button>
+    <button class="confirm-btn-back" style="width:100%;margin-top:10px" onclick="cerrarSorteo()">Cerrar</button>
+  </div>
 </div>
 
 <!-- Menu de estado de pago -->
@@ -610,6 +680,10 @@
         <select id="m-catMov"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
       </div>
       <div class="form-group"><label>Cat. Parado</label>
+        <select id="m-catFem"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
+      </div>
+      <div class="form-group">
+        <label>Categoría parado</label>
         <select id="m-catPar"><option value="">Seleccionar...</option><option value="Elite">🏆 Elite</option><option value="Plata">🥈 Plata</option><option value="Bronce">🥉 Bronce</option><option value="Rookie">⭐ Rookie</option></select>
       </div>
     </div>
@@ -679,6 +753,14 @@ function esc(t) {
 function estadoPago(v){ return CICLO_PAGO.indexOf(v) >= 0 ? v : 'No'; }
 function importePago(v){ var e = estadoPago(v); return e === 'No' ? 0 : IMPORTE_PAGO[e]; }
 
+/* Clase CSS segun si la marca ya llego a la hoja */
+function estadoEnvio(cod, jug) {
+  var c = String(cod) + '-' + jug;
+  if (typeof fallidas !== 'undefined' && fallidas[c] !== undefined) return ' fallo';
+  if (typeof pendientes !== 'undefined' && pendientes[c] !== undefined) return ' sin-confirmar';
+  return '';
+}
+
 /* ─── SINCRONIZACION SEGURA CON LA HOJA ───
    Las escrituras van por 'no-cors' (respuesta opaca), asi que:
    1) antes de escribir se comprueba que los datos locales no estan caducados,
@@ -707,6 +789,28 @@ function filaDeCodigo(cod, idxFallback) {
 
 function pedirDatosAdmin() { return pedirDatos('admin', { key: adminKey }); }
 
+/* Refresco automatico: si dos personas cobran a la vez desde dos moviles,
+   cada pantalla se pone al dia sola. Solo cuando no hay nada en vuelo y
+   nadie esta escribiendo, para no molestar. */
+var REFRESCO_AUTO = 60000;
+function arrancarRefrescoAuto() {
+  if (window._refrescoAuto) return;
+  window._refrescoAuto = setInterval(function(){
+    var panel = document.getElementById('admin-panel');
+    if (!panel || getComputedStyle(panel).display === 'none') return;
+    if (!adminKey || !hayConexion()) return;
+    if (colaEscrituras.length || enviandoAhora || nPendientes() || nFallidas()) return;
+    if (document.getElementById('menu-pago').classList.contains('show')) return;
+    var act = document.activeElement;
+    if (act && /^(INPUT|SELECT|TEXTAREA)$/.test(act.tagName)) return;
+    if (Date.now() - ultimaCarga < REFRESCO_AUTO) return;
+    refrescarDatos().then(function(){
+      renderStats(); renderTable(); checkDuplicados();
+      if (document.getElementById('cobro-view').classList.contains('show')) renderCobro();
+    }).catch(function(){});
+  }, 20000);
+}
+
 function indicePorCodigo(cod) {
   for (var i = 0; i < allData.length; i++) {
     if (String(allData[i][13]) === String(cod)) return i;
@@ -721,13 +825,208 @@ function refrescarDatos() {
     return true;
   });
 }
-function enviarAlServidor(payload) {
+/* ─── COLA DE ESCRITURAS ───
+   Apps Script ejecuta de una en una por usuario: si se le mandan varias
+   peticiones a la vez, descarta algunas sin avisar. Por eso las escrituras
+   salen de una en una, se espera la respuesta del servidor y se reintenta
+   lo que falle. Mientras una marca no esta confirmada se pinta punteada. */
+var colaEscrituras = [];
+var enviandoAhora = false;
+var pendientes = {};          // "codigo-1" | "codigo-2" | "codigo-n" -> valor en vuelo
+var fallidas = {};            // lo mismo, para lo que no se pudo guardar
+var postLegible = true;       // si el navegador no deja leer la respuesta, se degrada
+
+function clavePend(cod, jug) { return String(cod) + '-' + jug; }
+
+/* La cola se guarda en el navegador: si cierras la pestaña, te quedas sin
+   bateria o se va el wifi, al volver a entrar sigue por donde iba. */
+var CLAVE_COLA = 'amf_cola_escrituras';
+
+function guardarCola() {
+  try {
+    localStorage.setItem(CLAVE_COLA, JSON.stringify({
+      cola: colaEscrituras, pendientes: pendientes, fallidas: fallidas, ts: Date.now()
+    }));
+  } catch (e) {}
+}
+
+function recuperarCola() {
+  var guardado = null;
+  try { guardado = JSON.parse(localStorage.getItem(CLAVE_COLA) || 'null'); } catch (e) {}
+  if (!guardado) return 0;
+  // Lo de hace mas de dos dias se descarta: ya no tiene sentido
+  if (Date.now() - (guardado.ts || 0) > 48 * 3600 * 1000) { borrarCola(); return 0; }
+  colaEscrituras = guardado.cola || [];
+  pendientes = guardado.pendientes || {};
+  fallidas = guardado.fallidas || {};
+  colaEscrituras.forEach(function(t){ t.payload.key = adminKey; });
+  return colaEscrituras.length + Object.keys(fallidas).length;
+}
+
+function borrarCola() {
+  try { localStorage.removeItem(CLAVE_COLA); } catch (e) {}
+}
+
+function hayConexion() {
+  return (typeof navigator === 'undefined') || navigator.onLine !== false;
+}
+
+function avisarSinConexion() {
+  var n = nPendientes() + nFallidas();
+  setEstadoSync('📴 Sin conexi\u00f3n \u2014 ' + n +
+                (n === 1 ? ' cambio esperando. Se subir\u00e1 solo al volver la red.'
+                         : ' cambios esperando. Se subir\u00e1n solos al volver la red.'), '#ffc107');
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', function(){
+    if (colaEscrituras.length || nFallidas()) {
+      showToast('📶 Conexi\u00f3n recuperada, subiendo lo pendiente\u2026');
+      Object.keys(fallidas).forEach(function(c){ /* se reintentan tambien */ });
+      reintentarFallidas();
+      procesarCola();
+    }
+  });
+  window.addEventListener('offline', function(){
+    if (colaEscrituras.length || nPendientes()) avisarSinConexion();
+  });
+  window.addEventListener('beforeunload', function(e){
+    if (colaEscrituras.length || nFallidas()) {
+      guardarCola();
+      e.preventDefault();
+      e.returnValue = 'Quedan cambios sin guardar en la hoja.';
+      return e.returnValue;
+    }
+  });
+}
+
+function nPendientes() { return Object.keys(pendientes).length; }
+function nFallidas()   { return Object.keys(fallidas).length; }
+
+function pintarContador() {
+  var np = nPendientes(), nf = nFallidas();
+  if (nf) {
+    setEstadoSync('\u274c ' + nf + (nf === 1 ? ' cambio no se guard\u00f3' : ' cambios no se guardaron') +
+                  ' \u2014 pulsa Reintentar', '#f50057');
+    var b = document.getElementById('btn-reintentar');
+    if (b) b.style.display = '';
+  } else if (np) {
+    setEstadoSync('\u23f3 Guardando ' + np + (np === 1 ? ' cambio\u2026' : ' cambios\u2026'), '#ffc107');
+  }
+}
+
+function enviarPost(payload) {
   payload.key = adminKey;
-  return fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-    .catch(function(){
-      // Sin conexion: la verificacion posterior avisara de lo que no llego
-      setEstadoSync('\u26a0\ufe0f Sin conexion con la hoja: el ultimo cambio puede no haberse guardado', '#f50057');
+  var url = SCRIPT_URL + '?_=' + Date.now() + Math.floor(Math.random() * 1000);
+  if (!postLegible) {
+    // Modo degradado: se manda a ciegas, como antes
+    return fetch(url, {method:'POST', mode:'no-cors',
+                       headers:{'Content-Type':'application/json'},
+                       body:JSON.stringify(payload)})
+      .then(function(){ return {ok:true, ciego:true}; });
+  }
+  // Peticion simple (text/plain): no dispara preflight y SI deja leer la respuesta
+  return fetch(url, {method:'POST', cache:'no-store',
+                     headers:{'Content-Type':'text/plain;charset=utf-8'},
+                     body:JSON.stringify(payload)})
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      try { return JSON.parse(t); }
+      catch(e) { throw new Error('El servidor no devolvi\u00f3 una respuesta v\u00e1lida'); }
     });
+}
+
+function encolar(payload, clave, valor, etiqueta) {
+  if (clave) { pendientes[clave] = valor; delete fallidas[clave]; }
+  if (cobrador) payload.cobrador = cobrador;
+  colaEscrituras.push({ payload: payload, clave: clave, etiqueta: etiqueta, intentos: 0 });
+  ultimaEscritura = Date.now();
+  guardarCola();
+  pintarContador();
+  procesarCola();
+}
+
+function procesarCola() {
+  if (enviandoAhora || !colaEscrituras.length) return;
+  if (!hayConexion()) { avisarSinConexion(); return; }
+  enviandoAhora = true;
+  var t = colaEscrituras[0];
+
+  enviarPost(t.payload).then(function(r) {
+    if (r && r.ok === false) throw new Error(r.error || 'rechazado');
+    colaEscrituras.shift();
+    if (t.clave) delete pendientes[t.clave];
+    guardarCola();
+    renderTable();
+    if (typeof renderCobro === 'function' &&
+        document.getElementById('cobro-view').classList.contains('show')) renderCobro();
+  }).catch(function(e) {
+    t.intentos++;
+    // Si el navegador bloquea la lectura de la respuesta, se pasa al modo ciego
+    if (postLegible && t.intentos === 1 && e && /Failed to fetch|NetworkError|CORS/i.test(String(e.message))) {
+      postLegible = false;
+      return;
+    }
+    if (!hayConexion()) { t.intentos = 0; avisarSinConexion(); return; }
+    if (t.intentos >= 4) {
+      colaEscrituras.shift();
+      if (t.clave) { fallidas[t.clave] = pendientes[t.clave]; delete pendientes[t.clave]; }
+      guardarCola();
+      showToast('\u274c No se pudo guardar: ' + (t.etiqueta || 'un cambio'));
+      renderTable();
+    }
+  }).then(function() {
+    enviandoAhora = false;
+    pintarContador();
+    if (colaEscrituras.length) {
+      setTimeout(procesarCola, 300);
+    } else if (!nFallidas()) {
+      borrarCola();
+      setEstadoSync('\u2705 Todo guardado en la hoja', '#00c853');
+      programarVerificacion();
+    }
+  });
+}
+
+function reintentarFallidas() {
+  var claves = Object.keys(fallidas);
+  if (!claves.length) return;
+  if (!hayConexion()) { avisarSinConexion(); return; }
+  claves.forEach(function(c) {
+    var partes = c.split('-');
+    var jug = partes.pop();
+    var cod = partes.join('-');
+    if (jug === 'm1' || jug === 'm2') {
+      var im = indicePorCodigo(cod);
+      if (im < 0) { delete fallidas[c]; return; }
+      var vm = fallidas[c]; delete fallidas[c];
+      var jn = jug === 'm1' ? 1 : 2;
+      encolar({action:'updateImporte', row: filaDeCodigo(cod, im), jug: jn, value: vm}, c, vm,
+              'importe de ' + (allData[im][jn===1?2:4] || ''));
+      return;
+    }
+    var i = indicePorCodigo(cod);
+    if (i < 0) { delete fallidas[c]; return; }
+    var valor = fallidas[c];
+    delete fallidas[c];
+    if (jug === 'n') {
+      encolar({action:'updateNotas', row: filaDeCodigo(cod, i), value: valor}, c, valor,
+              'nota de ' + (allData[i][1] || ''));
+    } else {
+      var col = jug === '1' ? 3 : 5;
+      encolar({action:'updatePago', row: filaDeCodigo(cod, i), col: col + 1, value: valor}, c, valor,
+              allData[i][jug === '1' ? 2 : 4] || '');
+    }
+  });
+  var b = document.getElementById('btn-reintentar');
+  if (b) b.style.display = 'none';
+}
+
+// Se mantiene para borrados y ediciones, que no necesitan cola
+function enviarAlServidor(payload) {
+  return enviarPost(payload).catch(function(){
+    setEstadoSync('\u26a0\ufe0f Sin conexi\u00f3n con la hoja', '#f50057');
+  });
 }
 function setEstadoSync(txt, color) {
   var el = document.getElementById('sync-estado');
@@ -759,16 +1058,40 @@ function verificarGuardado() {
       enServidor[k] = true;
       if (!(k in esperado)) return;
       var e = esperado[k];
-      if (estadoPago(r[3]) !== e[0] || estadoPago(r[5]) !== e[1] || (r[14] == null ? '' : String(r[14])) !== e[2]) {
+      // Lo que todavia esta en la cola no cuenta como discrepancia
+      var p1 = pendientes[k + '-1'] !== undefined || fallidas[k + '-1'] !== undefined;
+      var p2 = pendientes[k + '-2'] !== undefined || fallidas[k + '-2'] !== undefined;
+      var pn = pendientes[k + '-n'] !== undefined || fallidas[k + '-n'] !== undefined;
+      if ((!p1 && estadoPago(r[3]) !== e[0]) ||
+          (!p2 && estadoPago(r[5]) !== e[1]) ||
+          (!pn && (r[14] == null ? '' : String(r[14])) !== e[2])) {
         fallos.push(r[1] || k);
       }
     });
     var desaparecidas = Object.keys(esperado).filter(function(k){ return !enServidor[k]; }).length;
-    allData = srv;
+    // Se adopta lo del servidor PERO conservando lo que aun no se ha guardado:
+    // asi una marca recien puesta nunca desaparece sola de la pantalla.
+    allData = srv.map(function(r){
+      var f = r.slice();
+      var c = String(f[13]);
+      if (pendientes[c + '-1'] !== undefined) f[3]  = pendientes[c + '-1'];
+      if (fallidas[c + '-1']   !== undefined) f[3]  = fallidas[c + '-1'];
+      if (pendientes[c + '-2'] !== undefined) f[5]  = pendientes[c + '-2'];
+      if (fallidas[c + '-2']   !== undefined) f[5]  = fallidas[c + '-2'];
+      if (pendientes[c + '-n'] !== undefined) f[14] = pendientes[c + '-n'];
+      if (fallidas[c + '-n']   !== undefined) f[14] = fallidas[c + '-n'];
+      if (pendientes[c + '-m1'] !== undefined) f[16] = pendientes[c + '-m1'];
+      if (fallidas[c + '-m1']   !== undefined) f[16] = fallidas[c + '-m1'];
+      if (pendientes[c + '-m2'] !== undefined) f[17] = pendientes[c + '-m2'];
+      if (fallidas[c + '-m2']   !== undefined) f[17] = fallidas[c + '-m2'];
+      return f;
+    });
     ultimaCarga = Date.now();
     registrarFilas(allData);
     renderStats(); renderTable(); checkDuplicados();
-    if (fallos.length) {
+    if (nFallidas() || nPendientes()) {
+      pintarContador();
+    } else if (fallos.length) {
       setEstadoSync('⚠️ No se guardo: ' + fallos.slice(0,3).join(', ') + (fallos.length>3 ? '…' : '') + ' — vuelve a marcarlo', '#f50057');
       showToast('⚠️ Algún cambio no llegó a la hoja. Datos recargados.');
     } else if (desaparecidas) {
@@ -885,6 +1208,10 @@ function pedirDatos(action, extra, intento) {
   intento = intento || 0;
   var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
   var opts = ctrl ? { signal: ctrl.signal } : {};
+  /* Sin esto, si Google devuelve una vez una pagina de redireccion, el
+     navegador la guarda y la repite en cada intento posterior. */
+  opts.cache = 'no-store';
+  opts.redirect = 'follow';
   var caducado = false;
   var limite = setTimeout(function(){ caducado = true; if (ctrl) ctrl.abort(); }, TIMEOUT_RED);
   var url = SCRIPT_URL + '?action=' + encodeURIComponent(action);
@@ -893,6 +1220,7 @@ function pedirDatos(action, extra, intento) {
       url += '&' + k + '=' + encodeURIComponent(extra[k]);
     });
   }
+  url += '&_=' + Date.now() + Math.floor(Math.random() * 1000);
   return fetch(url, opts)
     .then(function(r){ clearTimeout(limite); return r.text(); })
     .then(function(txt){
@@ -941,6 +1269,7 @@ function submitForm() {
   if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { document.getElementById('email').classList.add('error'); showToast('⚠️ Email no válido'); return; }
   var catMov = document.getElementById('catMovimiento').value;
   var catPar = document.getElementById('catParado').value;
+  var catFem = document.getElementById('catFemenino').value;
   if (!catMov && !catPar) { showToast('⚠️ Selecciona al menos una categoría'); return; }
 
   document.getElementById('c-equipo').textContent   = document.getElementById('equipo').value.trim();
@@ -979,7 +1308,8 @@ function enviarFormulario() {
     email: document.getElementById('email').value.trim(),
     comentarios: document.getElementById('comentarios').value.trim(),
     catMovimiento: document.getElementById('catMovimiento').value,
-    catParado: document.getElementById('catParado').value
+    catParado: document.getElementById('catParado').value,
+    catFemenino: document.getElementById('catFemenino').value
   };
   fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) })
     .then(function(){
@@ -1024,6 +1354,7 @@ function cargarDatosModificacion(codigo) {
         ['equipo','jugador1','jugador2','zona','telefono','email'].forEach(function(id){ document.getElementById(id).value = d[id] || ''; });
         document.getElementById('catMovimiento').value = d.catMovimiento || '';
         document.getElementById('catParado').value     = d.catParado || '';
+        document.getElementById('catFemenino').value   = d.catFemenino || '';
       } else { showToast('❌ Código no válido'); }
     }).catch(function(){ showToast('❌ Error cargando datos'); });
 }
@@ -1032,6 +1363,7 @@ function resetForm() {
   ['equipo','jugador1','telefono1','jugador2','telefono2','zona','telefono','email','comentarios'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('catMovimiento').value = '';
   document.getElementById('catParado').value = '';
+  document.getElementById('catFemenino').value = '';
   document.getElementById('form-card').style.display = '';
   document.getElementById('success-msg').style.display = 'none';
   document.getElementById('cancel-msg').style.display = 'none';
@@ -1099,7 +1431,7 @@ function renderParticipantes(rows) {
   }
 
   function bloqueModalidad(modKey, modLabel, modIcon, modColor) {
-    var colIdx = (modKey === 'mov') ? 11 : 12;
+    var colIdx = (modKey === 'mov') ? 11 : (modKey === 'fem') ? 15 : 12;
     var equiposMod = rows.filter(function(r){ return r[colIdx]; });
     if (catF) equiposMod = equiposMod.filter(function(r){ return r[colIdx] === catF; });
     if (!equiposMod.length) return '';
@@ -1131,8 +1463,12 @@ function renderParticipantes(rows) {
     html = bloqueModalidad('mov', 'MOVIMIENTO', '🔄', '#f50057');
   } else if (modF === 'par') {
     html = bloqueModalidad('par', 'PARADO', '✋', '#4a86e8');
+  } else if (modF === 'fem') {
+    html = bloqueModalidad('fem', 'FEMENINO', '🌹', '#ce93d8');
   } else {
-    html = bloqueModalidad('mov', 'MOVIMIENTO', '🔄', '#f50057') + bloqueModalidad('par', 'PARADO', '✋', '#4a86e8');
+    html = bloqueModalidad('mov', 'MOVIMIENTO', '🔄', '#f50057') +
+           bloqueModalidad('par', 'PARADO', '✋', '#4a86e8') +
+           bloqueModalidad('fem', 'FEMENINO', '🌹', '#ce93d8');
   }
 
   document.getElementById('participantes-content').innerHTML = html || '<div class="empty-state"><p>No hay participantes para ese filtro</p></div>';
@@ -1153,6 +1489,8 @@ function compartir() {
 
 // ─── ADMIN ───
 function desbloquearAdmin() {
+  arrancarRefrescoAuto();
+  pintarCobrador();
   document.getElementById('admin-login').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
   loadData();
@@ -1170,6 +1508,7 @@ function checkPass() {
     if (r && r.ok) {
       adminKey = clave;
       try { sessionStorage.setItem('amf_admin_key', clave); } catch(e) {}
+      arrancarRefrescoAuto();
       if (inp) inp.value = '';
       desbloquearAdmin();
     } else {
@@ -1197,6 +1536,25 @@ function loadData() {
       allData = data.rows || [];
       ultimaCarga = Date.now();
       registrarFilas(allData);
+      // Lo que quedo sin subir de la sesion anterior se aplica y se reanuda
+      var recuperados = recuperarCola();
+      if (recuperados) {
+        allData.forEach(function(r){
+          var c = String(r[13]);
+          if (pendientes[c+'-1'] !== undefined) r[3]  = pendientes[c+'-1'];
+          if (fallidas[c+'-1']   !== undefined) r[3]  = fallidas[c+'-1'];
+          if (pendientes[c+'-2'] !== undefined) r[5]  = pendientes[c+'-2'];
+          if (fallidas[c+'-2']   !== undefined) r[5]  = fallidas[c+'-2'];
+          if (pendientes[c+'-n'] !== undefined) r[14] = pendientes[c+'-n'];
+          if (fallidas[c+'-n']   !== undefined) r[14] = fallidas[c+'-n'];
+          if (pendientes[c+'-m1'] !== undefined) r[16] = pendientes[c+'-m1'];
+          if (fallidas[c+'-m1']   !== undefined) r[16] = fallidas[c+'-m1'];
+          if (pendientes[c+'-m2'] !== undefined) r[17] = pendientes[c+'-m2'];
+          if (fallidas[c+'-m2']   !== undefined) r[17] = fallidas[c+'-m2'];
+        });
+        showToast('↩️ Retomando ' + recuperados + ' cambio' + (recuperados>1?'s':'') + ' de antes');
+        setTimeout(function(){ reintentarFallidas(); procesarCola(); }, 600);
+      }
       clearTimeout(verifTimer);
       setEstadoSync('', '');
       renderStats(); renderTable(); checkDuplicados();
@@ -1224,7 +1582,21 @@ function renderStats() {
   });
   var html = '<div class="stat-card"><div class="stat-label">Total equipos</div><div class="stat-num">'+allData.length+'</div></div>';
   CATS.forEach(function(cat){ var n=allData.filter(function(r){return r[11]===cat||r[12]===cat;}).length; html+='<div class="stat-card '+cat.toLowerCase()+'"><div class="stat-label">'+cat+'</div><div class="stat-num">'+n+'</div></div>'; });
-  html += '<div class="stat-card pagado"><div class="stat-label">Jugadores pagados</div><div class="stat-num">'+tp+'/'+tj+'</div></div>';
+  // Personas distintas, no casillas: quien juega en dos parejas cuenta una vez
+  var personas = {};
+  allData.forEach(function(r){
+    [[r[2], r[3]], [r[4], r[5]]].forEach(function(par){
+      var nn = normalizarNombre(par[0]);
+      if (!nn) return;
+      if (!personas[nn]) personas[nn] = false;
+      if (estadoPago(par[1]) !== 'No') personas[nn] = true;
+    });
+  });
+  var nombresP = Object.keys(personas);
+  var pPag = nombresP.filter(function(k){ return personas[k]; }).length;
+  html += '<div class="stat-card pagado" title="Personas distintas. Quien juega en dos parejas cuenta una sola vez.">' +
+          '<div class="stat-label">Personas resueltas</div><div class="stat-num">'+pPag+'/'+nombresP.length+'</div></div>';
+  html += '<div class="stat-card" title="Casillas de pago marcadas, contando las dos de cada pareja."><div class="stat-label">Casillas marcadas</div><div class="stat-num" style="color:var(--text-dim)">'+tp+'/'+tj+'</div></div>';
   html += '<div class="stat-card dinero"><div class="stat-label">💶 Recaudado</div><div class="stat-num">'+recaudado+'€</div></div>';
   html += '<div class="stat-card"><div class="stat-label">Pendiente cobro</div><div class="stat-num" style="color:var(--ocupado)">'+pendiente+'€</div></div>';
   html += '<div class="stat-card"><div class="stat-label">🔁 Ya pagó en otra pareja</div><div class="stat-num" style="color:#7cb3ff">'+nOtra+'</div></div>';
@@ -1263,7 +1635,7 @@ function renderTable() {
     var ms = !q  || [r[1],r[2],r[4],r[6],r[7],r[8],r[9],r[13]].some(function(v){ return (v==null?'':String(v)).toLowerCase().indexOf(q)>=0; });
     var mc = !cf || r[11]===cf || r[12]===cf;
     var mp = !pf || estadoPago(r[3])===pf || estadoPago(r[5])===pf;
-    var mm = !mf || (mf==='mov' && r[11]) || (mf==='par' && r[12]);
+    var mm = !mf || (mf==='mov' && r[11]) || (mf==='par' && r[12]) || (mf==='fem' && r[15]);
     return ms && mc && mp && mm;
   });
   window._adminFiltered = filtered;
@@ -1290,13 +1662,14 @@ function renderTable() {
       '<td style="font-weight:700">'+esc(r[1])+'</td>' +
       '<td>'+esc(r[2])+'</td>' +
       '<td style="color:'+(d1?'#f50057':'var(--text-dim)')+';">'+esc(t1)+(d1?' ⚠️':'')+'</td>' +
-      '<td><button class="btn-pago '+CLASE_PAGO[e1]+'" data-idx="'+ri+'" data-jug="1" title="'+TITULO_PAGO[e1]+'" onclick="togglePago('+ri+',1)">'+LABEL_PAGO[e1]+'</button></td>' +
+      '<td><button class="btn-pago '+CLASE_PAGO[e1]+estadoEnvio(r[13],1)+'" data-idx="'+ri+'" data-jug="1" title="'+TITULO_PAGO[e1]+'" onclick="togglePago('+ri+',1)">'+LABEL_PAGO[e1]+'</button></td>' +
       '<td>'+esc(r[4])+'</td>' +
       '<td style="color:'+(d2?'#f50057':'var(--text-dim)')+';">'+esc(t2)+(d2?' ⚠️':'')+'</td>' +
-      '<td><button class="btn-pago '+CLASE_PAGO[e2]+'" data-idx="'+ri+'" data-jug="2" title="'+TITULO_PAGO[e2]+'" onclick="togglePago('+ri+',2)">'+LABEL_PAGO[e2]+'</button></td>' +
+      '<td><button class="btn-pago '+CLASE_PAGO[e2]+estadoEnvio(r[13],2)+'" data-idx="'+ri+'" data-jug="2" title="'+TITULO_PAGO[e2]+'" onclick="togglePago('+ri+',2)">'+LABEL_PAGO[e2]+'</button></td>' +
       '<td style="color:var(--text-dim)">'+esc(r[6])+'</td>' +
       '<td><span class="badge '+esc(cc(r[11]))+'">'+esc(r[11]||'-')+'</span></td>' +
       '<td><span class="badge '+esc(cc(r[12]))+'">'+esc(r[12]||'-')+'</span></td>' +
+      '<td><span class="badge '+esc(cc(r[15]))+'">'+esc(r[15]||'-')+'</span></td>' +
       '<td style="color:var(--text-dim);font-size:0.75rem">'+esc((r[0]||'').toString().substring(0,10))+'</td>' +
       '<td><input class="notas-input" value="'+esc(r[14])+'" placeholder="Notas..." onblur="guardarNotas('+ri+',this.value)"></td>' +
       '<td><button class="btn-edit" onclick="abrirModal('+ri+')">✏️</button><button class="btn-delete" onclick="eliminarInscrito('+ri+')">🗑️</button></td>' +
@@ -1309,6 +1682,7 @@ function renderTable() {
     var cats = [];
     if (r[11]) cats.push('Mov · ' + esc(r[11]));
     if (r[12]) cats.push('Par · ' + esc(r[12]));
+    if (r[15]) cats.push('Fem · ' + esc(r[15]));
     function jug(nombre, tel, est, n) {
       var t = (tel == null ? '' : String(tel)).trim();
       return '<div class="pcard-jug">' +
@@ -1316,7 +1690,7 @@ function renderTable() {
           '<div class="pcard-jug-nom">' + esc(nombre) + '</div>' +
           (t ? '<div class="pcard-jug-tel">📞 <a href="tel:'+esc(t.replace(/[^0-9+]/g,''))+'">'+esc(t)+'</a> · <a href="https://wa.me/34'+t.replace(/\D/g,'')+'" target="_blank" rel="noopener">WhatsApp</a></div>' : '') +
         '</div>' +
-        '<button class="btn-pago '+CLASE_PAGO[est]+'" data-idx="'+ri+'" data-jug="'+n+'" title="'+TITULO_PAGO[est]+'" onclick="togglePago('+ri+','+n+')">'+LABEL_PAGO[est]+'</button>' +
+        '<button class="btn-pago '+CLASE_PAGO[est]+estadoEnvio(r[13],n)+'" data-idx="'+ri+'" data-jug="'+n+'" title="'+TITULO_PAGO[est]+'" onclick="togglePago('+ri+','+n+')">'+LABEL_PAGO[est]+'</button>' +
       '</div>';
     }
     return '<div class="pcard">' +
@@ -1343,16 +1717,65 @@ function togglePago(idx, jugador) {
   escribirPago(idx, jugador, CICLO_PAGO[(CICLO_PAGO.indexOf(actual)+1) % CICLO_PAGO.length]);
 }
 
-function escribirPago(idx, jugador, nv) {
+/* Quien esta en la mesa cobrando. Se guarda con cada cobro, para que si
+   luego hay un descuadre se sepa a quien preguntar. */
+var cobrador = '';
+try { cobrador = localStorage.getItem('amf_cobrador') || ''; } catch(e) {}
+
+function pintarCobrador() {
+  var el = document.getElementById('quien-cobra');
+  if (el) el.textContent = cobrador ? '👤 ' + cobrador : '👤 Sin identificar';
+  var el2 = document.getElementById('quien-cobra-barra');
+  if (el2) el2.textContent = cobrador ? '👤 ' + cobrador : '👤 ¿Quién cobra?';
+}
+
+function pedirCobrador(forzar) {
+  if (cobrador && !forzar) { pintarCobrador(); return; }
+  var t = prompt('¿Quién está cobrando?\nSe guarda junto a cada cobro por si luego hay que aclarar algo.',
+                 cobrador || '');
+  if (t === null) { pintarCobrador(); return; }
+  cobrador = t.trim().slice(0, 40);
+  try { localStorage.setItem('amf_cobrador', cobrador); } catch(e) {}
+  pintarCobrador();
+}
+
+var historialCambios = [];     // para el boton de deshacer
+
+function hayQueDeshacer() { return historialCambios.length > 0; }
+
+function pintarDeshacer() {
+  var b = document.getElementById('btn-deshacer');
+  if (b) b.style.display = hayQueDeshacer() ? '' : 'none';
+  var b2 = document.getElementById('btn-deshacer-cobro');
+  if (b2) b2.style.display = hayQueDeshacer() ? '' : 'none';
+}
+
+function deshacerUltimo() {
+  var u = historialCambios.pop();
+  if (!u) return;
+  var i = indicePorCodigo(u.cod);
+  if (i < 0) { showToast('\u26a0\ufe0f Esa inscripci\u00f3n ya no est\u00e1'); pintarDeshacer(); return; }
+  escribirPago(i, u.jugador, u.anterior, true);
+  showToast('↩️ Deshecho: ' + u.nombre + ' vuelve a ' +
+            TITULO_PAGO[u.anterior].replace(/ \(.*\)/,''));
+  pintarDeshacer();
+}
+
+function escribirPago(idx, jugador, nv, esDeshacer) {
   if (!allData[idx]) return;
   var col = jugador===1 ? 3 : 5;
   var cod = allData[idx][13];
+  if (!esDeshacer) {
+    historialCambios.push({ cod: cod, jugador: jugador, anterior: estadoPago(allData[idx][col]),
+                            nombre: allData[idx][jugador===1?2:4] || '' });
+    if (historialCambios.length > 40) historialCambios.shift();
+  }
+  pintarDeshacer();
   allData[idx][col] = nv;
   renderStats(); renderTable();
-  ultimaEscritura = Date.now();
-  enviarAlServidor({action:'updatePago', row: filaDeCodigo(cod, idx), col: col+1, value: nv});
-  programarVerificacion();
   var nombre = allData[idx][jugador===1?2:4];
+  encolar({action:'updatePago', row: filaDeCodigo(cod, idx), col: col+1, value: nv},
+          clavePend(cod, jugador), nv, nombre + ' (' + (allData[idx][1]||'') + ')');
   var msg = { 'No':'❌ '+nombre+' pendiente',
               'Si':'✅ '+nombre+' pagado ('+PRECIO+'€)',
               'OtraPareja':'🔁 '+nombre+' ya pagó en otra pareja (0€)',
@@ -1415,9 +1838,8 @@ function guardarNotas(idx, valor) {
   if (previo === valor) return;                 // sin cambios, no se escribe
   var cod = allData[idx][13];
   allData[idx][14] = valor;
-  ultimaEscritura = Date.now();
-  enviarAlServidor({action:'updateNotas', row: filaDeCodigo(cod, idx), value: valor});
-  programarVerificacion();
+  encolar({action:'updateNotas', row: filaDeCodigo(cod, idx), value: valor},
+          clavePend(cod, 'n'), valor, 'nota de ' + (allData[idx][1]||''));
   showToast('📝 Nota guardada');
 }
 
@@ -1433,6 +1855,7 @@ function abrirModal(idx) {
   document.getElementById('m-email').value     = r[10]||'';
   document.getElementById('m-catMov').value    = r[11]||'';
   document.getElementById('m-catPar').value    = r[12]||'';
+  document.getElementById('m-catFem').value    = r[15]||'';
   document.getElementById('modal-editar').classList.add('show');
 }
 
@@ -1452,7 +1875,8 @@ function guardarEdicion() {
     email: document.getElementById('m-email').value.trim(),
     telefono: r[9]||'',
     catMovimiento: document.getElementById('m-catMov').value,
-    catParado: document.getElementById('m-catPar').value
+    catParado: document.getElementById('m-catPar').value,
+    catFemenino: document.getElementById('m-catFem').value
   };
   allData[editIdx][1]=data.equipo; allData[editIdx][2]=data.jugador1; allData[editIdx][7]=data.telefono1;
   allData[editIdx][4]=data.jugador2; allData[editIdx][8]=data.telefono2; allData[editIdx][6]=data.zona;
@@ -1572,16 +1996,17 @@ function loadHistorial() {
    Se marca desde aqui igual que en la tabla (se guarda en la hoja de Google).
    El importe manual solo vive en este navegador: sirve para cuadrar la caja
    cuando alguien paga una cantidad distinta de las de siempre. */
-var importesManuales = {};
-try { importesManuales = JSON.parse(localStorage.getItem('amf_importes_manuales') || '{}'); } catch(e) { importesManuales = {}; }
+/* El importe manual se guarda en la hoja, en las columnas Q (jugador 1) y
+   R (jugador 2). Asi cuadra igual lo abras desde donde lo abras. */
+function colManual(jugador) { return jugador === 1 ? 16 : 17; }
 
-function claveManual(cod, jugador){ return String(cod) + '-' + jugador; }
-function guardarManuales() {
-  try { localStorage.setItem('amf_importes_manuales', JSON.stringify(importesManuales)); } catch(e) {}
-}
+function claveManual(cod, jugador){ return String(cod) + '-m' + jugador; }
 function importeDe(cod, jugador, estado) {
-  var m = importesManuales[claveManual(cod, jugador)];
-  if (m !== undefined && m !== null && m !== '') return { valor: Number(m), manual: true };
+  var i = indicePorCodigo(cod);
+  var m = i >= 0 ? allData[i][colManual(jugador)] : '';
+  if (m !== undefined && m !== null && m !== '' && !isNaN(Number(m))) {
+    return { valor: Number(m), manual: true };
+  }
   return { valor: importePago(estado), manual: false };
 }
 
@@ -1599,11 +2024,216 @@ function jugadoresRepetidos() {
   return por;
 }
 
+/* ─── CIERRE DE CAJA ───
+   Congela como esta la caja en este momento y lo deja escrito en la hoja,
+   con fecha, quien cerro y el desglose. Sirve para cuadrar despues. */
+function cierreCaja() {
+  if (!allData.length) { showToast('No hay datos'); return; }
+  if (nPendientes() || colaEscrituras.length) {
+    showToast('⏳ Espera a que se guarde todo antes de cerrar la caja');
+    return;
+  }
+  if (nFallidas()) {
+    showToast('❌ Hay cambios sin guardar. Reinténtalos antes de cerrar.');
+    return;
+  }
+
+  var porEstado = {}, porZona = {}, sinPagar = [];
+  var cobrado = 0, pendiente = 0, manual = 0;
+  CICLO_PAGO.forEach(function(e){ porEstado[e] = 0; });
+
+  allData.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (!porZona[z]) porZona[z] = { cobrado: 0, pendiente: 0 };
+    [[r[2], r[3], 1], [r[4], r[5], 2]].forEach(function(par){
+      var e = estadoPago(par[1]);
+      porEstado[e]++;
+      var imp = importeDe(r[13], par[2], e);
+      if (imp.manual) manual++;
+      if (e === 'No') {
+        pendiente += PRECIO; porZona[z].pendiente += PRECIO;
+        sinPagar.push((par[0] || '?') + ' (' + (r[1] || '?') + ', ' + z + ')');
+      } else {
+        cobrado += imp.valor; porZona[z].cobrado += imp.valor;
+      }
+    });
+  });
+
+  var zonas = Object.keys(porZona).sort(function(a,b){ return a.localeCompare(b,'es'); });
+  var resumen =
+    'CIERRE DE CAJA\n\n' +
+    'Cobrado: ' + cobrado + ' €\n' +
+    'Pendiente: ' + pendiente + ' € (' + porEstado['No'] + ' jugadores)\n' +
+    'Total esperado: ' + (cobrado + pendiente) + ' €\n\n' +
+    'Pagado 25€: ' + porEstado['Si'] + '\n' +
+    'Staff 10€: ' + porEstado['Staff'] + '\n' +
+    'Gratis: ' + porEstado['Gratis'] + '\n' +
+    'Ya pagó en otra pareja: ' + porEstado['OtraPareja'] + '\n' +
+    (manual ? 'Con importe manual: ' + manual + '\n' : '') +
+    '\nCierra: ' + (cobrador || 'sin identificar') + '\n\n' +
+    '¿Guardar este cierre en la hoja?';
+
+  if (!confirm(resumen)) return;
+
+  var payload = {
+    action: 'cierreCaja',
+    cobrador: cobrador || 'sin identificar',
+    cobrado: cobrado,
+    pendiente: pendiente,
+    total: cobrado + pendiente,
+    equipos: allData.length,
+    detalle: CICLO_PAGO.map(function(e){
+      return TITULO_PAGO[e].replace(/ \(.*\)/,'') + ': ' + porEstado[e];
+    }).join(' | '),
+    zonas: zonas.map(function(z){
+      return z + ' ' + porZona[z].cobrado + '€/' + (porZona[z].cobrado + porZona[z].pendiente) + '€';
+    }).join(' | '),
+    sinPagar: sinPagar.join(' | ')
+  };
+
+  setEstadoSync('⏳ Guardando el cierre de caja…', '#ffc107');
+  enviarAlServidor(payload).then(function(r){
+    if (r && r.ok) {
+      setEstadoSync('🔒 Cierre guardado: ' + cobrado + '€ cobrados, ' +
+                    pendiente + '€ pendientes', '#00c853');
+      showToast('🔒 Cierre de caja guardado en la hoja');
+    } else {
+      setEstadoSync('❌ No se pudo guardar el cierre', '#f50057');
+      showToast('❌ No se pudo guardar el cierre de caja');
+    }
+  });
+}
+
+/* ─── SORTEO ───
+   Elige al azar entre los jugadores inscritos, con la opcion de dejar
+   fuera a los que no han pagado, y guarda el resultado en la hoja. */
+var sorteoGanador = null;
+var sorteoAnim = null;
+
+function candidatosSorteo() {
+  var ambito = document.getElementById('sorteo-ambito').value;
+  var zf = document.getElementById('sorteo-zona').value;
+  var lista = [];
+  allData.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (zf && z !== zf) return;
+    [[r[2], r[3]], [r[4], r[5]]].forEach(function(par){
+      if (!String(par[0] || '').trim()) return;
+      if (ambito === 'pagados' && estadoPago(par[1]) === 'No') return;
+      lista.push({ nombre: par[0], equipo: r[1] || '', zona: r[6] || '' });
+    });
+  });
+  // Una persona, una papeleta: quien juega en dos parejas no entra dos veces
+  var vistos = {}, unicos = [];
+  lista.forEach(function(c){
+    var k = normalizarNombre(c.nombre);
+    if (vistos[k]) return;
+    vistos[k] = true;
+    unicos.push(c);
+  });
+  return unicos;
+}
+
+function contarSorteo() {
+  var n = candidatosSorteo().length;
+  document.getElementById('sorteo-cuenta').textContent =
+    n + (n === 1 ? ' papeleta' : ' papeletas') + ' (una por persona)';
+  document.getElementById('sorteo-btn').disabled = n === 0;
+}
+
+function abrirSorteo() {
+  if (!allData.length) { showToast('No hay inscripciones'); return; }
+  var sel = document.getElementById('sorteo-zona');
+  var zs = [];
+  allData.forEach(function(r){
+    var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
+    if (zs.indexOf(z) === -1) zs.push(z);
+  });
+  zs.sort(function(a,b){ return a.localeCompare(b,'es'); });
+  sel.innerHTML = '<option value="">Todas las zonas</option>' +
+    zs.map(function(z){ return '<option value="'+esc(z)+'">'+esc(z)+'</option>'; }).join('');
+  document.getElementById('sorteo-ambito').onchange = contarSorteo;
+  sel.onchange = contarSorteo;
+  document.getElementById('sorteo-bombo').style.display = 'none';
+  document.getElementById('sorteo-btn').textContent = '🎲 Sortear';
+  document.getElementById('sorteo-btn').onclick = lanzarSorteo;
+  sorteoGanador = null;
+  contarSorteo();
+  pedirCobrador(false);
+  document.getElementById('sorteo-modal').classList.add('show');
+}
+
+function cerrarSorteo() {
+  clearInterval(sorteoAnim);
+  document.getElementById('sorteo-modal').classList.remove('show');
+}
+
+function lanzarSorteo() {
+  var lista = candidatosSorteo();
+  if (!lista.length) { showToast('No hay a quien sortear'); return; }
+  var premio = document.getElementById('sorteo-premio').value.trim();
+  if (!premio) { showToast('\u26a0\ufe0f Escribe qu\u00e9 se sortea'); return; }
+
+  var bombo = document.getElementById('sorteo-bombo');
+  var elN = document.getElementById('sorteo-nombre');
+  var elE = document.getElementById('sorteo-equipo');
+  bombo.style.display = 'block';
+  var btn = document.getElementById('sorteo-btn');
+  btn.disabled = true;
+
+  // Se elige ya; lo de abajo es solo el suspense
+  var g = lista[Math.floor(Math.random() * lista.length)];
+  var vueltas = 0;
+  clearInterval(sorteoAnim);
+  sorteoAnim = setInterval(function(){
+    var t = lista[Math.floor(Math.random() * lista.length)];
+    elN.textContent = t.nombre;
+    elE.textContent = t.equipo;
+    elN.style.color = 'var(--text-dim)';
+    vueltas++;
+    if (vueltas > 24) {
+      clearInterval(sorteoAnim);
+      elN.textContent = g.nombre;
+      elE.textContent = g.equipo + (g.zona ? ' \u00b7 ' + g.zona : '');
+      elN.style.color = 'var(--libre)';
+      sorteoGanador = g;
+      btn.disabled = false;
+      btn.textContent = '💾 Guardar el resultado';
+      btn.onclick = guardarSorteo;
+      showToast('🎉 ' + g.nombre + ' \u2014 ' + g.equipo);
+    }
+  }, 85);
+}
+
+function guardarSorteo() {
+  if (!sorteoGanador) return;
+  var premio = document.getElementById('sorteo-premio').value.trim();
+  var lista = candidatosSorteo();
+  var ambito = document.getElementById('sorteo-ambito').value === 'pagados'
+             ? 'Solo los que pagaron' : 'Todos los inscritos';
+  var zf = document.getElementById('sorteo-zona').value;
+  if (zf) ambito += ' \u00b7 ' + zf;
+
+  enviarAlServidor({
+    action: 'sorteo', premio: premio,
+    ganador: sorteoGanador.nombre, equipo: sorteoGanador.equipo, zona: sorteoGanador.zona,
+    ambito: ambito, participantes: lista.length, cobrador: cobrador || ''
+  }).then(function(r){
+    if (r && r.ok) {
+      showToast('\u2705 Sorteo guardado en la hoja');
+      cerrarSorteo();
+    } else {
+      showToast('\u274c No se pudo guardar el sorteo');
+    }
+  });
+}
+
 function hojaCobro() {
   var datos = window._adminFiltered || allData;
   if (!datos.length) { showToast('No hay datos para la hoja de cobro'); return; }
   document.getElementById('cobro-view').classList.add('show');
   document.body.style.overflow = 'hidden';
+  pedirCobrador(false);
   var sel = document.getElementById('cobro-zona');
   var previa = sel.value;
   var zs = [];
@@ -1636,19 +2266,42 @@ function renderCobro() {
   var zEl = document.getElementById('cobro-zona');
   var q = qEl ? qEl.value.trim().toLowerCase() : '';
   var zf = zEl ? zEl.value : '';
-  var hayFiltro = !!(q || zf);
+  var eEl = document.getElementById('cobro-estado');
+  var ef = eEl ? eEl.value : '';
+  var hayFiltro = !!(q || zf || ef);
   var btnL = document.getElementById('cobro-limpiar');
   if (btnL) btnL.style.display = hayFiltro ? '' : 'none';
 
+  /* Al buscar se filtra jugador a jugador: si escribes "luis" salen los
+     Luis, cada uno con su pareja y su zona, y no los compañeros que no
+     coinciden. Si lo que coincide es el equipo, salen los dos. */
   var zonas = {};
   datos.forEach(function(r){
     var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
     if (zf && z !== zf) return;
-    if (q && ![r[1], r[2], r[4], r[6]].some(function(v){
-      return (v == null ? '' : String(v)).toLowerCase().indexOf(q) >= 0;
-    })) return;
+    var quien = [1, 2];
+    if (q) {
+      // Equipo, zona, telefono del equipo y codigo: buscar por cualquiera saca la pareja entera
+      var coincideEquipo = [r[1], r[6], r[9], r[13]].some(function(v){
+        return (v == null ? '' : String(v)).toLowerCase().indexOf(q) >= 0;
+      });
+      if (!coincideEquipo) {
+        // Por nombre o por telefono propio: sale solo ese jugador
+        quien = [];
+        if ([r[2], r[7]].some(function(v){ return (v==null?'':String(v)).toLowerCase().indexOf(q)>=0; })) quien.push(1);
+        if ([r[4], r[8]].some(function(v){ return (v==null?'':String(v)).toLowerCase().indexOf(q)>=0; })) quien.push(2);
+        if (!quien.length) return;
+      }
+    }
+    if (ef) {
+      quien = quien.filter(function(j){
+        var pendiente = estadoPago(j === 1 ? r[3] : r[5]) === 'No';
+        return ef === 'pend' ? pendiente : !pendiente;
+      });
+      if (!quien.length) return;
+    }
     if (!zonas[z]) zonas[z] = [];
-    zonas[z].push(r);
+    zonas[z].push({ r: r, quien: quien });
   });
   var nombresZona = Object.keys(zonas).sort(function(a,b){ return a.localeCompare(b, 'es'); });
 
@@ -1656,13 +2309,15 @@ function renderCobro() {
 
   nombresZona.forEach(function(z){
     var filas = zonas[z].slice().sort(function(a,b){
-      return String(a[1]||'').localeCompare(String(b[1]||''), 'es');
+      return String(a.r[1]||'').localeCompare(String(b.r[1]||''), 'es');
     });
     var zCob = 0, zPen = 0, zPendN = 0, n = 0, cuerpo = '';
 
-    filas.forEach(function(r){
+    filas.forEach(function(item){
+      var r = item.r;
       var ri = allData.indexOf(r);
       [[r[2], r[3], 1], [r[4], r[5], 2]].forEach(function(par){
+        if (item.quien.indexOf(par[2]) === -1) return;
         var est = estadoPago(par[1]);
         var jugN = par[2];
         var imp = importeDe(r[13], jugN, est);
@@ -1671,16 +2326,20 @@ function renderCobro() {
         if (pend) { zPen += PRECIO; zPendN++; } else { zCob += imp.valor; }
 
         var otros = (reps[normalizarNombre(par[0])] || []).filter(function(e){ return e !== r[1]; });
+        var companero = par[2] === 1 ? r[4] : r[2];
         var ops = CICLO_PAGO.map(function(e){
           return '<option value="'+e+'"'+(e===est ? ' selected':'')+'>' +
                  LABEL_PAGO[e] + ' ' + TITULO_PAGO[e].replace(/ \(.*\)/,'') +
                  (e==='No' ? '' : ' \u00b7 ' + IMPORTE_PAGO[e] + '\u20ac') + '</option>';
         }).join('');
 
-        cuerpo += '<div class="crow' + (pend ? '' : ' pagado') + '" id="crow-'+ri+'-'+jugN+'">' +
+        cuerpo += '<div class="crow' + (pend ? '' : ' pagado') + estadoEnvio(r[13], jugN) +
+          (otros.length ? ' homonimo' : '') + '" id="crow-'+ri+'-'+jugN+'">' +
           '<div class="crow-info">' +
             '<div class="crow-nom">' + esc(par[0]) + '</div>' +
-            '<div class="crow-eq">' + esc(r[1]) + '</div>' +
+            '<div class="crow-eq"><span class="crow-pareja">' + esc(r[1]) + '</span>' +
+              (companero ? ' <span class="crow-con">con ' + esc(companero) + '</span>' : '') +
+              ' <span class="crow-zona">' + esc(z) + '</span></div>' +
             (otros.length ? '<div class="crow-dup">👥 Tambi\u00e9n en: ' + esc(otros.join(' \u00b7 ')) + '</div>' : '') +
           '</div>' +
           '<select onchange="cobroCambiarEstado('+ri+','+jugN+',this.value)">' + ops +
@@ -1696,12 +2355,17 @@ function renderCobro() {
 
     cobrado += zCob; pendiente += zPen; nPend += zPendN;
     html += '<div class="cobro-zona"><h3>' + esc(z) +
-      '<span>' + filas.length + (filas.length===1 ? ' pareja' : ' parejas') + ' \u00b7 ' + n + ' jug.</span></h3>' +
+      '<span>' + n + (n===1 ? ' jugador' : ' jugadores') + ' \u00b7 ' + filas.length +
+      (filas.length===1 ? ' pareja' : ' parejas') + '</span></h3>' +
       cuerpo +
       '<div class="cobro-sub">Cobrado: <b>' + zCob + '\u20ac</b> \u00b7 Pendiente: <b>' + zPen + '\u20ac</b>' +
       (zPendN ? ' (' + zPendN + ' jug.)' : '') + '</div></div>';
   });
 
+  if (q && nombresZona.length > 1) {
+    html = '<div class="aviso-homonimos">🔎 ' + esc(q) + ': ' + nJug +
+           ' jugadores en ' + nombresZona.length + ' zonas. Mira el equipo y la zona antes de marcar.</div>' + html;
+  }
   document.getElementById('cobro-body').innerHTML = html ||
     '<div class="empty-state"><p>Ning\u00fan jugador coincide con la b\u00fasqueda</p></div>';
   document.getElementById('cobro-tot').innerHTML =
@@ -1717,7 +2381,17 @@ function renderCobro() {
 function limpiarFiltrosCobro() {
   document.getElementById('cobro-search').value = '';
   document.getElementById('cobro-zona').value = '';
+  document.getElementById('cobro-estado').value = '';
   renderCobro();
+}
+
+function escribirImporteManual(idx, jugador, valor) {
+  if (!allData[idx]) return;
+  var cod = allData[idx][13];
+  allData[idx][colManual(jugador)] = valor;
+  encolar({action:'updateImporte', row: filaDeCodigo(cod, idx), jug: jugador, value: valor},
+          claveManual(cod, jugador), valor,
+          'importe de ' + (allData[idx][jugador===1?2:4] || ''));
 }
 
 function cobroToggle(idx, jugador) {
@@ -1730,26 +2404,22 @@ function cobroToggle(idx, jugador) {
 function cobroCambiarEstado(idx, jugador, valor) {
   if (!allData[idx]) return;
   var cod = allData[idx][13];
+  var cm = colManual(jugador);
   if (valor === '__manual__') {
-    var actual = importesManuales[claveManual(cod, jugador)];
+    var actual = allData[idx][cm];
     var t = prompt('Importe cobrado a ' + (allData[idx][jugador===1?2:4]||'') + ' (en \u20ac).\nD\u00e9jalo vac\u00edo para volver al importe normal:', actual == null ? '' : actual);
     if (t === null) { renderCobro(); return; }
     t = t.replace(',', '.').trim();
-    if (t === '') {
-      delete importesManuales[claveManual(cod, jugador)];
-    } else if (isNaN(Number(t)) || Number(t) < 0) {
+    if (t !== '' && (isNaN(Number(t)) || Number(t) < 0)) {
       showToast('\u26a0\ufe0f Importe no v\u00e1lido');
       renderCobro(); return;
-    } else {
-      importesManuales[claveManual(cod, jugador)] = Number(t);
-      if (estadoPago(allData[idx][jugador===1?3:5]) === 'No') escribirPago(idx, jugador, 'Si');
     }
-    guardarManuales();
+    escribirImporteManual(idx, jugador, t === '' ? '' : Number(t));
+    if (t !== '' && estadoPago(allData[idx][jugador===1?3:5]) === 'No') escribirPago(idx, jugador, 'Si');
     renderCobro();
     return;
   }
-  delete importesManuales[claveManual(cod, jugador)];
-  guardarManuales();
+  if (allData[idx][cm] !== '' && allData[idx][cm] != null) escribirImporteManual(idx, jugador, '');
   escribirPago(idx, jugador, valor);
   renderCobro();
 }
@@ -1779,6 +2449,7 @@ function renderInforme() {
   datos.forEach(function(r){
     if (mf === 'mov' && !r[11]) return;
     if (mf === 'par' && !r[12]) return;
+    if (mf === 'fem' && !r[15]) return;
     var z = (r[6] || 'SIN ZONA').toString().trim().toUpperCase();
     if (!zonas[z]) zonas[z] = [];
     zonas[z].push(r);
@@ -1787,8 +2458,9 @@ function renderInforme() {
 
   function modalidadesDe(r) {
     var m = [];
-    if (r[11] && mf !== 'par') m.push('Movimiento \u00b7 ' + esc(r[11]));
-    if (r[12] && mf !== 'mov') m.push('Parado \u00b7 ' + esc(r[12]));
+    if (r[11] && mf !== 'par' && mf !== 'fem') m.push('Movimiento \u00b7 ' + esc(r[11]));
+    if (r[12] && mf !== 'mov' && mf !== 'fem') m.push('Parado \u00b7 ' + esc(r[12]));
+    if (r[15] && mf !== 'mov' && mf !== 'par') m.push('Femenino \u00b7 ' + esc(r[15]));
     return m.length ? m.join('<br>') : '\u2014';
   }
 
@@ -1815,6 +2487,7 @@ function renderInforme() {
   var sub = 'Todas las modalidades';
   if (mf === 'mov') sub = 'Solo MOVIMIENTO';
   if (mf === 'par') sub = 'Solo PARADO';
+  if (mf === 'fem') sub = 'Solo FEMENINO';
   var hoy = new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
 
   document.getElementById('informe-body').innerHTML = html ||
@@ -1832,13 +2505,14 @@ function exportCSV() {
   var datos = window._adminFiltered || allData;
   if (!datos.length) { showToast('No hay datos para exportar'); return; }
 
-  var headers = ['Modalidad','Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas','Importe J1','Importe J2','Importe pareja'];
+  var headers = ['Modalidad','Fecha','Equipo','Jugador 1','Pago J1','Jugador 2','Pago J2','Zona','Tel.J1','Tel.J2','Tel.Eq','Email','Cat.Mov','Cat.Par','Código','Notas','Cat.Fem','Importe J1','Importe J2','Importe pareja'];
   var lineas = [headers.map(function(c){ return '"'+c+'"'; }).join(',')];
 
   datos.forEach(function(r){
     var modalidades = [];
     if (mf === 'mov') { if (r[11]) modalidades.push('Movimiento'); }
     else if (mf === 'par') { if (r[12]) modalidades.push('Parado'); }
+    else if (mf === 'fem') { if (r[15]) modalidades.push('Femenino'); }
     else {
       if (r[11]) modalidades.push('Movimiento');
       if (r[12]) modalidades.push('Parado');
@@ -1848,7 +2522,7 @@ function exportCSV() {
 
     modalidades.forEach(function(mod){
       var i1 = importePago(r[3]), i2 = importePago(r[5]);
-      var fila = [mod].concat(r.slice(0,15)).concat([i1, i2, i1 + i2]);
+      var fila = [mod].concat(r.slice(0,15)).concat([r[15] || '']).concat([i1, i2, i1 + i2]);
       lineas.push(fila.map(function(c){ return '"'+(c===undefined||c===null?'':c)+'"'; }).join(','));
     });
   });
@@ -1856,6 +2530,7 @@ function exportCSV() {
   var nombre = 'inscripciones_amf';
   if (mf === 'mov') nombre = 'inscripciones_MOVIMIENTO';
   if (mf === 'par') nombre = 'inscripciones_PARADO';
+  if (mf === 'fem') nombre = 'inscripciones_FEMENINO';
 
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\ufeff' + lineas.join('\n')], {type:'text/csv;charset=utf-8;'}));
