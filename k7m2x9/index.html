@@ -633,7 +633,7 @@ footer button:hover{color:var(--acc)}
   <div class="modal-box"><div class="modal-h"><h3 id="fTitle"></h3><button class="x" onclick="closeM('mFicha')">&times;</button></div><div class="modal-b" id="fBody"></div></div>
 </div>
 <div class="modal" id="mAdmin" onclick="if(event.target===this)closeM('mAdmin')">
-  <div class="modal-box wide"><div class="modal-h"><h3 id="aTitle"></h3><button class="x" onclick="closeM('mAdmin')">&times;</button></div><div class="modal-b" id="aBody"></div></div>
+  <div class="modal-box wide" id="cajaAdmin"><div class="modal-h"><h3 id="aTitle"></h3><button class="x" onclick="closeM('mAdmin')">&times;</button></div><div class="modal-b" id="aBody"></div></div>
 </div>
 <div class="modal" id="mLegal" onclick="if(event.target===this)closeM('mLegal')">
   <div class="modal-box"><div class="modal-h"><h3 id="lTitle"></h3><button class="x" onclick="closeM('mLegal')">&times;</button></div><div class="modal-b" id="lBody"></div></div>
@@ -2346,15 +2346,17 @@ function deshacer(){
 /* ============================================================
    12 · PANEL DE ADMINISTRACIÓN
    ============================================================ */
-function openAdmin(){ admin?panelAdmin():loginAdmin(); openM("mAdmin"); }
+function openAdmin(){
+  $("#cajaAdmin").classList.toggle("wide",admin);
+  admin?panelAdmin():loginAdmin();
+  openM("mAdmin");
+}
 function loginAdmin(){
   $("#aTitle").textContent=LANG==="gl"?"Acceso administración":"Acceso administración";
   $("#aBody").innerHTML=`
-    <p class="sub">${LANG==="gl"?"Só a organización pode modificar resultados.":"Solo la organización puede modificar resultados."}</p>
-    <label class="f" for="quien">${esc(T("tuNombre"))}</label>
-    <input class="f" id="quien" maxlength="40" value="${esc(autor)}">
     <label class="f" for="pw">${LANG==="gl"?"Contrasinal":"Contraseña"}</label>
-    <input class="f" id="pw" type="password" autocomplete="current-password">
+    <input class="f" id="pw" type="password" autocomplete="off"
+           autocapitalize="off" autocorrect="off" spellcheck="false" name="clave-liga">
     <div id="pwErr"></div>
     <button class="btn full" onclick="tryLogin()">${LANG==="gl"?"Entrar":"Entrar"}</button>
     ${(!ST.passHash&&CONFIG.adminPassLocal==="launion2026")?`<p class="err" style="margin:14px 0 0">${
@@ -2366,9 +2368,9 @@ function loginAdmin(){
 async function tryLogin(){
   const v=$("#pw").value;
   if(await comprobarPass(v)){
+    $("#cajaAdmin").classList.add("wide");
     admin=true; clearInterval(timerSync);
-    autor=$("#quien")?.value.trim()||autor||"—";
-    try{ localStorage.setItem(LS_AUTOR,autor); }catch{}
+    autor="Organización";
     cargarPropuestas().then(()=>{ if(admin) panelAdmin(); });
     copiaDelDia();
     panelAdmin();
@@ -3091,9 +3093,9 @@ function estadoInicial(){
     render(); irTab(vista.tab,false);
   }
 
-  // Entrada discreta al panel: #admin en la dirección, o cinco
-  // toques seguidos sobre el escudo.
-  if(location.hash==="#admin"){ history.replaceState(null,"",location.pathname); openAdmin(); }
+  // Única entrada al panel: cinco toques seguidos sobre el escudo.
+  // Nada de #admin en la dirección: quedaría en el historial, en el
+  // portapapeles y en cualquier enlace que se comparta por error.
   let toques=0, ultimo=0;
   document.querySelector(".mark")?.addEventListener("click",()=>{
     const t=Date.now();
