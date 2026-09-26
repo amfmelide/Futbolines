@@ -385,6 +385,29 @@ footer button:hover{color:var(--acc)}
   .anotar{display:table!important}
 }
 .print-head{display:none}
+.hoja{display:none}
+@media print{
+  body.imprimiendo header,body.imprimiendo footer,body.imprimiendo .hero,
+  body.imprimiendo section,body.imprimiendo .modal,body.imprimiendo #tv,body.imprimiendo #toast,
+  body.imprimiendo .print-head{display:none!important}
+  .hoja.print{display:block!important;color:#000}
+  .hoja h2{font-size:15pt;margin:0 0 4mm;color:#000}
+  .hoja h3{font-size:11pt;margin:6mm 0 2mm;color:#000;letter-spacing:1px}
+  .hoja p{font-size:10pt;color:#222;margin-bottom:2.5mm;line-height:1.5}
+  .hoja .jorbloque{page-break-inside:avoid;margin-bottom:5mm}
+  .hoja .jortit{font-size:10.5pt;font-weight:700;border-bottom:1.5px solid #000;padding-bottom:1mm;margin-bottom:1.5mm}
+  .hoja .jortit small{font-weight:400;color:#444;font-size:9pt;margin-left:3mm}
+  .hoja table{width:100%;border-collapse:collapse;font-size:9.5pt}
+  .hoja th,.hoja td{border:1px solid #999;padding:1.8mm 2mm}
+  .hoja th{background:#eee;font-size:8.5pt;letter-spacing:.5px;text-transform:uppercase}
+  .hoja td.eq{width:33%}
+  .hoja td.vs{text-align:center;width:8%;color:#666}
+  .hoja td.res{text-align:center;width:18%}
+  .hoja .cols{column-count:2;column-gap:8mm}
+  .hoja .bloque{break-inside:avoid;margin-bottom:5mm}
+  .hoja .pts{display:flex;gap:4mm;margin-top:2mm}
+  .hoja .pts div{border:1px solid #999;padding:2mm 4mm;font-size:9.5pt;text-align:center}
+}
 .anotar{display:none;width:100%;border-collapse:collapse;margin-top:6mm;font-size:10pt}
 .anotar th,.anotar td{border:1px solid #999;padding:3mm 2mm;text-align:center}
 .anotar th{background:#eee}
@@ -563,7 +586,7 @@ footer button:hover{color:var(--acc)}
     <div class="shead"><h2 id="h-cal"></h2>
       <div class="row">
         <div class="seg" id="segCal"></div>
-        <button class="btn ghost sm no-print" onclick="imprimirJornada()" id="btnPrint"></button>
+        <button class="btn ghost sm no-print" onclick="menuImprimir()" id="btnPrint"></button>
         <button class="btn ghost sm no-print" onclick="compartir('jornada')" id="btnShareJor"></button>
       </div>
     </div>
@@ -580,6 +603,8 @@ footer button:hover{color:var(--acc)}
       <div id="calBody"></div>
     </div>
     <div id="anotarWrap"></div>
+    <h3 style="font-size:17px;margin:30px 0 14px" id="tReglasCal"></h3>
+    <div class="rules" id="reglasCal"></div>
   </section>
 
   <section id="s-resultados">
@@ -639,6 +664,7 @@ footer button:hover{color:var(--acc)}
   <div class="tv-prog"><i id="tvProg"></i></div>
 </div>
 
+<div class="hoja" id="hojaImpresion"></div>
 <div id="toast"></div>
 <div id="anuncio" aria-live="polite" aria-atomic="true"
      style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"></div>
@@ -725,7 +751,7 @@ const TX = {
   proxima:"Próxima jornada",sede:"Lugar",fecha:"Fecha",
   posicion:"Posición",puntos:"Puntos",vd:"V · D",difSets:"Dif. sets",proxPartido:"Próximo partido",
   jugados:"Partidos jugados",cara:"Cara a cara",ficha:"Ficha",
-  compartir:"Compartir",imprimir:"Imprimir",descargarImg:"Imagen de este grupo",imgTodo:"Imagen con todo",copiarTexto:"Copiar texto",textoTodo:"Texto con todo",
+  compartir:"Compartir",imprimir:"Imprimir",comoFunciona:"Como funciona",impJornada:"Esta xornada",impCalendario:"Calendario completo",impNormas:"Normas",queImprimir:"Que queres imprimir?",calendarioCompleto:"Calendario completo",resultado:"Resultado",comoFunciona:"Cómo funciona",impJornada:"Esta jornada",impCalendario:"Calendario completo",impNormas:"Normas",queImprimir:"¿Qué quieres imprimir?",calendarioCompleto:"Calendario completo",resultado:"Resultado",descargarImg:"Imagen de este grupo",imgTodo:"Imagen con todo",copiarTexto:"Copiar texto",textoTodo:"Texto con todo",
   copiado:"Copiado al portapapeles",imgLista:"Imagen descargada",
   jugadosK:"Partidos jugados",setsK:"Sets disputados",partidasK:"Partidas",cerosK:"Ganados 2–0",
   spp:"Sets por partido",pendK:"Partidos pendientes",
@@ -764,7 +790,7 @@ const TX = {
   proxima:"Vindeira xornada",sede:"Lugar",fecha:"Data",
   posicion:"Posición",puntos:"Puntos",vd:"V · D",difSets:"Dif. sets",proxPartido:"Vindeiro partido",
   jugados:"Partidos xogados",cara:"Cara a cara",ficha:"Ficha",
-  compartir:"Compartir",imprimir:"Imprimir",descargarImg:"Imaxe deste grupo",imgTodo:"Imaxe con todo",copiarTexto:"Copiar texto",textoTodo:"Texto con todo",
+  compartir:"Compartir",imprimir:"Imprimir",comoFunciona:"Como funciona",impJornada:"Esta xornada",impCalendario:"Calendario completo",impNormas:"Normas",queImprimir:"Que queres imprimir?",calendarioCompleto:"Calendario completo",resultado:"Resultado",descargarImg:"Imaxe deste grupo",imgTodo:"Imaxe con todo",copiarTexto:"Copiar texto",textoTodo:"Texto con todo",
   copiado:"Copiado ao portapapeis",imgLista:"Imaxe descargada",
   jugadosK:"Partidos xogados",setsK:"Sets disputados",partidasK:"Partidas",cerosK:"Gañados 2–0",
   spp:"Sets por partido",pendK:"Partidos pendentes",
@@ -1714,11 +1740,13 @@ function renderCal(){
       ${meta.lugar?`<span>${esc(T("sede"))}: <b>${esc(meta.lugar)}</b></span>`:""}</div>`:"";
 
   const partidos=js[vista.jor-1]||[];
-  if(!partidos.length){ $("#calBody").innerHTML=`<div class="card-b"><p class="sub" style="margin:0">${esc(T("sinPartidos"))}</p></div>`; $("#anotarWrap").innerHTML=""; return; }
+  if(!partidos.length){ $("#calBody").innerHTML=`<div class="card-b"><p class="sub" style="margin:0">${esc(T("sinPartidos"))}</p></div>`; $("#anotarWrap").innerHTML=""; $("#tReglasCal").textContent=T("comoFunciona"); $("#reglasCal").innerHTML=reglasHTML(); return; }
   const g=grupo(gid), juegan=new Set(partidos.flatMap(m=>[m.l,m.v]));
   const desc=g?g.parejas.filter(p=>!juegan.has(p.id)):[];
   $("#calBody").innerHTML=partidos.map((m,i)=>matchHTML(m,null,partidoJugado(m)?"":botonProponer(gid,vista.jor,i))).join("")+
     (desc.length?`<div class="descansa">${esc(T("descansa"))}: ${desc.map(p=>esc(p.nombre)).join(", ")}</div>`:"");
+  $("#tReglasCal").textContent=T("comoFunciona");
+  $("#reglasCal").innerHTML=reglasHTML();
   $("#anotarWrap").innerHTML=`<table class="anotar"><thead><tr>
       <th>${esc(T("pareja"))}</th><th>S1</th><th>S2</th><th>S3</th><th>${esc(T("pareja"))}</th></tr></thead>
     <tbody>${partidos.map(m=>`<tr><td class="eq">${esc(nombreP(m.l))}</td><td></td><td></td><td></td><td class="eq">${esc(nombreP(m.v))}</td></tr>`).join("")}</tbody></table>`;
@@ -2095,7 +2123,14 @@ function renderInfo(){
   const det=ST.grupos.map(g=>`<b>${esc(g.nombre)}</b> (${g.parejas.length})`).join(" · ");
   const jorMax=Math.max(0,...ST.grupos.map(g=>jornadasDe(g.id).length));
   const es=LANG==="es";
-  $("#infoBody").innerHTML=`
+  $("#infoBody").innerHTML=reglasHTML();
+}
+function reglasHTML(){
+  const n=ST.grupos.reduce((a,g)=>a+g.parejas.length,0);
+  const det=ST.grupos.filter(g=>g.parejas.length).map(g=>`<b>${esc(g.nombre)}</b> (${g.parejas.length})`).join(" · ");
+  const jorMax=Math.max(0,...ST.grupos.map(g=>jornadasDe(g.id).length));
+  const es=LANG==="es";
+  return `
     <div class="rule"><h3>${esc(T("fmtFormato"))}</h3>
       <p>${n} ${esc(T("parejas").toLowerCase())} · ${ST.grupos.length} ${esc(T("grupos").toLowerCase())}: ${det}.</p>
       <p><b>${es?"Liga a ida y vuelta + playoff.":"Liga a ida e volta + playoff."}</b></p>
@@ -2180,6 +2215,21 @@ function textoTodo(){
   { const u=enlace(); if(u) L.push(u); }
   return L.join("\n");
 }
+function textoCalendario(gid){
+  const g=grupo(gid), js=jornadasDe(gid);
+  const L=[`*${CONFIG.liga}* — ${g.nombre} · ${T("calendarioCompleto")}`,""];
+  js.forEach((partidos,i)=>{
+    const meta=metaJor(gid,i);
+    L.push(`*${T("jornada")} ${i+1}*${meta.fecha?" · "+fechaCorta(meta.fecha):""}${meta.lugar?" · "+meta.lugar:""}`);
+    partidos.forEach(m=>{
+      const r=resultado(m);
+      L.push(`${nombreP(m.l)} ${r?`*${r.sl}-${r.sv}*`:"vs"} ${nombreP(m.v)}`);
+    });
+    L.push("");
+  });
+  const u=enlace(); if(u) L.push(u);
+  return L.join("\n");
+}
 function compartir(tipo){
   const texto = tipo==="jornada" ? textoJornada(vista.cal,vista.jor) : textoClasificacion(vista.clas);
   $("#lTitle").textContent=T("compartir");
@@ -2192,6 +2242,7 @@ function compartir(tipo){
       ${tipo==="jornada"?"":`<button class="btn ghost" onclick="imagenClasificacion()">${esc(T("descargarImg"))}</button>`}
     </div>
     <div class="row" style="margin-top:9px">
+      ${tipo==="jornada"?`<button class="btn ghost" onclick="$('#shTxt').value=textoCalendario(vista.cal);toast(T('copiado'))">${esc(T("calendarioCompleto"))}</button>`:""}
       <button class="btn ghost" onclick="$('#shTxt').value=textoTodo();toast(T('copiado'))">${esc(T("textoTodo"))}</button>
       <button class="btn ghost" onclick="imagenTodo()">${esc(T("imgTodo"))}</button>
     </div>`;
@@ -2339,6 +2390,83 @@ function imagenTodo(){
     a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
     toast(T("imgLista"),"ok");
   },"image/png");
+}
+function cabeceraHoja(sub){
+  return `<h2>${esc(CONFIG.liga)}</h2>
+    <p style="margin:-2mm 0 5mm;border-bottom:2px solid #000;padding-bottom:3mm">
+      ${esc(CONFIG.entidad)}${CONFIG.patrocinador?" · "+esc(CONFIG.patrocinador):""} · ${esc(CONFIG.temporada)}${sub?" · "+esc(sub):""}</p>`;
+}
+function filaImp(m){
+  const r=resultado(m);
+  return `<tr><td class="eq">${esc(nombreP(m.l))}</td><td class="vs">vs</td>
+    <td class="eq">${esc(nombreP(m.v))}</td>
+    <td class="res">${r?`${r.sl} – ${r.sv}`:(m.apl?esc(T("aplazado")):"")}</td></tr>`;
+}
+function hojaJornada(){
+  const gid=vista.cal, g=grupo(gid), jor=vista.jor;
+  const meta=metaJor(gid,jor-1), partidos=jornadasDe(gid)[jor-1]||[];
+  const pie=[g.nombre, `${T("jornada")} ${jor}`, meta.fecha?fechaCorta(meta.fecha):"", meta.lugar||""].filter(Boolean).join(" · ");
+  return cabeceraHoja(pie)+
+    `<table><thead><tr><th>${esc(T("pareja"))}</th><th></th><th>${esc(T("pareja"))}</th>
+      <th>S1</th><th>S2</th><th>S3</th></tr></thead><tbody>
+      ${partidos.map(m=>`<tr><td class="eq">${esc(nombreP(m.l))}</td><td class="vs">vs</td>
+        <td class="eq">${esc(nombreP(m.v))}</td><td></td><td></td><td></td></tr>`).join("")}
+    </tbody></table>
+    <p style="margin-top:4mm;font-size:9pt;color:#555">${LANG==="es"
+      ?"Anota las partidas de cada set (4 partidas ganan el set)."
+      :"Anota as partidas de cada set (4 partidas gañan o set)."}</p>`;
+}
+function hojaCalendario(){
+  const gid=vista.cal, g=grupo(gid), js=jornadasDe(gid);
+  let html=cabeceraHoja(`${g.nombre} · ${T("calendarioCompleto")}`);
+  js.forEach((partidos,i)=>{
+    const meta=metaJor(gid,i);
+    const juegan=new Set(partidos.flatMap(m=>[m.l,m.v]));
+    const desc=g.parejas.filter(p=>!juegan.has(p.id));
+    html+=`<div class="jorbloque">
+      <div class="jortit">${esc(T("jornada"))} ${i+1}
+        <small>${[meta.fecha?fechaCorta(meta.fecha):"",meta.lugar||""].filter(Boolean).join(" · ")}</small></div>
+      <table><tbody>${partidos.map(filaImp).join("")}</tbody></table>
+      ${desc.length?`<p style="font-size:8.5pt;color:#555;margin:1mm 0 0">${esc(T("descansa"))}: ${desc.map(p=>esc(p.nombre)).join(", ")}</p>`:""}
+    </div>`;
+  });
+  return html;
+}
+function hojaNormas(){
+  return cabeceraHoja(T("comoFunciona"))+
+    `<div class="cols">${reglasHTML()
+      .replace(/<div class="rule">/g,'<div class="bloque">')
+      .replace(/<div class="ptbl">/g,'<div class="pts">')
+      .replace(/<div class="pbox">/g,'<div>')
+      .replace(/class="s"/g,'style="font-weight:700"')
+      .replace(/class="d"/g,'style="font-size:8.5pt;color:#444"')}</div>`;
+}
+function imprimirHoja(tipo){
+  closeM("mLegal");
+  const el=$("#hojaImpresion");
+  el.innerHTML = tipo==="calendario" ? hojaCalendario() : tipo==="normas" ? hojaNormas() : hojaJornada();
+  el.classList.add("print");
+  document.body.classList.add("imprimiendo");
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      el.classList.remove("print"); el.innerHTML="";
+      document.body.classList.remove("imprimiendo");
+    },700);
+  },120);
+}
+function menuImprimir(){
+  $("#lTitle").textContent=T("queImprimir");
+  $("#lBody").innerHTML=`
+    <div class="row">
+      <button class="btn" onclick="imprimirHoja('jornada')">${esc(T("impJornada"))}</button>
+      <button class="btn ghost" onclick="imprimirHoja('calendario')">${esc(T("impCalendario"))}</button>
+      <button class="btn ghost" onclick="imprimirHoja('normas')">${esc(T("impNormas"))}</button>
+    </div>
+    <p class="sub" style="margin:14px 0 0">${LANG==="es"
+      ?"Se abre el diálogo de impresión. También puedes guardarlo como PDF."
+      :"Ábrese o diálogo de impresión. Tamén podes gardalo como PDF."}</p>`;
+  openM("mLegal");
 }
 function imprimirJornada(){
   const g=grupo(vista.cal), meta=metaJor(vista.cal,vista.jor-1);
@@ -3436,8 +3564,8 @@ function atraparFoco(e){
   else if(!e.shiftKey && document.activeElement===ultimo){ e.preventDefault(); primero.focus(); }
 }
 function openM(id){
-  if(id==="mLegal" && !$("#lBody").innerHTML.includes("shTxt")){
-    if($("#lTitle").textContent!==T("compartir")){ $("#lTitle").textContent=T("legal"); $("#lBody").innerHTML=legalHTML(); }
+  if(id==="mLegal" && !$("#lBody").innerHTML.trim()){
+    $("#lTitle").textContent=T("legal"); $("#lBody").innerHTML=legalHTML();
   }
   const caja=$("#"+id);
   focoPrevio=document.activeElement;
