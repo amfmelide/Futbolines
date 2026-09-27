@@ -80,7 +80,7 @@
     width: 100%;
   }
   @media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-  @media (min-width: 960px) { .grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
+  @media (min-width: 960px) { .grid { grid-template-columns: repeat(6, 1fr); gap: 14px; } }
   .card-btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: rgba(17,24,39,0.85); backdrop-filter: blur(10px);
@@ -106,6 +106,8 @@
   .card-btn.liga:hover { border-color: #ce93d8; box-shadow: 0 16px 40px rgba(156,39,176,0.2); }
   .card-btn.bases { border-color: rgba(255,193,7,0.2); }
   .card-btn.bases:hover { border-color: var(--gold); box-shadow: 0 16px 40px rgba(255,193,7,0.15); }
+  .card-btn.recuerdos { border-color: rgba(240,120,30,0.35); }
+  .card-btn.recuerdos:hover { border-color: #f0781e; box-shadow: 0 16px 40px rgba(240,120,30,0.2); }
   .card-icon { font-size: 2.4rem; margin-bottom: 12px; line-height: 1; }
   @media (min-width: 640px) { .card-icon { font-size: 3rem; } }
   .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.06em; text-align: center; line-height: 1.2; }
@@ -115,6 +117,7 @@
   .card-btn.ranking .card-title { color: var(--libre); }
   .card-btn.liga .card-title { color: #ce93d8; }
   .card-btn.bases .card-title { color: #ffd54f; }
+  .card-btn.recuerdos .card-title { color: #ffab66; }
   .card-desc { font-size: 0.75rem; color: var(--text-dim); text-align: center; line-height: 1.4; margin-top: 6px; display: none; }
   @media (min-width: 640px) { .card-desc { display: block; } }
   .zico-x {
@@ -533,6 +536,11 @@
       <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><rect x="4" y="4" width="16" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M8 11h8M8 15h8M8 18h5"/></g></svg></div>
       <div class="card-title">Bases del<br>Ranking</div>
       <div class="card-desc">Reglamento y estatutos oficiales</div>
+    </a>
+    <a class="card-btn recuerdos" href="recuerdos.html">
+      <div class="card-icon"><svg viewBox="0 0 24 24"><g class="ic"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-8 8"/></g></svg></div>
+      <div class="card-title">Recuerdos</div>
+      <div class="card-desc">Fotos y vídeos de todos los torneos</div>
     </a>
   </div>
   <!-- BANNER PATROCINADORES -->
