@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /k7m2x9/
+Disallow: /index_futbolines.html
+
+Sitemap: https://amfmelide.es/sitemap.xml
