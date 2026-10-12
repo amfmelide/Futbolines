@@ -197,9 +197,10 @@ function vFormato() {
   const f = ST.config.formatos;
   const ds = T.divisiones(ST);
   const bloque = d => {
-    const cats = ST.config.categorias.filter(c => (c.division || ds[0].id) === d.id).map(c => `<li><b>${esc(c.nombre)}</b>: ${c.posiciones.map(p => p + "º").join(", ")} de cada grupo · ${c.formato === "doble"
+    const cats = ST.config.categorias.filter(c => (c.division || ds[0].id) === d.id).map(c => `<li><b>${esc(c.nombre)}</b>: ${c.posiciones.length ? c.posiciones.map(p => p + "º").join(", ") + " de cada grupo · " : ""}${c.formato === "doble"
       ? `doble K (si pierdes en ganadores bajas a perdedores; con 4 y 4 se sortean los cruces y el de ganadores empieza ${ST.config.ventajaCruce}-0)` : "eliminatoria directa"} · ${esc(T.textoFormato(T.formatoDe(ST, { tipo: "K", cat: c.id })))}</li>`).join("");
-    return (ds.length > 1 ? `<li><b>${esc(d.nombre)}</b><ul style="padding-left:18px">${cats}</ul></li>` : cats);
+    const niv = d.modo === "niveles" ? `<li>Cada pareja tiene un <b>nivel</b>. Del 1º al 4º de grupo pasan a ${esc((ST.config.categorias.find(c => (c.division || ds[0].id) === d.id) || {}).nombre || "")}. El 5º y quien pierde en ganadores: si es de ese nivel (o mejor) va a perdedores; si es de un nivel inferior, baja a la categoría siguiente. Quien pierde en perdedores queda fuera.</li>` : "";
+    return (ds.length > 1 ? `<li><b>${esc(d.nombre)}</b><ul style="padding-left:18px">${niv}${cats}</ul></li>` : niv + cats);
   };
   return `<div class="card small" style="margin-bottom:16px"><h3>Formato</h3><ul style="padding-left:18px" class="stack">
     <li><b>Grupos</b> de ${ST.config.tamGrupo}, todos contra todos · ${esc(T.textoFormato(f.grupos))}</li>${ds.map(bloque).join("")}</ul></div>`;

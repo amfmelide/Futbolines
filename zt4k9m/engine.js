@@ -134,6 +134,7 @@
       j2: (datos.j2 || "").trim(),
       ranking: datos.ranking ? Number(datos.ranking) : null,
       division: datos.division || null,
+      nivel: datos.nivel || null,             // modo por niveles: id de la categoría de la pareja
       baja: false,
       presente: false,
       alta: datos.alta || Date.now()
@@ -317,6 +318,21 @@
   function idxCategoria(st, catId) { return st.config.categorias.findIndex(c => c.id === catId); }
 
   // Equipos que llegan a una categoría directamente desde los grupos, ya ordenados como cabezas de serie.
+  // Todas las parejas de una división ordenadas como cabezas de serie (posición en el grupo y, a igual posición, rendimiento).
+  function rankingDivision(st, div) {
+    const filas = [];
+    st.grupos.forEach((g, gi) => {
+      if ((g.division || divisiones(st)[0].id) !== div) return;
+      clasificacionGrupo(st, g.id).forEach(r => {
+        if (!(equipo(st, r.id) || {}).baja) filas.push(Object.assign({ grupo: g.id, gi }, r));
+      });
+    });
+    const q = (v, pj) => (pj ? v / pj : 0);
+    return filas.sort((x, y) =>
+      x.pos - y.pos || q(y.pts, y.pj) - q(x.pts, x.pj) || q(y.dif, y.pj) - q(x.dif, x.pj) ||
+      q(y.gd, y.pj) - q(x.gd, x.pj) || q(y.gf, y.pj) - q(x.gf, x.pj) || x.gi - y.gi);
+  }
+
   function directosCategoria(st, catId) {
     const cat = categoria(st, catId);
     if (!cat) return [];
@@ -363,9 +379,187 @@
     return caen.filter(Boolean).sort((x, y) => siembra.indexOf(x) - siembra.indexOf(y));
   }
 
+  /* =================================================================
+     MODO POR NIVELES (todos juntos en los grupos; cada pareja tiene un nivel)
+     - 1º-4º de grupo → ganadores de la 1ª categoría (Élite).
+     - 5º → si su nivel es Élite y Élite tiene doble K, a perdedores de Élite; si no, a la categoría siguiente.
+     - Pierde en ganadores de la categoría k:
+         nivel k o mejor → perdedores de k si k tiene doble K; si no, fuera.
+         nivel peor que k → baja a ganadores de k+1.
+     - Pierde en perdedores → fuera.
+     - Con perdedores: al quedar 4 y 4 se sortean los cruces (el de ganadores empieza con ventaja).
+       Sin perdedores: ganadores sigue directo hasta la final.
+     Como las parejas llegan a cada categoría sobre la marcha, las rondas se generan solas,
+     ronda a ronda, en cuanto termina la anterior ("bolsas" de ganadores y perdedores).
+     ================================================================= */
+  function divisionObj(st, id) { return divisiones(st).find(d => d.id === id) || divisiones(st)[0]; }
+  function divDeCat(st, c) { return c.division || divisiones(st)[0].id; }
+  function catsDe(st, div) { return st.config.categorias.filter(c => divDeCat(st, c) === div); }
+  function esNiveles(st, catId) {
+    const c = categoria(st, catId);
+    return !!c && divisionObj(st, divDeCat(st, c)).modo === "niveles";
+  }
+  function nivelIdx(st, id, cats) {
+    const e = equipo(st, id);
+    const i = cats.findIndex(c => c.id === (e && e.nivel));
+    return i < 0 ? cats.length - 1 : i;                // sin nivel = el más bajo
+  }
+
+  function flujoNiveles(st, div) {
+    const cats = catsDe(st, div), K = cats.length;
+    const pools = cats.map(c => ({
+      W: { cat: c, llave: "W", miembros: [], set: new Set(), fuera: new Set(), partidos: [] },
+      L: { cat: c, llave: "L", miembros: [], set: new Set(), fuera: new Set(), partidos: [] }
+    }));
+    const rank = rankingDivision(st, div), seed = {};
+    rank.forEach((r, i) => (seed[r.id] = i));
+    const F = { cats, pools, seed, rank, iniciado: !!(K && (st.cuadros[cats[0].id] || {}).generado) };
+    if (!F.iniciado) return F;
+    const meta = k => st.cuadros[cats[k].id] || {};
+    const entra = (k, l, id) => {
+      if (k >= K) return;
+      const P = pools[k][l];
+      if (!P.set.has(id)) { P.set.add(id); P.miembros.push(id); }
+    };
+    const caer = (k, id, desdeGrupo) => {
+      const doble = cats[k].formato === "doble" && !meta(k).directo;
+      if (nivelIdx(st, id, cats) <= k) {
+        if (doble) entra(k, "L", id);
+        else if (desdeGrupo) entra(k + 1, "W", id);
+      } else entra(k + 1, "W", id);
+    };
+    const pos0 = cats[0].posiciones;
+    rank.forEach(r => (pos0.includes(r.pos) ? entra(0, "W", r.id) : caer(0, r.id, true)));
+    const idx = {};
+    cats.forEach((c, i) => (idx[c.id] = i));
+    st.partidos.forEach(p => {
+      if (p.tipo !== "K" || !(p.cat in idx) || (p.llave !== "W" && p.llave !== "L")) return;
+      const k = idx[p.cat];
+      pools[k][p.llave].partidos.push(p);
+      if (p.estado !== "fin" || p.bye || !p.perdedor) return;
+      pools[k][p.llave].fuera.add(p.perdedor);
+      const m = meta(k);
+      if (p.llave === "W" && !(m.directoDesde && p.ronda >= m.directoDesde)) caer(k, p.perdedor, false);
+    });
+    pools.forEach(pp => ["W", "L"].forEach(l => {
+      const P = pp[l];
+      P.vivos = P.miembros.filter(id => !P.fuera.has(id));
+      P.pendientes = P.partidos.filter(p => p.estado !== "fin");
+      const ocup = new Set();
+      P.pendientes.forEach(p => { ocup.add(p.a); ocup.add(p.b); });
+      P.esperando = P.vivos.filter(id => !ocup.has(id)).sort((a, b) => seed[a] - seed[b]);
+      P.rondas = P.partidos.reduce((mx, p) => Math.max(mx, p.ronda), 0);
+    }));
+    pools.forEach((pp, k) => {
+      const c = cats[k], m = meta(k), doble = c.formato === "doble" && !m.directo;
+      const W = pp.W, L = pp.L;
+      W.feeders = k === 0 || pools[k - 1].W.hecho || !!meta(k - 1).directo;
+      W.objetivo = doble ? 4 : 1;
+      W.hecho = W.feeders && !W.pendientes.length && W.vivos.length <= W.objetivo;
+      L.activo = doble;
+      L.feeders = W.hecho;
+      L.objetivo = 4;
+      L.hecho = !doble || (L.feeders && !L.pendientes.length && L.vivos.length <= 4);
+    });
+    return F;
+  }
+
+  function partidosJugados(st, div) {
+    const s = new Set();
+    st.partidos.forEach(p => { if (p.a && p.b) { s.add(p.a + "|" + p.b); s.add(p.b + "|" + p.a); } });
+    return s;
+  }
+
+  function generarRondaPool(st, c, P, mm) {
+    const r = P.rondas + 1, lista = P.esperando, n = lista.length;
+    const juegan = lista.slice(n - 2 * mm);             // los mejores descansan (pasan sin jugar)
+    const pares = [];
+    for (let i = 0; i < mm; i++) pares.push([juegan[i], juegan[2 * mm - 1 - i]]);
+    const ya = partidosJugados(st);
+    for (let i = 0; i < pares.length; i++) {             // evitar repetir enfrentamiento (también el de grupo)
+      if (!ya.has(pares[i][0] + "|" + pares[i][1])) continue;
+      for (let j = i + 1; j < pares.length; j++) {
+        if (!ya.has(pares[i][0] + "|" + pares[j][1]) && !ya.has(pares[j][0] + "|" + pares[i][1])) {
+          [pares[i][1], pares[j][1]] = [pares[j][1], pares[i][1]];
+          break;
+        }
+      }
+    }
+    const final = P.llave === "W" && P.objetivo === 1 && P.feeders;
+    const etiqueta = P.llave === "L" ? `Perdedores R${r}`
+      : final && n === 2 ? "Final" : final && n <= 4 ? "Semifinales"
+      : c.formato === "doble" && !(st.cuadros[c.id] || {}).directo ? `Ganadores R${r}` : `Ronda ${r}`;
+    pares.forEach(([a, b], i) => {
+      const p = nuevoPartido({ id: `K:${c.id}:${P.llave}:${r}:${i + 1}`, tipo: "K", cat: c.id, llave: P.llave, ronda: r, n: i + 1, a, b, fija: true, etiqueta });
+      st.partidos.push(p);
+      if (final && n === 2) st.cuadros[c.id].finalId = p.id;
+    });
+  }
+
+  // Genera todas las rondas que ya se pueden jugar en una división por niveles.
+  function avanzarNiveles(st, div) {
+    for (let vuelta = 0; vuelta < 200; vuelta++) {
+      const F = flujoNiveles(st, div);
+      if (!F.iniciado) return;
+      let cambio = false;
+      for (let k = 0; k < F.cats.length && !cambio; k++) {
+        const c = F.cats[k], m = st.cuadros[c.id], { W, L } = F.pools[k];
+        m.campeon = !m.cruce && W.objetivo === 1 && W.hecho && W.vivos.length === 1 ? W.vivos[0] : null;
+        if (m.cruce) continue;
+        // doble K sin nadie en perdedores → se sigue directo hasta la final, sin sorteo
+        if (c.formato === "doble" && !m.directo && W.hecho && L.miembros.length === 0) {
+          m.directo = true; m.directoDesde = W.rondas + 1; cambio = true; break;
+        }
+        for (const P of L.activo ? [W, L] : [W]) {
+          if (P.pendientes.length) continue;
+          const n = P.esperando.length, t = P.objetivo;
+          if (n < 2 || n <= t) continue;
+          let mm;
+          if (P.feeders) {
+            if ((n & (n - 1)) === 0) mm = Math.min(n / 2, n - t);
+            else { let pw = 1; while (pw * 2 < n) pw *= 2; mm = n - Math.max(pw, t); }
+          } else mm = Math.min(Math.floor(n / 2), n - t);
+          if (mm < 1) continue;
+          generarRondaPool(st, c, P, mm);
+          cambio = true;
+        }
+      }
+      if (!cambio) return;
+    }
+  }
+
+  function iniciarNiveles(st, catId) {
+    const c = categoria(st, catId), div = divDeCat(st, c), cats = catsDe(st, div);
+    if (cats[0].id !== catId) throw new Error("Las eliminatorias por niveles se empiezan desde " + cats[0].nombre);
+    if (!gruposTerminados(st)) throw new Error("Faltan partidos de grupos");
+    st.partidos = st.partidos.filter(p => !(p.tipo === "K" && cats.some(k => k.id === p.cat)));
+    cats.forEach(k => (st.cuadros[k.id] = { formato: "niveles", generado: true, division: div, siembra: [], origen: {} }));
+    avanzarNiveles(st, div);
+    actualizarFase(st);
+    return st.cuadros[catId];
+  }
+
+  // Resumen para el panel: cuántas parejas hay en cada bolsa.
+  function estadoNiveles(st, catId) {
+    const c = categoria(st, catId), F = flujoNiveles(st, divDeCat(st, c));
+    const k = F.cats.findIndex(x => x.id === catId);
+    if (!F.iniciado || k < 0) return { iniciado: false };
+    const { W, L } = F.pools[k];
+    return { iniciado: true, entradas: new Set(W.miembros.concat(L.miembros)).size, ganadores: W.vivos.length, perdedores: L.activo ? L.vivos.length : null, enPerdedores: L.miembros.length, directo: !!st.cuadros[catId].directo, cerrada: W.miembros.length + L.miembros.length === 0 && W.feeders };
+  }
+
   // ¿Ya se conocen todas las parejas de la categoría?
   function estadoCategoria(st, catId) {
     const i = idxCategoria(st, catId);
+    if (esNiveles(st, catId)) {
+      const c = categoria(st, catId), cats = catsDe(st, divDeCat(st, c));
+      const res = { listo: false, motivo: "", directos: [], caidos: [], generado: !!(st.cuadros[catId] || {}).generado, niveles: true };
+      if (cats[0].id !== catId) { res.motivo = "Se llena sola con las parejas que bajan de " + cats[cats.indexOf(c) - 1].nombre; return res; }
+      if (!gruposTerminados(st)) { res.motivo = "Faltan partidos de grupos"; return res; }
+      res.directos = directosCategoria(st, catId);
+      res.listo = rankingDivision(st, divDeCat(st, c)).length >= 2;
+      return res;
+    }
     const res = { listo: false, motivo: "", directos: [], caidos: [], generado: !!(st.cuadros[catId] || {}).generado };
     if (!gruposTerminados(st)) { res.motivo = "Faltan partidos de grupos"; return res; }
     res.directos = directosCategoria(st, catId);
@@ -422,6 +616,7 @@
       una "fuente": {id, take:"g"|"p"} = ganador o perdedor de otro partido.   */
   function generarCuadro(st, catId, opciones) {
     opciones = opciones || {};
+    if (esNiveles(st, catId)) return iniciarNiveles(st, catId);
     const est = estadoCategoria(st, catId);
     if (!est.listo && !opciones.forzar) throw new Error(est.motivo || "La categoría no está lista");
     const cat = categoria(st, catId);
@@ -526,6 +721,13 @@
 
   /* ---------- cruces del doble K ---------- */
   function estadoCruce(st, catId) {
+    if (esNiveles(st, catId)) {
+      const cat = categoria(st, catId), m = st.cuadros[catId];
+      if (!m || !m.generado || cat.formato !== "doble" || m.directo) return { aplica: false };
+      const F = flujoNiveles(st, divDeCat(st, cat)), { W, L } = F.pools[F.cats.indexOf(cat)];
+      const pad = a => a.concat([null, null, null, null]).slice(0, 4);
+      return { aplica: true, sorteado: !!m.cruce, listo: W.hecho && L.hecho && L.miembros.length > 0, ganadores: pad(W.vivos), perdedores: pad(L.vivos) };
+    }
     const c = st.cuadros[catId];
     if (!c || !c.cruce) return { aplica: false };
     const byId = {};
@@ -542,6 +744,19 @@
     if (partidosCuadro(st, catId).some(p => p.llave === "X" && p.estado === "fin" && !p.bye)) throw new Error("Los cruces ya se están jugando");
     const rand = rng(semilla != null ? semilla : Math.floor(Math.random() * 1e9));
     const perd = barajar(e.perdedores, rand);
+    if (esNiveles(st, catId)) {
+      if (st.cuadros[catId].cruce) throw new Error("Los cruces ya están sorteados");
+      const pid = (l, m) => `K:${catId}:${l}:1:${m}`, src = (l, m, take) => ({ id: pid(l, m), take });
+      for (let m = 1; m <= 4; m++) st.partidos.push(nuevoPartido({ id: pid("X", m), tipo: "K", cat: catId, llave: "X", ronda: 1, n: m, a: e.ganadores[m - 1], b: perd[m - 1], fija: true, ventaja: "a" }));
+      st.partidos.push(nuevoPartido({ id: pid("S", 1), tipo: "K", cat: catId, llave: "S", ronda: 1, n: 1, a: null, b: null, fa: src("X", 1, "g"), fb: src("X", 2, "g") }));
+      st.partidos.push(nuevoPartido({ id: pid("S", 2), tipo: "K", cat: catId, llave: "S", ronda: 1, n: 2, a: null, b: null, fa: src("X", 3, "g"), fb: src("X", 4, "g") }));
+      st.partidos.push(nuevoPartido({ id: pid("F", 1), tipo: "K", cat: catId, llave: "F", ronda: 1, n: 1, a: null, b: null, fa: src("S", 1, "g"), fb: src("S", 2, "g") }));
+      if (st.config.tercerPuesto) st.partidos.push(nuevoPartido({ id: pid("T", 1), tipo: "K", cat: catId, llave: "T", ronda: 1, n: 1, a: null, b: null, fa: src("S", 1, "p"), fb: src("S", 2, "p") }));
+      st.cuadros[catId].cruce = { sorteado: true };
+      st.cuadros[catId].finalId = pid("F", 1);
+      resolver(st, catId);
+      return partidosCuadro(st, catId).filter(p => p.llave === "X");
+    }
     for (let m = 1; m <= 4; m++) {
       const p = partido(st, `K:${catId}:X:1:${m}`);
       Object.assign(p, { a: e.ganadores[m - 1], b: perd[m - 1], fija: true, bye: false, estado: "pendiente", ganador: null, perdedor: null, mesa: null });
@@ -592,15 +807,31 @@
     }
     if (p.estado === "fin" && p.tipo === "K") {
       const nuevoGanador = ra > rb ? p.a : p.b;
-      if (nuevoGanador !== p.ganador && !puedeDeshacer(st, id)) throw new Error("El siguiente partido ya se jugó; corrige primero ese");
+      if (nuevoGanador !== p.ganador) {
+        if (!puedeDeshacer(st, id)) throw new Error("El siguiente partido ya se jugó; corrige primero ese");
+        if (esNiveles(st, p.cat)) borrarPosteriores(st, p);
+      }
     }
     p.ra = ra; p.rb = rb; p.goles = goles; p.wo = opciones.wo || null;
     p.estado = "fin"; p.fin = opciones.ahora || Date.now(); p.mesa = p.mesa || null;
     p.ganador = ra > rb ? p.a : rb > ra ? p.b : null;
     p.perdedor = ra > rb ? p.b : rb > ra ? p.a : null;
     if (p.tipo === "K") resolver(st, p.cat);
+    if (p.tipo === "K" && esNiveles(st, p.cat)) avanzarNiveles(st, divDeCat(st, categoria(st, p.cat)));
     actualizarFase(st);
     return p;
+  }
+
+  // Partidos generados después de p en los que juega alguna de sus parejas (modo niveles).
+  function posteriores(st, p) {
+    const i = st.partidos.indexOf(p);
+    return st.partidos.slice(i + 1).filter(x => x.tipo === "K" && [x.a, x.b].some(id => id && (id === p.a || id === p.b)));
+  }
+  function borrarPosteriores(st, p) {
+    const fuera = new Set(posteriores(st, p));
+    st.partidos = st.partidos.filter(x => !fuera.has(x));
+    const c = st.cuadros[p.cat];
+    if (c && c.directo && p.llave === "W" && p.ronda < c.directoDesde) { delete c.directo; delete c.directoDesde; }
   }
 
   function dependientes(st, p) {
@@ -611,6 +842,8 @@
     const p = partido(st, id);
     if (!p || p.estado !== "fin" || p.bye) return false;
     if (p.tipo === "G") return !Object.values(st.cuadros).some(c => c.generado);   // cambiaría el reparto
+    if (esNiveles(st, p.cat) && (p.llave === "W" || p.llave === "L"))
+      return posteriores(st, p).every(x => x.estado === "pendiente" && (x.llave === "W" || x.llave === "L"));
     if (dependientes(st, p).some(d => d.estado === "fin" && !d.bye)) return false;
     const c = st.cuadros[p.cat];
     if (c && c.cruce && c.cruce.sorteado && c.cruce.ganadores.concat(c.cruce.perdedores).some(f => f.id === p.id)) return false;
@@ -624,14 +857,17 @@
   function deshacerResultado(st, id) {
     const p = partido(st, id);
     if (!puedeDeshacer(st, id)) throw new Error("No se puede deshacer: ya hay partidos que dependen de este");
+    if (p.tipo === "K" && esNiveles(st, p.cat)) borrarPosteriores(st, p);
     Object.assign(p, { ra: null, rb: null, goles: null, wo: null, estado: "pendiente", fin: null, ganador: null, perdedor: null, mesa: null, llamado: null });
     if (p.tipo === "K") resolver(st, p.cat);
+    if (p.tipo === "K" && esNiveles(st, p.cat)) avanzarNiveles(st, divDeCat(st, categoria(st, p.cat)));
     actualizarFase(st);
     return p;
   }
 
   function campeon(st, catId) {
     const c = st.cuadros[catId];
+    if (c && c.formato === "niveles" && !c.cruce) return c.campeon || null;
     if (!c || !c.finalId) return null;
     const f = partido(st, c.finalId);
     return f && f.estado === "fin" ? f.ganador : null;
@@ -642,7 +878,7 @@
     if (!st.grupos.length) return;
     const generadas = st.config.categorias.filter(c => (st.cuadros[c.id] || {}).generado);
     const fin = gruposTerminados(st) && generadas.length > 0 &&
-      generadas.every(c => campeon(st, c.id)) &&
+      generadas.every(c => campeon(st, c.id) || (esNiveles(st, c.id) && estadoNiveles(st, c.id).cerrada)) &&
       st.config.categorias.every(c => (st.cuadros[c.id] || {}).generado || !estadoCategoria(st, c.id).listo);
     st.fase = fin ? "terminado" : generadas.length ? "eliminatorias" : "grupos";
   }
@@ -729,6 +965,7 @@
 
   function nombreRonda(st, p) {
     const c = st.cuadros[p.cat] || {};
+    if (p.etiqueta) return p.etiqueta;
     switch (p.llave) {
       case "W": return c.formato === "doble" ? `Ganadores R${p.ronda}` : rondaNombre(c.tam || 2, p.ronda);
       case "L": return `Perdedores R${p.ronda}`;
@@ -764,7 +1001,7 @@
     formatoDe, textoFormato, admiteEmpate,
     tamañosGrupos, liguilla, sortearGrupos, clasificacionGrupo, grupoTerminado, gruposTerminados,
     rondaNombre, ordenSiembra, directosCategoria, caidosDe, estadoCategoria, generarCuadro, campeon, resolver,
-    estadoCruce, sortearCruce,
+    estadoCruce, sortearCruce, esNiveles, estadoNiveles, flujoNiveles, catsDe, rankingDivision,
     registrarResultado, deshacerResultado, puedeDeshacer,
     cola, mesasLibres, llamar, soltar, asignarMesas, ocupados,
     partidosDeEquipo, nombrePartido, nombreRonda, resumen, partidosCuadro

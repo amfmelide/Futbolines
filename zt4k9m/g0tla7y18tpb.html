@@ -87,6 +87,8 @@ async function pantallaAcceso(msg) {
         <option value="melide4">Melide 4 categorías: torneo Élite/Oro + torneo Plata/Bronce (mesas compartidas)</option>
         <option value="melide2">Sólo Élite/Oro: grupos de 4/5 → Élite en doble K (1º-4º) y Oro (5º)</option>
         <option value="pb">Sólo Plata/Bronce: grupos de 4/5 → Plata en doble K (1º-4º) y Bronce (5º)</option>
+        <option value="niveles3">Por niveles, 3 categorías (Élite / Oro / Plata), todos juntos en grupos de 5</option>
+        <option value="niveles4">Por niveles, 4 categorías (Élite / Oro / Plata / Bronce), todos juntos en grupos de 5</option>
       </select></div>
       <button class="btn pri">Crear torneo</button>
     </form>
@@ -95,11 +97,20 @@ async function pantallaAcceso(msg) {
 
 // ---- divisiones (torneos dentro del evento: Élite/Oro y Plata/Bronce) ----
 const multiDiv = () => T.divisiones(ST).length > 1;
+const hayNiveles = () => T.divisiones(ST).some(d => d.modo === "niveles");
 const nombreDiv = id => (T.divisiones(ST).find(d => d.id === id) || {}).nombre || "";
 function selectDivision(idSel, actual) {
   if (!multiDiv()) return "";
   return `<div class="campo"><label class="f">Torneo</label><select id="${idSel}">${T.divisiones(ST).map(d => `<option value="${esc(d.id)}" ${actual === d.id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></div>`;
 }
+
+const divNiveles = divId => (T.divisiones(ST).find(d => d.id === divId) || {}).modo === "niveles";
+function selectNivel(idSel, divId, actual) {
+  if (!divNiveles(divId)) return "";
+  const cats = T.catsDe(ST, divId);
+  return `<div class="campo"><label class="f">Nivel de la pareja</label><select id="${idSel}">${cats.map(c => `<option value="${esc(c.id)}" ${actual === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("")}</select></div>`;
+}
+const nombreNivel = e => { const c = e.nivel && T.categoria(ST, e.nivel); return c ? c.nombre : ""; };
 
 function slug(s) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
@@ -120,8 +131,18 @@ async function entrar(codigo) {
 const PLANTILLAS = {
   melide4: {},
   melide2: (() => { const c = T.configPorDefecto(); return { divisiones: [c.divisiones[0]], categorias: c.categorias.filter(k => k.division === "d1") }; })(),
-  pb: (() => { const c = T.configPorDefecto(); return { divisiones: [c.divisiones[1]], categorias: c.categorias.filter(k => k.division === "d2") }; })()
+  pb: (() => { const c = T.configPorDefecto(); return { divisiones: [c.divisiones[1]], categorias: c.categorias.filter(k => k.division === "d2") }; })(),
+  niveles3: plantillaNiveles(["Élite", "Oro", "Plata"]),
+  niveles4: plantillaNiveles(["Élite", "Oro", "Plata", "Bronce"])
 };
+function plantillaNiveles(nombres) {
+  const goles = [7, 5, 5, 5];
+  return {
+    tamGrupo: 5,
+    divisiones: [{ id: "d1", nombre: "Open", modo: "niveles" }],
+    categorias: nombres.map((n, i) => ({ id: slug(n), nombre: n, division: "d1", posiciones: i ? [] : [1, 2, 3, 4], formato: i < 2 ? "doble" : "simple", partidas: { tipo: "al", partidas: 3, goles: goles[i] } }))
+  };
+}
 
 async function crearTorneo(ev) {
   ev.preventDefault();
@@ -521,14 +542,14 @@ function vParejas() {
       <span class="spacer"></span>
       <input type="search" id="buscar" placeholder="Buscar nombre o teléfono" value="${esc(filtro)}" style="max-width:260px">
     </div>
-    <div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th>Teléfono</th><th class="n">🔔</th><th class="n" title="Cabeza de serie">Rank</th>${multiDiv() ? "<th>Torneo</th>" : ""}${sorteado ? '<th class="n">Gr.</th>' : ""}<th class="n">Presente</th><th></th></tr></thead><tbody>
+    <div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th>Teléfono</th><th class="n">🔔</th><th class="n" title="Cabeza de serie">Rank</th>${multiDiv() ? "<th>Torneo</th>" : ""}${hayNiveles() ? "<th>Nivel</th>" : ""}${sorteado ? '<th class="n">Gr.</th>' : ""}<th class="n">Presente</th><th></th></tr></thead><tbody>
     ${lista.map((e, i) => {
       const tel = PRIV.telefonos[e.id] || "";
       return `<tr style="${e.baja ? "opacity:.45" : ""}"><td class="n dim">${i + 1}</td>
         <td><b>${esc(e.nombre)}</b>${e.baja ? ' <span class="pill bad">baja</span>' : ""}<div class="small dim">${esc(jugadores(ST, e.id))}</div></td>
         <td class="small">${tel ? `<a href="${esc(TC.linkWhatsApp(tel, ""))}" target="_blank" title="WhatsApp">${esc(tel)}</a>` : '<span class="dim">—</span>'}</td>
         <td class="n">${PRIV.push[e.id] ? "✅" : ""}</td>
-        <td class="n">${e.ranking || ""}</td>${multiDiv() ? `<td class="small">${esc(nombreDiv(T.divisionDe(ST, e)))}</td>` : ""}
+        <td class="n">${e.ranking || ""}</td>${multiDiv() ? `<td class="small">${esc(nombreDiv(T.divisionDe(ST, e)))}</td>` : ""}${hayNiveles() ? `<td class="small">${divNiveles(T.divisionDe(ST, e)) ? (esc(nombreNivel(e)) || '<span class="pill warn">sin nivel</span>') : ""}</td>` : ""}
         ${sorteado ? `<td class="n">${esc(grupoDe[e.id] || "")}</td>` : ""}
         <td class="n"><input type="checkbox" ${e.presente ? "checked" : ""} onchange="cambio(()=>{T.equipo(ST,'${e.id}').presente=this.checked})" aria-label="Presente"></td>
         <td class="n"><button class="btn sm" onclick="modalPareja('${e.id}')">Editar</button></td></tr>`;
@@ -547,6 +568,7 @@ function modalPareja(id) {
     <div class="row campo"><div style="flex:2"><label class="f">Teléfono</label><input type="tel" id="pTel" value="${esc(tel)}"></div>
       <div style="flex:1"><label class="f" title="1 = mejor. Se reparten en grupos distintos">Cabeza de serie</label><input type="number" id="pRank" min="1" value="${esc(e.ranking || "")}"></div></div>
     ${selectDivision("pDiv", id ? T.divisionDe(ST, e) : T.divisiones(ST)[0].id)}
+    ${selectNivel("pNivel", id ? T.divisionDe(ST, e) : T.divisiones(ST)[0].id, e.nivel)}
     <div class="row"><button class="btn pri">Guardar</button>
       ${id ? `<button type="button" class="btn ${e.baja ? "" : "bad"}" id="pBaja">${e.baja ? "Volver a dar de alta" : "Dar de baja"}</button>` : ""}
       ${id && !enGrupo ? `<button type="button" class="btn bad" id="pBorrar">Eliminar</button>` : ""}
@@ -555,7 +577,7 @@ function modalPareja(id) {
   </form>`, (el, cerrar) => {
     el.querySelector("#fP").onsubmit = async ev => {
       ev.preventDefault();
-      const datos = { j1: $("#pJ1").value.trim(), j2: $("#pJ2").value.trim(), nombre: $("#pNom").value.trim(), ranking: $("#pRank").value, division: $("#pDiv") ? $("#pDiv").value : null };
+      const datos = { j1: $("#pJ1").value.trim(), j2: $("#pJ2").value.trim(), nombre: $("#pNom").value.trim(), ranking: $("#pRank").value, division: $("#pDiv") ? $("#pDiv").value : null, nivel: $("#pNivel") ? $("#pNivel").value : null };
       if (!datos.j1 && !datos.j2 && !datos.nombre) return TC.toast("Pon al menos un nombre", "bad");
       const telNuevo = $("#pTel").value.trim();
       let eid = id;
@@ -566,6 +588,7 @@ function modalPareja(id) {
           x.nombre = datos.nombre || [datos.j1, datos.j2].filter(Boolean).join(" / ");
           x.ranking = datos.ranking ? Number(datos.ranking) : null;
           if (datos.division) x.division = datos.division;
+          if (datos.nivel) x.nivel = datos.nivel;
         } else eid = T.añadirEquipo(ST, datos).id;
       }, id ? "Pareja editada" : "Pareja añadida");
       if (!ok) return;
@@ -587,7 +610,7 @@ async function guardarTelefono(id, tel) {
 
 function modalImportar() {
   TC.modal(`<h3>Importar parejas</h3>
-    <p class="small dim" style="margin-bottom:8px">Una pareja por línea: <code>Jugador 1; Jugador 2; Teléfono; Nombre pareja; Cabeza de serie${multiDiv() ? "; Torneo (1 = " + esc(T.divisiones(ST)[0].nombre) + ", 2 = " + esc(T.divisiones(ST)[1].nombre) + ")" : ""}</code>. Sólo los dos primeros son obligatorios. Puedes pegar directamente desde Excel (tabuladores).</p>
+    <p class="small dim" style="margin-bottom:8px">Una pareja por línea: <code>Jugador 1; Jugador 2; Teléfono; Nombre pareja; Cabeza de serie${multiDiv() ? "; Torneo (1 = " + esc(T.divisiones(ST)[0].nombre) + ", 2 = " + esc(T.divisiones(ST)[1].nombre) + ")" : hayNiveles() ? "; (vacío)" : ""}${hayNiveles() ? "; Nivel (" + ST.config.categorias.filter(c => divNiveles(c.division || T.divisiones(ST)[0].id)).map(c => esc(c.nombre)).join(" / ") + ")" : ""}</code>. Sólo los dos primeros son obligatorios. Puedes pegar directamente desde Excel (tabuladores).</p>
     <textarea id="imp" placeholder="Ana López; Marta Pérez; 600123456&#10;Juan; Pedro; 611222333; Los Galácticos; 1"></textarea>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="bImp">Importar</button><span class="spacer"></span><button class="btn" data-cerrar>Cancelar</button></div>`,
   (el, cerrar) => {
@@ -596,11 +619,13 @@ function modalImportar() {
       const tels = [];
       const ok = cambio(() => {
         lineas.forEach(l => {
-          const [j1, j2, tel, nom, rank, div] = l.split(/\t|;/).map(x => (x || "").trim());
+          const [j1, j2, tel, nom, rank, div, niv] = l.split(/\t|;/).map(x => (x || "").trim());
           if (!j1 && !j2) return;
           const ds = T.divisiones(ST);
           const d = ds[Number(div) - 1] || ds.find(x => div && x.nombre.toLowerCase().includes(div.toLowerCase())) || ds[0];
-          const e = T.añadirEquipo(ST, { j1, j2, nombre: nom, ranking: rank, division: d.id });
+          const sinTilde = x => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          const nc = niv && T.catsDe(ST, d.id).find(c => sinTilde(c.nombre) === sinTilde(niv) || c.id === niv);
+          const e = T.añadirEquipo(ST, { j1, j2, nombre: nom, ranking: rank, division: d.id, nivel: nc ? nc.id : null });
           if (tel) tels.push([e.id, tel]);
         });
       }, `Importadas ${lineas.length} parejas`);
@@ -618,7 +643,8 @@ function parejasPrueba() {
   const N = ["Ana", "Brais", "Carla", "Diego", "Eva", "Fran", "Iria", "Xoán", "Lucía", "Manu", "Noa", "Óscar", "Paula", "Rubén", "Sara", "Tino", "Uxía", "Vítor", "Alba", "Hugo"];
   cambio(() => {
     const ds = T.divisiones(ST);
-    for (let i = 0; i < n; i++) T.añadirEquipo(ST, { j1: N[i % 20] + " " + (i + 1), j2: N[(i * 7 + 3) % 20] + " " + (i + 1), nombre: "Pareja " + (ST.equipos.length + 1), division: ds[i < n * 0.55 ? 0 : ds.length - 1].id });
+    for (let i = 0; i < n; i++) T.añadirEquipo(ST, { j1: N[i % 20] + " " + (i + 1), j2: N[(i * 7 + 3) % 20] + " " + (i + 1), nombre: "Pareja " + (ST.equipos.length + 1), division: ds[i < n * 0.55 ? 0 : ds.length - 1].id,
+      nivel: (() => { const d = ds[i < n * 0.55 ? 0 : ds.length - 1]; const cs = T.catsDe(ST, d.id); return d.modo === "niveles" ? cs[i % cs.length].id : null; })() });
   }, `${n} parejas de prueba`);
 }
 
@@ -685,10 +711,10 @@ function vCuadros() {
     const n = e.directos.length + e.caidos.length;
     const jugados = cu ? T.partidosCuadro(ST, c.id).filter(p => p.estado === "fin" && !p.bye).length : 0;
     h += `<div class="card"><h3><span class="cat-dot" style="background:${TC.colorCat(ST, c.id)}"></span>${esc(c.nombre)}</h3>
-      <div class="small dim">${c.posiciones.map(p => p + "º").join(", ")} de grupo · ${c.formato === "doble" ? "doble K + cruces" : "eliminatoria simple"}${ST.config.caida && ST.config.categorias[0].id !== c.id ? " · + caídos de la categoría superior" : ""}</div>
-      <div style="margin:8px 0">${cu && cu.generado ? `<span class="pill ok">Cuadro de ${cu.siembra.length} (${cu.tam})</span> <span class="dim small">${jugados} jugados</span>${T.campeon(ST, c.id) ? ` <span class="pill gold">🏆 ${esc(nombre(ST, T.campeon(ST, c.id)))}</span>` : ""}`
-        : e.listo ? `<span class="pill gold">Lista: ${n} parejas</span>` : `<span class="pill warn">${esc(e.motivo)}</span>`}</div>
-      <div class="row"><button class="btn sm ${cu ? "" : "pri"}" onclick="generar('${c.id}')" ${e.listo ? "" : "disabled"}>${cu ? "Regenerar" : "Generar cuadro"}</button>
+      <div class="small dim">${c.posiciones.length ? c.posiciones.map(p => p + "º").join(", ") + " de grupo" : "llegan las que bajan"} · ${c.formato === "doble" ? "doble K + cruces" : "eliminatoria simple"}${ST.config.caida && ST.config.categorias[0].id !== c.id ? " · + caídos de la categoría superior" : ""}</div>
+      ${e.niveles ? estadoNivelesHtml(c, cu, e, jugados) : `<div style="margin:8px 0">${cu && cu.generado ? `<span class="pill ok">Cuadro de ${cu.siembra.length} (${cu.tam})</span> <span class="dim small">${jugados} jugados</span>${T.campeon(ST, c.id) ? ` <span class="pill gold">🏆 ${esc(nombre(ST, T.campeon(ST, c.id)))}</span>` : ""}`
+        : e.listo ? `<span class="pill gold">Lista: ${n} parejas</span>` : `<span class="pill warn">${esc(e.motivo)}</span>`}</div>`}
+      <div class="row">${e.niveles && !e.listo ? "" : `<button class="btn sm ${cu ? "" : "pri"}" onclick="generar('${c.id}')" ${e.listo ? "" : "disabled"}>${cu ? (e.niveles ? "Volver a empezar" : "Regenerar") : (e.niveles ? "▶ Empezar eliminatorias" : "Generar cuadro")}</button>`}
       ${(() => { const x = T.estadoCruce(ST, c.id); return x.aplica && !x.sorteado ? `<button class="btn sm ${x.listo ? "pri" : ""}" onclick="sortearCruces('${c.id}')" ${x.listo ? "" : "disabled title='Cuando queden 4 en ganadores y 4 en perdedores'"}>🎲 Sortear cruces</button>` : ""; })()}
       <button class="btn sm" data-cat="${c.id}">Ver</button></div></div>`;
   });
@@ -697,10 +723,26 @@ function vCuadros() {
   return h;
 }
 
+function estadoNivelesHtml(c, cu, e, jugados) {
+  const camp = T.campeon(ST, c.id);
+  if (!cu || !cu.generado) return `<div style="margin:8px 0">${e.listo ? `<span class="pill gold">Grupos terminados: listo para empezar</span>` : `<span class="pill warn">${esc(e.motivo)}</span>`}</div>`;
+  const x = T.estadoNiveles(ST, c.id);
+  return `<div style="margin:8px 0" class="small">
+    <span class="pill ok">${x.entradas} parejas han pasado</span> <span class="dim">${jugados} jugados</span><br>
+    Ganadores: <b>${x.ganadores}</b> vivas${x.perdedores != null ? ` · Perdedores: <b>${x.perdedores}</b> vivas` : ""}${x.directo ? ` · <span class="pill">sin perdedores: directo a la final</span>` : ""}
+    ${camp ? `<br><span class="pill gold">🏆 ${esc(nombre(ST, camp))}</span>` : ""}</div>`;
+}
+
 function generar(catId) {
   const cu = ST.cuadros[catId];
   const cat = ST.config.categorias.find(c => c.id === catId);
-  if (cu && T.partidosCuadro(ST, catId).some(p => p.estado === "fin" && !p.bye) && !confirm(`⚠️ El cuadro de ${cat.nombre} ya tiene resultados. Regenerarlo los borra. ¿Seguir?`)) return;
+  const niv = T.esNiveles(ST, catId);
+  const conRes = niv ? T.catsDe(ST, cat.division || T.divisiones(ST)[0].id).some(k => T.partidosCuadro(ST, k.id).some(p => p.estado === "fin" && !p.bye)) : T.partidosCuadro(ST, catId).some(p => p.estado === "fin" && !p.bye);
+  if (cu && conRes && !confirm(`⚠️ Ya hay resultados de eliminatoria. ${niv ? "Volver a empezar" : "Regenerar el cuadro"} los borra. ¿Seguir?`)) return;
+  if (niv && !cu) {
+    const sin = T.equiposActivos(ST).filter(x => T.divisionDe(ST, x) === (cat.division || T.divisiones(ST)[0].id) && !x.nivel).length;
+    if (sin && !confirm(`${sin} pareja(s) no tienen nivel: se tratarán como del nivel más bajo. ¿Empezar igualmente?`)) return;
+  }
   if (cambio(() => T.generarCuadro(ST, catId), "Cuadro generado: " + cat.nombre)) {
     catVista = catId; tab = "cuadros"; pintar();
     TC.toast(`Cuadro de ${esc(cat.nombre)} generado`, "ok");
@@ -802,12 +844,14 @@ function vAjustes() {
   <div class="card stack ancho">
     <h2>Categorías</h2>
     <div class="small dim">Torneos del evento (cada uno con sus grupos; comparten las mesas):</div>
-    <div id="divs">${T.divisiones(ST).map(d => `<div class="row" data-fdiv="${esc(d.id)}" style="margin-bottom:6px"><input type="text" value="${esc(d.nombre)}" style="flex:1" aria-label="Nombre del torneo">${T.divisiones(ST).length > 1 ? `<button type="button" class="btn sm" onclick="this.parentElement.remove()" aria-label="Quitar">✕</button>` : ""}</div>`).join("")}</div>
+    <div id="divs">${T.divisiones(ST).map(d => `<div class="row" data-fdiv="${esc(d.id)}" style="margin-bottom:6px"><input type="text" value="${esc(d.nombre)}" style="flex:1" aria-label="Nombre del torneo">
+      <select class="divModo" style="flex:1.6" aria-label="Modalidad"><option value="" ${d.modo !== "niveles" ? "selected" : ""}>Por posición (1º-4º → 1ª categoría, 5º → 2ª)</option><option value="niveles" ${d.modo === "niveles" ? "selected" : ""}>Por niveles (bajan según el nivel de la pareja)</option></select>${T.divisiones(ST).length > 1 ? `<button type="button" class="btn sm" onclick="this.parentElement.remove()" aria-label="Quitar">✕</button>` : ""}</div>`).join("")}</div>
     ${T.divisiones(ST).length < 2 ? `<div><button type="button" class="btn sm" onclick="añadirDivision()">+ Otro torneo (ej. Plata / Bronce)</button></div>` : ""}
     <div class="small dim">Categorías: posiciones del grupo que van a cada una (ej. «1,2,3,4»), formato y partidas de la eliminatoria.</div>
     <div id="cats">${c.categorias.map((k, i) => filaCat(k, i)).join("")}</div>
     <div class="row"><button type="button" class="btn sm" onclick="añadirCat()">+ Categoría</button></div>
-    <div class="small dim"><b>Doble K</b>: quien pierde en ganadores baja a perdedores; cuando quedan 4 y 4 se sortean los cruces. <b>Simple</b>: quien pierde, fuera.</div>
+    <div class="small dim"><b>Doble K</b>: quien pierde en ganadores baja a perdedores; cuando quedan 4 y 4 se sortean los cruces (sin nadie en perdedores, directo a la final). <b>Simple</b>: quien pierde, fuera.</div>
+    ${hayNiveles() ? `<div class="small dim"><b>Por niveles</b> (orden de la lista = de mejor a peor): 1º-4º de grupo a ganadores de la 1ª categoría. El 5º y quien pierde en ganadores: si la pareja es de ese nivel o mejor, a perdedores (si la categoría tiene doble K; si no, fuera); si es de nivel inferior, baja a la categoría siguiente. Quien pierde en perdedores, fuera. Pon las posiciones sólo en la 1ª categoría.</div>` : ""}
     <label class="check"><input type="checkbox" id="cCaida" ${c.caida ? "checked" : ""}> Caída (sólo cuadros simples): quien pierde su primer partido baja a la categoría siguiente</label>
     <label class="check"><input type="checkbox" id="cTercer" ${c.tercerPuesto ? "checked" : ""}> Partido por el 3er puesto</label>
   </div>
@@ -865,7 +909,7 @@ function guardarAjustes(ev) {
     partidas: { tipo: "al", partidas: Math.max(1, +f.querySelector(".catPart").value || 3), goles: Math.max(1, +f.querySelector(".catGol").value || 7) },
     division: f.querySelector(".catDiv") ? f.querySelector(".catDiv").value : T.divisiones(ST)[0].id
   }));
-  const divs = $$("#divs [data-fdiv]").map(f => ({ id: f.dataset.fdiv, nombre: f.querySelector("input").value.trim() || "Torneo" }));
+  const divs = $$("#divs [data-fdiv]").map(f => ({ id: f.dataset.fdiv, nombre: f.querySelector("input").value.trim() || "Torneo", modo: f.querySelector(".divModo").value || undefined }));
   if (!divs.length) return TC.toast("Hace falta al menos un torneo", "bad");
   const usadas = cats.flatMap(c => c.posiciones.map(p => c.division + ":" + p));
   if (new Set(usadas).size !== usadas.length) return TC.toast("Una posición no puede estar en dos categorías del mismo torneo", "bad");

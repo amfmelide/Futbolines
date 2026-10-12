@@ -25,6 +25,19 @@ Cada pareja elige su torneo al inscribirse (o se lo pones tú).
 
 **2 categorías:** sólo uno de los dos torneos (plantilla al crear el torneo).
 
+**Por niveles (3 o 4 categorías, todos juntos en grupos de 5):** cada pareja tiene un **nivel** (Élite, Oro, Plata,
+Bronce) que pone el organizador antes del torneo (ficha de la pareja o columna *Nivel* al importar).
+- 1º-4º de grupo → ganadores de Élite.
+- El 5º → perdedores de Élite si es de nivel Élite; si no, baja a Oro.
+- Quien pierde en ganadores de una categoría: si es de ese nivel (o mejor) va a perdedores de esa categoría
+  (si tiene doble K; si no, queda fuera); si es de nivel inferior, baja a la categoría siguiente.
+- Quien pierde en perdedores queda fuera.
+- En cada categoría eliges doble K o simple. Con perdedores: al quedar 4 y 4 se sortean los cruces (el de ganadores
+  empieza 1-0). Si no hay nadie en perdedores: directo hasta la final, sin sorteo.
+- Como las parejas llegan a cada categoría sobre la marcha, las rondas se generan solas en cuanto termina la anterior
+  (los mejores clasificados descansan cuando sobra alguien). Si corriges un resultado y cambia el ganador, se borran y
+  rehacen los partidos que dependían de él (siempre que no se hayan empezado a jugar).
+
 Reglas comunes (todo editable en *Ajustes*):
 1. **Grupos** de 4 (y alguno de 5), todos contra todos, **2 partidas a 6 goles** (puede acabar 1-1).
    Puntos 2/1/0. Desempates: puntos → enfrentamiento directo → dif. de partidas → dif. de goles → goles a favor → sorteo.
@@ -74,7 +87,7 @@ desde otros móviles.
 ## Tests del motor
 
 ```
-node --test zt4k9m/tests/*.test.js
+node --test zt4k9m/tests/*.test.js   # 16 tests
 ```
 
 ## Ideas para seguir mejorando

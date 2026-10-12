@@ -233,3 +233,121 @@ test("cuadro simple con caída (opcional)", () => {
   assert.equal(T.campeon(st, "c1"), "e1");
   assert.ok(T.campeon(st, "c2"));
 });
+
+/* ------------------------- MODO POR NIVELES ------------------------- */
+function torneoNiveles(n, formatos, niveles) {
+  const cats = [
+    { id: "elite", nombre: "Élite", division: "d1", posiciones: [1, 2, 3, 4], formato: formatos[0], partidas: { tipo: "al", partidas: 3, goles: 7 } },
+    { id: "oro", nombre: "Oro", division: "d1", posiciones: [], formato: formatos[1], partidas: { tipo: "al", partidas: 3, goles: 5 } },
+    { id: "plata", nombre: "Plata", division: "d1", posiciones: [], formato: formatos[2], partidas: { tipo: "al", partidas: 3, goles: 5 } }
+  ];
+  const st = T.nuevoTorneo({ semilla: 11, config: { tamGrupo: 5, divisiones: [{ id: "d1", nombre: "Open", modo: "niveles" }], categorias: cats } });
+  for (let i = 1; i <= n; i++) T.añadirEquipo(st, { id: "e" + i, nombre: "P" + i, nivel: niveles(i) });
+  return st;
+}
+const nivelDe = i => (i % 3 === 1 ? "elite" : i % 3 === 2 ? "oro" : "plata");
+
+// Juega todo lo que haya; ganan los de id menor salvo "sorpresas"
+function jugarTodo(st, sorpresas) {
+  let k = 0;
+  for (let vuelta = 0; vuelta < 5000; vuelta++) {
+    const p = T.cola(st)[0];
+    if (p) {
+      let ganaA = num(p.a) < num(p.b);
+      if (sorpresas && k++ % 3 === 0) ganaA = !ganaA;
+      const [ra, rb] = marcador(st, p, ganaA);
+      T.registrarResultado(st, p.id, ra, rb);
+      continue;
+    }
+    const c = ["elite", "oro", "plata"].find(c => { const e = T.estadoCruce(st, c); return e.aplica && e.listo && !e.sorteado; });
+    if (!c) return;
+    T.sortearCruce(st, c, 3);
+  }
+  throw new Error("bucle");
+}
+
+test("niveles: el 5º baja según su nivel y quien pierde en ganadores baja o va a perdedores", () => {
+  const st = torneoNiveles(40, ["doble", "doble", "simple"], nivelDe);
+  T.sortearGrupos(st);
+  jugar(st, p => p.tipo === "G");
+  assert.ok(T.estadoCategoria(st, "elite").listo);
+  assert.equal(T.estadoCategoria(st, "oro").listo, false);
+  T.generarCuadro(st, "elite");
+  const F0 = T.flujoNiveles(st, "d1");
+  const quintos = F0.rank.filter(r => r.pos === 5).map(r => r.id);
+  assert.equal(quintos.length, 8);
+  quintos.forEach(id => {
+    const e = T.equipo(st, id);
+    if (e.nivel === "elite") assert.ok(F0.pools[0].L.set.has(id), "5º élite → perdedores de Élite");
+    else assert.ok(F0.pools[1].W.set.has(id), "5º oro/plata → Oro");
+  });
+  jugarTodo(st, true);
+  const F = T.flujoNiveles(st, "d1");
+  // nadie de nivel inferior juega en perdedores de Élite; ningún élite baja a Oro
+  F.pools[0].L.miembros.forEach(id => assert.equal(T.equipo(st, id).nivel, "elite"));
+  F.pools[1].W.miembros.forEach(id => assert.notEqual(T.equipo(st, id).nivel, "elite"));
+  F.pools[1].L.miembros.forEach(id => assert.equal(T.equipo(st, id).nivel, "oro"));
+  F.pools[2].W.miembros.forEach(id => assert.equal(T.equipo(st, id).nivel, "plata"));
+  // quien pierde en perdedores no vuelve a jugar
+  st.partidos.filter(p => p.llave === "L" && p.estado === "fin").forEach(p => {
+    const despues = st.partidos.slice(st.partidos.indexOf(p) + 1).filter(x => x.tipo === "K" && x.cat === p.cat && (x.a === p.perdedor || x.b === p.perdedor));
+    assert.equal(despues.length, 0);
+  });
+  for (const c of ["elite", "oro", "plata"]) assert.ok(T.campeon(st, c), c);
+  assert.ok(T.partidosCuadro(st, "elite").some(p => p.llave === "X"), "Élite con cruces");
+  assert.ok(T.partidosCuadro(st, "oro").some(p => p.llave === "X"), "Oro con cruces");
+  assert.ok(!T.partidosCuadro(st, "plata").some(p => p.llave === "X"), "Plata simple: sin cruces");
+  assert.equal(st.fase, "terminado");
+});
+
+test("niveles: Oro sin doble K → los de nivel oro que pierden quedan fuera; los de plata bajan", () => {
+  const st = torneoNiveles(40, ["doble", "simple", "simple"], nivelDe);
+  T.sortearGrupos(st);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  jugarTodo(st, true);
+  const F = T.flujoNiveles(st, "d1");
+  assert.equal(F.pools[1].L.miembros.length, 0);
+  F.pools[2].W.miembros.forEach(id => assert.equal(T.equipo(st, id).nivel, "plata"));
+  for (const c of ["elite", "oro", "plata"]) assert.ok(T.campeon(st, c), c);
+});
+
+test("niveles: doble K sin nadie en perdedores → directo a la final sin sorteo", () => {
+  // nadie es de nivel Élite: todos los que pierden en Élite bajan a Oro
+  const st = torneoNiveles(20, ["doble", "doble", "simple"], i => (i % 2 ? "oro" : "plata"));
+  T.sortearGrupos(st);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  jugarTodo(st, false);
+  assert.ok(!T.partidosCuadro(st, "elite").some(p => p.llave === "X" || p.llave === "L"));
+  assert.ok(T.partidosCuadro(st, "elite").some(p => p.etiqueta === "Final"));
+  assert.equal(T.campeon(st, "elite"), "e1");
+  assert.ok(T.campeon(st, "oro"));
+  assert.ok(T.campeon(st, "plata"));
+});
+
+test("niveles: 200 parejas, corregir un resultado borra lo generado después", () => {
+  const st = torneoNiveles(200, ["doble", "doble", "doble"], nivelDe);
+  st.config.mesas = 30;
+  T.sortearGrupos(st);
+  assert.equal(st.grupos.length, 40);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  // primera ronda de Élite: 160 → 128
+  const r1 = T.partidosCuadro(st, "elite").filter(p => p.llave === "W" && p.ronda === 1);
+  assert.equal(r1.length, 32);
+  r1.forEach(p => T.registrarResultado(st, p.id, 3, 1));
+  const ultimo = r1[r1.length - 1];
+  const antes = st.partidos.length;
+  assert.ok(st.partidos.length > antes - 1);
+  // cambiar el ganador del último partido: se rehacen las rondas que dependían de él
+  assert.ok(T.puedeDeshacer(st, ultimo.id));
+  T.registrarResultado(st, ultimo.id, 1, 3);
+  assert.equal(ultimo.ganador, ultimo.b);
+  const F = T.flujoNiveles(st, "d1");
+  assert.ok(F.pools[0].W.vivos.includes(ultimo.b));
+  assert.ok(!F.pools[0].W.vivos.includes(ultimo.a));
+  jugarTodo(st, true);
+  for (const c of ["elite", "oro", "plata"]) assert.ok(T.campeon(st, c), c);
+  assert.equal(st.fase, "terminado");
+});

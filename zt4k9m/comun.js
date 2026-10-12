@@ -97,14 +97,20 @@
     if (camp) h += `<div class="card campeon"><span class="dim">🏆 Campeones de ${esc(cat.nombre)}</span><b>${esc(nombre(st, camp))}</b><span class="small dim">${esc(jugadores(st, camp))}</span></div>`;
     const columnas = (cols) => `<div class="cuadro">` + cols.filter(k => k.ps.length).map(k =>
       `<div class="ronda"><div class="rt">${esc(k.t)}</div><div class="lista">${k.ps.map(p => htmlMk(st, p, c, op)).join("")}</div></div>`).join("") + `</div>`;
-    if (c.formato === "doble") {
+    if (c.formato === "doble" || c.formato === "niveles") {
+      const maxR = l => ps.filter(p => p.llave === l).reduce((m, p) => Math.max(m, p.ronda), 0);
+      const rW = c.formato === "niveles" ? maxR("W") : c.rondasW, rL = c.formato === "niveles" ? maxR("L") : c.rondasL;
       const fin = [{ t: "Cruces", ps: ronda("X", 1) }, { t: "Semifinales", ps: ronda("S", 1) }, { t: "Final", ps: ronda("F", 1) }, { t: "3er puesto", ps: ronda("T", 1) }];
       const e = T.estadoCruce(st, catId);
-      h += `<h3 class="seccion">Fase final</h3>`;
-      if (!e.sorteado) h += `<p class="small dim">${e.listo ? "Listos los 4 de ganadores y los 4 de perdedores: falta el sorteo de cruces." : "Cuando queden 4 en ganadores y 4 en perdedores se sortean los cruces (el de ganadores empieza 1-0)."}</p>`;
-      else h += columnas(fin);
-      h += `<h3 class="seccion">Cuadro de ganadores</h3>` + columnas([...Array(c.rondasW).keys()].map(i => ({ t: "Ganadores R" + (i + 1), ps: ronda("W", i + 1) })));
-      if (c.rondasL) h += `<h3 class="seccion">Cuadro de perdedores</h3>` + columnas([...Array(c.rondasL).keys()].map(i => ({ t: "Perdedores R" + (i + 1), ps: ronda("L", i + 1) })));
+      if (e.aplica || fin.some(k => k.ps.length)) {
+        h += `<h3 class="seccion">Fase final</h3>`;
+        if (!e.sorteado && e.aplica) h += `<p class="small dim">${e.listo ? "Listos los 4 de ganadores y los 4 de perdedores: falta el sorteo de cruces." : `Cuando queden 4 en ganadores y 4 en perdedores se sortean los cruces (el de ganadores empieza ${st.config.ventajaCruce}-0).`}</p>`;
+        else h += columnas(fin);
+      }
+      if (c.formato === "niveles" && !rW) h += `<p class="small dim">Todavía no ha llegado nadie a esta categoría.</p>`;
+      const titulo = (p0, i) => (p0 && p0.etiqueta) || "R" + (i + 1);
+      h += `<h3 class="seccion">${c.formato === "niveles" && !rL && !e.aplica ? "Cuadro" : "Cuadro de ganadores"}</h3>` + columnas([...Array(rW).keys()].map(i => { const r = ronda("W", i + 1); return { t: c.formato === "niveles" ? titulo(ps.find(p => p.llave === "W" && p.ronda === i + 1), i) : "Ganadores R" + (i + 1), ps: r }; }));
+      if (rL) h += `<h3 class="seccion">Cuadro de perdedores</h3>` + columnas([...Array(rL).keys()].map(i => ({ t: "Perdedores R" + (i + 1), ps: ronda("L", i + 1) })));
       return h;
     }
     return h + columnas([...Array(c.rondasW).keys()].map(i => ({ t: T.rondaNombre(c.tam, i + 1), ps: ronda("W", i + 1) })).concat([{ t: "3er puesto", ps: ronda("T", 1) }]));
