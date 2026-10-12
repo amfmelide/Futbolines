@@ -1,0 +1,15 @@
+{
+  "name": "Liga Melide 2026-2027",
+  "short_name": "Liga Melide",
+  "description": "Clasificación, calendario y resultados de la Liga Melide de futbolín.",
+  "lang": "es",
+  "start_url": "/liga.html",
+  "scope": "/liga",
+  "display": "standalone",
+  "background_color": "#08090B",
+  "theme_color": "#08090B",
+  "icons": [
+    { "src": "/liga-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/liga-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

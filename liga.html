@@ -6,6 +6,11 @@
 <title>Liga Melide 2026-2027 · Clasificación, calendario y resultados</title>
 <meta name="description" content="Liga Melide 2026-2027 de futbolín (AMF · Melide, A Coruña): clasificación en directo, calendario por jornadas, resultados, parejas y estadísticas.">
 <meta name="theme-color" content="#08090B">
+<link rel="manifest" href="/liga.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Liga Melide">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://amfmelide.es/liga.html">
 <meta property="og:type" content="website">
@@ -681,9 +686,17 @@ footer{padding:34px 0 16px}
 }
 @keyframes introFade{from{opacity:0}}
 @media print{.band,.bleed,.fab,.hero-word{display:none!important}}
+
+/* Portada compacta en el móvil a partir de la segunda visita (el logo sigue en la cabecera) */
+@media (max-width:899px){
+  body.vuelta .hero-media .visor, body.vuelta .hero-media .thumbs, body.vuelta .hero .lead{display:none}
+  body.vuelta .hero-word{opacity:.5}
+}
 </style>
 </head>
 <body>
+<script>/* Segunda visita en adelante: portada compacta en el móvil */
+try{ if(localStorage.getItem("liga-visto")) document.body.classList.add("vuelta"); localStorage.setItem("liga-visto","1"); }catch(e){}</script>
 <a href="#main" class="sr">Saltar al contenido</a>
 
 <!-- ============================================================
@@ -881,7 +894,7 @@ const TX = {
   lider:"Líder",segundo:"2.º puesto",victoria:"Victoria",derrota:"Derrota",sinJugar:"Sin jugar",
   jornada:"Jornada",ida:"IDA",vuelta:"VUELTA",porJugar:"Por jugar",descansa:"Descansa",
   anterior:"Jornada anterior",siguiente:"Jornada siguiente",jorActual:"Jornada actual",
-  fechaPend:"Fecha por confirmar",lugarPend:"Lugar por confirmar",
+  fechaPend:"Fecha por confirmar",addCal:"Añadir al calendario",lugarPend:"Lugar por confirmar",
   plazoAviso:"La <b>IDA</b> (jornadas 1-9) tiene que estar terminada antes del <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"El plazo de la <b>IDA</b> terminó el 31/12/2026.",
   jugadosJ:"{a}/{b} jugados",
@@ -924,7 +937,7 @@ const TX = {
   lider:"Líder",segundo:"2.º posto",victoria:"Vitoria",derrota:"Derrota",sinJugar:"Sen xogar",
   jornada:"Xornada",ida:"IDA",vuelta:"VOLTA",porJugar:"Por xogar",descansa:"Descansa",
   anterior:"Xornada anterior",siguiente:"Xornada seguinte",jorActual:"Xornada actual",
-  fechaPend:"Data por confirmar",lugarPend:"Lugar por confirmar",
+  fechaPend:"Data por confirmar",addCal:"Engadir ao calendario",lugarPend:"Lugar por confirmar",
   plazoAviso:"A <b>IDA</b> (xornadas 1-9) ten que estar rematada antes do <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"O prazo da <b>IDA</b> rematou o 31/12/2026.",
   jugadosJ:"{a}/{b} xogados",
@@ -1227,7 +1240,7 @@ function tickCuenta(){
   $("#cdS").textContent=pad(Math.floor(d/1e3)%60);
   $("#cdNote").textContent=T("cdIda",{p:idaPct});
 }
-function diasPlazo(){ return Math.max(0,Math.ceil((new Date(CONFIG.plazoIda).getTime()-Date.now())/864e5)); }
+function diasPlazo(){ return Math.max(0,Math.floor((new Date(CONFIG.plazoIda).getTime()-Date.now())/864e5)); }
 /* Contadores animados */
 function animarNum(el,to,animar){
   if(!el) return;
@@ -1362,6 +1375,7 @@ function renderCalendario(){
           <span>${ICO.cal}${meta.fecha?esc(fechaLarga(meta.fecha)):T("fechaPend")}</span>
           <span>${ICO.pin}${meta.lugar?esc(meta.lugar):T("lugarPend")}</span>
         </div>
+        ${meta.fecha?`<button type="button" class="btn ghost sm" style="margin-top:10px" data-act="calJor" data-g="${esc(gid)}" data-j="${jor}">${ICO.cal}<span>${T("addCal")}</span></button>`:""}
       </div>
       <div style="text-align:right">
         <span class="phase ${esIda(gid,jor)?"ida":"vuelta"}">${esIda(gid,jor)?T("ida"):T("vuelta")}</span>
@@ -2157,10 +2171,28 @@ function irTab(tab,push){
   $$(".sec").forEach(s=>{ const on=s.id==="sec-"+tab; s.classList.toggle("on",on); if(on&&cambio){ s.classList.remove("anim"); void s.offsetWidth; s.classList.add("anim"); } });
   if(push!==false && location.hash.slice(1)!==tab) history.replaceState(null,"","#"+tab);
   if(tab==="estadisticas" && ST && !cargando) renderEstadisticas();
-  if(cambio && window.innerWidth<860){ const h=$(".hero"); const y=h?h.offsetTop+h.offsetHeight-62:0; if(window.scrollY>y) window.scrollTo({top:y,behavior:reduceMotion()?"auto":"smooth"}); }
+  /* En el móvil, al cambiar de pestaña se baja directo al contenido (no a la portada) */
+  if(cambio && push!==false && window.innerWidth<860){ const m=$("#main"), hd=$("#hdTop"); if(m){ const y=m.getBoundingClientRect().top+window.scrollY-(hd?hd.offsetHeight:62)-12; window.scrollTo({top:Math.max(0,y),behavior:reduceMotion()?"auto":"smooth"}); } }
 }
 /* Todos los clics con data-act pasan por aquí */
 const ACCIONES={
+  /* Añadir la jornada al calendario del móvil (.ics de día completo; Google, Apple y Outlook lo abren) */
+  calJor:(b)=>{
+    const gid=b.dataset.g, jor=+b.dataset.j, meta=metaJor(gid,jor-1);
+    if(!meta.fecha||!/^\d{4}-\d{2}-\d{2}$/.test(meta.fecha)) return;
+    const d=meta.fecha.replace(/-/g,""), sig=new Date(meta.fecha+"T12:00:00"); sig.setDate(sig.getDate()+1);
+    const d2=sig.getFullYear()+String(sig.getMonth()+1).padStart(2,"0")+String(sig.getDate()).padStart(2,"0");
+    const g=grupo(gid), ics_=v=>String(v).replace(/[\\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
+    const titulo=`${CONFIG.liga} · ${T("jornada")} ${jor}${g&&ST.grupos.length>1?" · "+g.nombre:""}`;
+    const txt=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//AMF//Liga Melide//ES","CALSCALE:GREGORIAN","BEGIN:VEVENT",
+      `UID:${CONFIG.codigo}-${gid}-${jor}@amfmelide.es`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
+      `DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d2}`,`SUMMARY:${ics_(titulo)}`,
+      meta.lugar?`LOCATION:${ics_(meta.lugar)}`:"",`DESCRIPTION:${ics_("https://"+CONFIG.url+"#calendario")}`,`URL:https://${CONFIG.url}`,
+      "END:VEVENT","END:VCALENDAR"].filter(Boolean).join("\r\n");
+    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/calendar;charset=utf-8"}));
+    a.download=`liga-melide-jornada-${jor}.ics`; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  },
   seg:(b)=>{ const k=b.dataset.k, v=b.dataset.v; vista[k]=v;
     if(k==="clas") renderClasificacion(); else if(k==="cal") renderCalendario(); else if(k==="res"){ vista.resN=12; renderResultados(); }
     else if(k==="par") renderParejas(); else if(k==="est"){ vista.evoSel=null; renderEstadisticas(); }
@@ -2319,5 +2351,7 @@ function estadoInicial(){
 </script>
 <!-- Estadísticas de visitas sin cookies (ver legal.html#cookies) -->
 <script data-goatcounter="https://amfmelide.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<script>/* App instalable y sin conexión (ver sw-liga.js) */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("/sw-liga.js", { scope: "/liga" }).catch(function(){});</script>
 </body>
 </html>
