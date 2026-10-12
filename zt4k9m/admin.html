@@ -84,10 +84,9 @@ async function pantallaAcceso(msg) {
       <div><label class="f" for="nCodigo">Código (para la dirección web)</label><input type="text" id="nCodigo" required placeholder="open-melide-2026"></div>
       <div class="row"><div style="flex:1"><label class="f" for="nFecha">Fecha</label><input type="date" id="nFecha"></div><div style="flex:1"><label class="f" for="nLugar">Lugar</label><input type="text" id="nLugar" placeholder="Melide"></div></div>
       <div><label class="f" for="nPlantilla">Formato</label><select id="nPlantilla">
-        <option value="3">Grupos de 4 → 3 categorías (1º-2º Primera, 3º Segunda, 4º-5º Tercera) con caída</option>
-        <option value="4">Grupos de 4 → 4 categorías (1º, 2º, 3º, 4º-5º) con caída</option>
-        <option value="5">Grupos de 5 → 3 categorías (1º-2º, 3º, 4º-5º) con caída</option>
-        <option value="2">Grupos de 4 → 2 categorías (1º-2º Oro, 3º-5º Plata)</option>
+        <option value="melide">Melide: grupos de 4/5 → Élite en doble K (1º-4º) y Oro (5º)</option>
+        <option value="melide5">Igual, pero grupos de 5 (y alguno de 4)</option>
+        <option value="simple">Eliminatoria simple: Élite (1º-2º) y Oro (3º-5º)</option>
       </select></div>
       <button class="btn pri">Crear torneo</button>
     </form>
@@ -111,10 +110,9 @@ async function entrar(codigo) {
 }
 
 const PLANTILLAS = {
-  "3": { tamGrupo: 4, categorias: [{ id: "c1", nombre: "Primera", posiciones: [1, 2] }, { id: "c2", nombre: "Segunda", posiciones: [3] }, { id: "c3", nombre: "Tercera", posiciones: [4, 5] }] },
-  "4": { tamGrupo: 4, categorias: [{ id: "c1", nombre: "Primera", posiciones: [1] }, { id: "c2", nombre: "Segunda", posiciones: [2] }, { id: "c3", nombre: "Tercera", posiciones: [3] }, { id: "c4", nombre: "Cuarta", posiciones: [4, 5] }] },
-  "5": { tamGrupo: 5, categorias: [{ id: "c1", nombre: "Primera", posiciones: [1, 2] }, { id: "c2", nombre: "Segunda", posiciones: [3] }, { id: "c3", nombre: "Tercera", posiciones: [4, 5] }] },
-  "2": { tamGrupo: 4, caida: false, categorias: [{ id: "c1", nombre: "Oro", posiciones: [1, 2] }, { id: "c2", nombre: "Plata", posiciones: [3, 4, 5] }] }
+  melide: { tamGrupo: 4 },
+  melide5: { tamGrupo: 5 },
+  simple: { tamGrupo: 4, categorias: [{ id: "elite", nombre: "Élite", posiciones: [1, 2], formato: "simple" }, { id: "oro", nombre: "Oro", posiciones: [3, 4, 5], formato: "simple" }] }
 };
 
 async function crearTorneo(ev) {
@@ -279,6 +277,7 @@ function vMesas() {
     const min = (Date.now() - p.llamado) / 60000;
     h += `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${m}</span><span class="spacer"></span><span class="t ${min > 20 ? "tarde" : ""}">⏱ ${TC.hace(p.llamado)}</span></div>
       <div class="small dim">${esc(T.nombrePartido(ST, p))}${p.avisos ? ` · 🔔×${p.avisos}` : ""}</div>
+      <div class="formato">${esc(T.textoFormato(T.formatoDe(ST, p)))}${p.ventaja ? ` · ${esc(nombre(ST, p[p.ventaja]))} empieza ${ST.config.ventajaCruce}-0` : ""}</div>
       <div class="vs"><span>${esc(nombre(ST, p.a))}</span><i>contra</i><span>${esc(nombre(ST, p.b))}</span></div>
       <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="avisarPartido('${p.id}')">🔔 Avisar</button><button class="btn sm" onclick="quitarDeMesa('${p.id}')" title="Devolver a la cola">↩</button></div></div>`;
   }
@@ -293,9 +292,12 @@ function vMesas() {
 // Avisa en la pantalla de mesas cuando ya se puede generar algún cuadro
 function avisoCategorias() {
   if (!T.gruposTerminados(ST)) return "";
+  const cruces = crucesListos();
+  const hc = cruces.length ? `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)">🎲 Ya quedan 4 en ganadores y 4 en perdedores de <b>${cruces.map(c => esc(c.nombre)).join(", ")}</b>.
+    ${cruces.map(c => `<button class="btn sm pri" onclick="sortearCruces('${c.id}')">Sortear cruces de ${esc(c.nombre)}</button>`).join(" ")}</div>` : "";
   const listas = ST.config.categorias.filter(c => !(ST.cuadros[c.id] || {}).generado && T.estadoCategoria(ST, c.id).listo);
-  if (!listas.length) return "";
-  return `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)">🏁 Ya se puede generar el cuadro de <b>${listas.map(c => esc(c.nombre)).join(", ")}</b>.
+  if (!listas.length) return hc;
+  return hc + `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)">🏁 Ya se puede generar el cuadro de <b>${listas.map(c => esc(c.nombre)).join(", ")}</b>.
     ${listas.map(c => `<button class="btn sm pri" onclick="generar('${c.id}')">Generar ${esc(c.nombre)}</button>`).join(" ")}</div>`;
 }
 
@@ -348,7 +350,7 @@ async function avisarPartido(id, enLote) {
   p.avisos = (p.avisos || 0) + 1;
   guardar();
   const faltan = [];
-  const cuerpo = lado => `Contra ${nombre(ST, lado === "a" ? p.b : p.a)} · ${T.nombrePartido(ST, p)}`;
+  const cuerpo = lado => `Contra ${nombre(ST, lado === "a" ? p.b : p.a)} · ${T.nombrePartido(ST, p)} · ${T.textoFormato(T.formatoDe(ST, p))}`;
   if (S.modo === "remoto" && PUSH_OK) {
     try {
       for (const lado of ["a", "b"]) {
@@ -384,14 +386,34 @@ function modalResultado(id) {
   const p = T.partido(ST, id);
   if (!p || !p.a || !p.b || p.bye) return;
   const fin = p.estado === "fin";
-  const ini = fin ? [p.ra, p.rb] : [0, 0];
+  const fmt = T.formatoDe(ST, p);
+  const v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
+  const ini = fin ? [p.ra, p.rb] : [p.ventaja === "a" ? v : 0, p.ventaja === "b" ? v : 0];
+  // marcadores posibles con este formato
+  const posibles = [];
+  if (fmt.tipo === "fijo") for (let i = fmt.partidas; i >= 0; i--) posibles.push([i, fmt.partidas - i]);
+  else {
+    for (let k = 0; k < fmt.partidas; k++) posibles.push([fmt.partidas, k]);
+    for (let k = fmt.partidas - 1; k >= 0; k--) posibles.push([k, fmt.partidas]);
+  }
+  const validos = posibles.filter(([x, y]) => (p.ventaja === "a" ? x >= v : true) && (p.ventaja === "b" ? y >= v : true));
+  const nPartidas = fmt.tipo === "fijo" ? fmt.partidas : 2 * fmt.partidas - 1 - v;
+  const g = p.goles || [];
+  const filasGoles = [...Array(nPartidas).keys()].map(i => `<span class="small dim">Partida ${i + 1 + (p.ventaja ? v : 0)}</span>
+    <input type="number" min="0" max="${fmt.goles + 5}" class="gA" inputmode="numeric" value="${g[i] ? g[i][0] : ""}" aria-label="Goles ${esc(nombre(ST, p.a))}">
+    <input type="number" min="0" max="${fmt.goles + 5}" class="gB" inputmode="numeric" value="${g[i] ? g[i][1] : ""}" aria-label="Goles ${esc(nombre(ST, p.b))}">`).join("");
   const step = (k, d) => `<button type="button" class="btn" onclick="const i=document.getElementById('${k}');i.value=Math.max(0,(+i.value||0)+${d})">${d > 0 ? "+" : "−"}</button>`;
   TC.modal(`<h3>${esc(T.nombrePartido(ST, p))}${p.mesa && p.estado === "mesa" ? ` · Mesa ${p.mesa}` : ""}</h3>
+    <p class="formato" style="margin:-6px 0 12px">${esc(T.textoFormato(fmt))}${v ? ` · <b>${esc(nombre(ST, p[p.ventaja]))}</b> (viene de ganadores) empieza ${v}-0` : ""}</p>
     <form id="fRes">
+      <div class="rapidos">${validos.map(([x, y]) => `<button type="button" class="btn sm" data-m="${x}-${y}">${x}-${y}</button>`).join("")}</div>
       <div class="marcador"><div><b>${esc(nombre(ST, p.a))}</b><div class="small dim">${esc(jugadores(ST, p.a))}</div></div><input type="number" id="rA" min="0" max="99" value="${ini[0]}" inputmode="numeric"></div>
       <div class="stepper" style="justify-content:flex-end;margin:-4px 0 10px">${step("rA", -1)}${step("rA", 1)}</div>
       <div class="marcador"><div><b>${esc(nombre(ST, p.b))}</b><div class="small dim">${esc(jugadores(ST, p.b))}</div></div><input type="number" id="rB" min="0" max="99" value="${ini[1]}" inputmode="numeric"></div>
-      <div class="stepper" style="justify-content:flex-end;margin:-4px 0 14px">${step("rB", -1)}${step("rB", 1)}</div>
+      <div class="stepper" style="justify-content:flex-end;margin:-4px 0 10px">${step("rB", -1)}${step("rB", 1)}</div>
+      <details ${p.tipo === "G" || g.length ? "open" : ""}><summary class="small">Goles de cada partida ${p.tipo === "G" ? "(cuentan para desempatar)" : "(opcional)"}</summary>
+        <div class="partidas"><span></span><span class="small" style="text-align:center">${esc(nombre(ST, p.a))}</span><span class="small" style="text-align:center">${esc(nombre(ST, p.b))}</span>${filasGoles}</div>
+      </details>
       <button class="btn ok big" style="width:100%">Guardar resultado</button>
       <div class="row" style="margin-top:10px">
         <button type="button" class="btn sm" id="woA">No se presenta ${esc(nombre(ST, p.a))}</button>
@@ -400,6 +422,20 @@ function modalResultado(id) {
         <span class="spacer"></span><button type="button" class="btn sm" data-cerrar>Cancelar</button>
       </div>
     </form>`, (el, cerrar) => {
+    const goles = () => {
+      const A = [...el.querySelectorAll(".gA")], B = [...el.querySelectorAll(".gB")];
+      return A.map((x, i) => [x.value, B[i].value]).filter(([x, y]) => x !== "" && y !== "").map(([x, y]) => [+x, +y]);
+    };
+    // al escribir los goles se calcula el marcador solo
+    el.querySelector(".partidas").addEventListener("input", () => {
+      const gs = goles();
+      el.querySelector("#rA").value = gs.filter(([x, y]) => x > y).length + (p.ventaja === "a" ? v : 0);
+      el.querySelector("#rB").value = gs.filter(([x, y]) => y > x).length + (p.ventaja === "b" ? v : 0);
+    });
+    el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => {
+      const [x, y] = b.dataset.m.split("-");
+      el.querySelector("#rA").value = x; el.querySelector("#rB").value = y;
+    });
     const ok = (ra, rb, op) => {
       const estabaEnMesa = p.estado === "mesa";
       if (cambio(() => T.registrarResultado(ST, id, ra, rb, op), `${nombre(ST, p.a)} ${op && op.wo ? "W.O." : ra + "-" + rb} ${nombre(ST, p.b)}`)) {
@@ -408,12 +444,15 @@ function modalResultado(id) {
         trasResultado(estabaEnMesa);
       }
     };
-    el.querySelector("#fRes").onsubmit = e => { e.preventDefault(); ok(el.querySelector("#rA").value, el.querySelector("#rB").value); };
+    el.querySelector("#fRes").onsubmit = e => {
+      e.preventDefault();
+      const gs = goles();
+      ok(el.querySelector("#rA").value, el.querySelector("#rB").value, gs.length ? { goles: gs } : {});
+    };
     el.querySelector("#woA").onclick = () => ok(0, 0, { wo: "a" });
     el.querySelector("#woB").onclick = () => ok(0, 0, { wo: "b" });
     const br = el.querySelector("#borrarRes");
     if (br) br.onclick = () => { if (confirm("¿Borrar el resultado?") && cambio(() => T.deshacerResultado(ST, id), "Resultado borrado")) cerrar(); };
-    el.querySelector("#rA").select();
   });
 }
 
@@ -428,6 +467,23 @@ function trasResultado(liberoMesa) {
   // ¿ya se puede generar algún cuadro?
   const listas = ST.config.categorias.filter(c => !(ST.cuadros[c.id] || {}).generado && T.estadoCategoria(ST, c.id).listo);
   if (listas.length) TC.toast(`🏁 Ya se puede generar el cuadro de ${listas.map(c => esc(c.nombre)).join(", ")}`, "ok", 7000);
+  const cruces = crucesListos();
+  if (cruces.length) TC.toast(`🎲 Ya se pueden sortear los cruces de ${cruces.map(c => esc(c.nombre)).join(", ")}`, "ok", 7000);
+}
+
+function crucesListos() {
+  return ST.config.categorias.filter(c => { const e = T.estadoCruce(ST, c.id); return e.aplica && e.listo && !e.sorteado; });
+}
+
+function sortearCruces(catId) {
+  const cat = T.categoria(ST, catId);
+  let cruces = [];
+  if (!cambio(() => { cruces = T.sortearCruce(ST, catId); }, "Sorteo de cruces: " + cat.nombre)) return;
+  const v = ST.config.ventajaCruce;
+  TC.modal(`<h3>🎲 Cruces de ${esc(cat.nombre)}</h3><p class="small dim" style="margin-bottom:10px">El de ganadores empieza ${v}-0 · ${esc(T.textoFormato(ST.config.formatos.eliminatoria))}</p>
+    ${cruces.map(p => `<div class="card" style="margin-bottom:8px"><b>${esc(nombre(ST, p.a))}</b> <span class="pill gold">${v}-0</span><div class="dim small">contra</div><b>${esc(nombre(ST, p.b))}</b></div>`).join("")}
+    <button class="btn pri" data-cerrar style="width:100%">Vale</button>`);
+  catVista = catId;
 }
 
 /* =================================================================
@@ -606,10 +662,11 @@ function vCuadros() {
     const n = e.directos.length + e.caidos.length;
     const jugados = cu ? T.partidosCuadro(ST, c.id).filter(p => p.estado === "fin" && !p.bye).length : 0;
     h += `<div class="card"><h3><span class="cat-dot" style="background:${TC.colorCat(ST, c.id)}"></span>${esc(c.nombre)}</h3>
-      <div class="small dim">${c.posiciones.map(p => p + "º").join(", ")} de grupo${ST.config.caida && ST.config.categorias[0].id !== c.id ? " + caídos de la categoría superior" : ""}</div>
+      <div class="small dim">${c.posiciones.map(p => p + "º").join(", ")} de grupo · ${c.formato === "doble" ? "doble K + cruces" : "eliminatoria simple"}${ST.config.caida && ST.config.categorias[0].id !== c.id ? " · + caídos de la categoría superior" : ""}</div>
       <div style="margin:8px 0">${cu && cu.generado ? `<span class="pill ok">Cuadro de ${cu.siembra.length} (${cu.tam})</span> <span class="dim small">${jugados} jugados</span>${T.campeon(ST, c.id) ? ` <span class="pill gold">🏆 ${esc(nombre(ST, T.campeon(ST, c.id)))}</span>` : ""}`
         : e.listo ? `<span class="pill gold">Lista: ${n} parejas</span>` : `<span class="pill warn">${esc(e.motivo)}</span>`}</div>
       <div class="row"><button class="btn sm ${cu ? "" : "pri"}" onclick="generar('${c.id}')" ${e.listo ? "" : "disabled"}>${cu ? "Regenerar" : "Generar cuadro"}</button>
+      ${(() => { const x = T.estadoCruce(ST, c.id); return x.aplica && !x.sorteado ? `<button class="btn sm ${x.listo ? "pri" : ""}" onclick="sortearCruces('${c.id}')" ${x.listo ? "" : "disabled title='Cuando queden 4 en ganadores y 4 en perdedores'"}>🎲 Sortear cruces</button>` : ""; })()}
       <button class="btn sm" data-cat="${c.id}">Ver</button></div></div>`;
   });
   h += `</div>`;
@@ -710,16 +767,23 @@ function vAjustes() {
     <div class="row"><div style="flex:1"><label class="f">Puntos victoria</label><input type="number" id="cPV" min="0" value="${c.puntos.victoria}"></div>
       <div style="flex:1"><label class="f">Empate</label><input type="number" id="cPE" min="0" value="${c.puntos.empate}"></div>
       <div style="flex:1"><label class="f">Derrota</label><input type="number" id="cPD" min="0" value="${c.puntos.derrota}"></div></div>
-    <label class="check"><input type="checkbox" id="cEmp" ${c.permitirEmpate ? "checked" : ""}> Se permiten empates en grupos</label>
-    <div><label class="f">Marcador por W.O. (no presentado)</label><input type="number" id="cWO" min="1" value="${c.setsWO}"></div>
-    <div class="small dim">Desempates: puntos → enfrentamiento directo → diferencia → a favor → sorteo.</div>
+    <div class="small dim">Con 2 partidas: victoria 2, empate 1, derrota 0 = un punto por partida ganada.</div>
+    <div class="small dim">Desempates: puntos → enfrentamiento directo → diferencia de partidas → diferencia de goles → goles a favor → sorteo.</div>
+  </div>
+  <div class="card stack">
+    <h2>Partidas</h2>
+    ${filaFormato("fGrupos", "Grupos", c.formatos.grupos)}
+    ${filaFormato("fPrimera", "1ª ronda de eliminatoria", c.formatos.primeraRonda)}
+    ${filaFormato("fElim", "Resto de eliminatorias", c.formatos.eliminatoria)}
+    <div><label class="f">Ventaja en los cruces (partidas con las que empieza el de ganadores)</label><input type="number" id="cVent" min="0" max="5" value="${c.ventajaCruce}"></div>
   </div>
   <div class="card stack">
     <h2>Categorías</h2>
-    <div class="small dim">Qué posiciones del grupo van a cada categoría (ej. «1,2»).</div>
+    <div class="small dim">Qué posiciones del grupo van a cada categoría (ej. «1,2,3,4») y su formato.</div>
     <div id="cats">${c.categorias.map((k, i) => filaCat(k, i)).join("")}</div>
     <div class="row"><button type="button" class="btn sm" onclick="añadirCat()">+ Categoría</button></div>
-    <label class="check"><input type="checkbox" id="cCaida" ${c.caida ? "checked" : ""}> Caída: quien pierde su primer partido de una categoría baja a la siguiente</label>
+    <div class="small dim"><b>Doble K</b>: quien pierde en ganadores baja a perdedores; cuando quedan 4 y 4 se sortean los cruces. <b>Simple</b>: quien pierde, fuera.</div>
+    <label class="check"><input type="checkbox" id="cCaida" ${c.caida ? "checked" : ""}> Caída (sólo cuadros simples): quien pierde su primer partido baja a la categoría siguiente</label>
     <label class="check"><input type="checkbox" id="cTercer" ${c.tercerPuesto ? "checked" : ""}> Partido por el 3er puesto</label>
   </div>
   <div class="card stack">
@@ -734,22 +798,34 @@ function vAjustes() {
   </div></form>`;
 }
 
+function filaFormato(id, titulo, f) {
+  return `<div><label class="f">${titulo}</label><div class="row" id="${id}">
+    <select class="fTipo" style="flex:2"><option value="fijo" ${f.tipo === "fijo" ? "selected" : ""}>Se juegan siempre</option><option value="al" ${f.tipo === "al" ? "selected" : ""}>Gana quien llega a</option></select>
+    <input type="number" class="fPart" min="1" max="9" value="${f.partidas}" style="flex:1" aria-label="Partidas"><span class="small dim">partidas de</span>
+    <input type="number" class="fGol" min="1" max="20" value="${f.goles}" style="flex:1" aria-label="Goles"><span class="small dim">goles</span></div></div>`;
+}
+function leerFormato(id) {
+  const el = $("#" + id);
+  return { tipo: el.querySelector(".fTipo").value, partidas: Math.max(1, +el.querySelector(".fPart").value || 1), goles: Math.max(1, +el.querySelector(".fGol").value || 1) };
+}
 function filaCat(k, i) {
   return `<div class="row" data-fcat="${esc(k.id)}" style="margin-bottom:6px"><span class="cat-dot" style="background:var(--c${(i % 5) + 1})"></span>
     <input type="text" class="catNom" value="${esc(k.nombre)}" style="flex:2" aria-label="Nombre">
     <input type="text" class="catPos" value="${esc(k.posiciones.join(","))}" style="flex:1" aria-label="Posiciones">
+    <select class="catFmt" style="flex:1.4" aria-label="Formato"><option value="doble" ${k.formato === "doble" ? "selected" : ""}>Doble K</option><option value="simple" ${k.formato !== "doble" ? "selected" : ""}>Simple</option></select>
     <button type="button" class="btn sm" onclick="this.parentElement.remove()" aria-label="Quitar">✕</button></div>`;
 }
 function añadirCat() {
   const n = $$("#cats [data-fcat]").length;
-  $("#cats").insertAdjacentHTML("beforeend", filaCat({ id: "c" + Date.now().toString(36), nombre: "Categoría " + (n + 1), posiciones: [] }, n));
+  $("#cats").insertAdjacentHTML("beforeend", filaCat({ id: "c" + Date.now().toString(36), nombre: "Categoría " + (n + 1), posiciones: [], formato: "simple" }, n));
 }
 
 function guardarAjustes(ev) {
   ev.preventDefault();
   const cats = $$("#cats [data-fcat]").map(f => ({
     id: f.dataset.fcat, nombre: f.querySelector(".catNom").value.trim() || "Categoría",
-    posiciones: f.querySelector(".catPos").value.split(/[^\d]+/).map(Number).filter(n => n > 0)
+    posiciones: f.querySelector(".catPos").value.split(/[^\d]+/).map(Number).filter(n => n > 0),
+    formato: f.querySelector(".catFmt").value
   }));
   const usadas = cats.flatMap(c => c.posiciones);
   if (new Set(usadas).size !== usadas.length) return TC.toast("Una posición no puede estar en dos categorías", "bad");
@@ -764,7 +840,8 @@ function guardarAjustes(ev) {
     c.inscripcionAbierta = $("#cAbierta").checked;
     c.tamGrupo = Number($("#cTam").value); c.numGrupos = Number($("#cNumG").value) || 0;
     c.puntos = { victoria: Number($("#cPV").value), empate: Number($("#cPE").value), derrota: Number($("#cPD").value) };
-    c.permitirEmpate = $("#cEmp").checked; c.setsWO = Number($("#cWO").value) || 2;
+    c.formatos = { grupos: leerFormato("fGrupos"), primeraRonda: leerFormato("fPrimera"), eliminatoria: leerFormato("fElim") };
+    c.ventajaCruce = Math.max(0, Number($("#cVent").value) || 0);
     c.categorias = cats; c.caida = $("#cCaida").checked; c.tercerPuesto = $("#cTercer").checked;
     if (!c.categorias.some(k => k.id === catVista)) catVista = c.categorias[0].id;
   }, "Ajustes guardados");

@@ -1,8 +1,7 @@
 {
   "name": "Torneos AMF Melide",
   "short_name": "Torneos AMF",
-  "description": "Inscripción, grupos, cuadros y avisos de los torneos de futbolín de la Asociación Melide Futbolín",
-  "start_url": "./index.html",
+    "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0a0e1a",

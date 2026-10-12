@@ -45,16 +45,19 @@
     const fin = T.grupoTerminado(st, g.id);
     const ps = st.partidos.filter(p => p.tipo === "G" && p.grupo === g.id).sort((a, b) => a.ronda - b.ronda || a.n - b.n);
     const jugados = ps.filter(p => p.estado === "fin").length;
+    const emp = ps.length && T.admiteEmpate(st, ps[0]);
+    const conGoles = ps.some(p => p.goles && p.goles.length);
     let h = `<div class="card grupo" data-grupo="${esc(g.id)}"><h3><span>Grupo ${esc(g.id)}</span>
       <span class="pill ${fin ? "ok" : ""}">${fin ? "Terminado" : jugados + "/" + ps.length}</span></h3>
-      <div class="scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th class="n">PJ</th><th class="n">G</th>${st.config.permitirEmpate ? '<th class="n">E</th>' : ""}<th class="n">P</th><th class="n">Dif</th><th class="n">Pts</th></tr></thead><tbody>`;
+      <div class="scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th class="n">PJ</th><th class="n">G</th>${emp ? '<th class="n">E</th>' : ""}<th class="n">P</th><th class="n" title="Diferencia de partidas">Dif</th>${conGoles ? '<th class="n" title="Diferencia de goles">Goles</th>' : ""}<th class="n">Pts</th></tr></thead><tbody>`;
+    const signo = n => (n > 0 ? "+" : "") + n;
     filas.forEach(r => {
       const cat = catDePosicion(st, r.pos);
       const color = cat ? colorCat(st, cat.id) : "transparent";
       h += `<tr class="${op.yo === r.id ? "yo" : ""}"><td class="n"><span class="pos" style="box-shadow: inset 0 -3px 0 ${color}" title="${cat ? esc(cat.nombre) : ""}">${r.pos}</span></td>
         <td>${esc(nombre(st, r.id))}${op.jugadores ? `<div class="small dim">${esc(jugadores(st, r.id))}</div>` : ""}</td>
-        <td class="n">${r.pj}</td><td class="n">${r.g}</td>${st.config.permitirEmpate ? `<td class="n">${r.e}</td>` : ""}<td class="n">${r.p}</td>
-        <td class="n">${r.dif > 0 ? "+" : ""}${r.dif}</td><td class="n"><b>${r.pts}</b></td></tr>`;
+        <td class="n">${r.pj}</td><td class="n">${r.g}</td>${emp ? `<td class="n">${r.e}</td>` : ""}<td class="n">${r.p}</td>
+        <td class="n">${signo(r.dif)}</td>${conGoles ? `<td class="n">${signo(r.gd)}</td>` : ""}<td class="n"><b>${r.pts}</b></td></tr>`;
     });
     h += `</tbody></table></div>`;
     if (op.partidos !== false) {
@@ -69,46 +72,53 @@
     op = op || {};
     const fin = p.estado === "fin";
     const res = fin ? `${p.ra}-${p.rb}${p.wo ? " WO" : ""}` : p.estado === "mesa" ? `M${p.mesa}` : "vs";
+    const det = fin && p.goles && p.goles.length ? `<span class="dim small">${p.goles.map(g => g.join("-")).join(" · ")}</span>` : `<span class="dim small">J${p.ronda}</span>`;
     const click = op.admin ? " click" : "";
     return `<div class="pg${fin ? " fin" : ""}${click}" data-partido="${esc(p.id)}">
       <span class="a ${fin && p.ganador === p.a ? "gana" : ""}">${esc(nombre(st, p.a))}</span>
       <span class="res" ${p.estado === "mesa" ? 'style="color:var(--ok)"' : ""}>${res}</span>
       <span class="b ${fin && p.ganador === p.b ? "gana" : ""}">${esc(nombre(st, p.b))}</span>
-      <span class="dim small">J${p.ronda}</span></div>`;
+      ${det}</div>`;
   }
 
   /* ---------- cuadro de eliminatoria ---------- */
+  // Doble K: cuadro de ganadores, cuadro de perdedores y fase final (cruces, semis y final).
   function htmlCuadro(st, catId, op) {
     op = op || {};
     const c = st.cuadros[catId];
-    const cat = st.config.categorias.find(x => x.id === catId);
+    const cat = T.categoria(st, catId);
     if (!c || !c.generado) return `<div class="vacio">El cuadro de ${esc(cat ? cat.nombre : catId)} aún no está generado.</div>`;
     const ps = T.partidosCuadro(st, catId);
+    const visible = p => !p.bye || (p.llave === "W" && p.ronda === 1 && p.ganador);
+    const ronda = (llave, r) => ps.filter(p => p.llave === llave && p.ronda === r && visible(p)).sort((a, b) => a.n - b.n);
     let h = "";
     const camp = T.campeon(st, catId);
     if (camp) h += `<div class="card campeon"><span class="dim">🏆 Campeones de ${esc(cat.nombre)}</span><b>${esc(nombre(st, camp))}</b><span class="small dim">${esc(jugadores(st, camp))}</span></div>`;
-    h += `<div class="cuadro">`;
-    for (let r = 1; r <= c.rondas; r++) {
-      const ronda = ps.filter(p => p.ronda === r && !p.tercer).sort((a, b) => a.n - b.n);
-      h += `<div class="ronda"><div class="rt">${esc(T.rondaNombre(c.tam, r))}</div><div class="lista">`;
-      ronda.forEach(p => { h += htmlMk(st, p, c, op); });
-      if (r === c.rondas) {
-        const tp = ps.find(p => p.tercer);
-        if (tp) h += `<div class="rt" style="margin-top:14px">3er puesto</div>` + htmlMk(st, tp, c, op);
-      }
-      h += `</div></div>`;
+    const columnas = (cols) => `<div class="cuadro">` + cols.filter(k => k.ps.length).map(k =>
+      `<div class="ronda"><div class="rt">${esc(k.t)}</div><div class="lista">${k.ps.map(p => htmlMk(st, p, c, op)).join("")}</div></div>`).join("") + `</div>`;
+    if (c.formato === "doble") {
+      const fin = [{ t: "Cruces", ps: ronda("X", 1) }, { t: "Semifinales", ps: ronda("S", 1) }, { t: "Final", ps: ronda("F", 1) }, { t: "3er puesto", ps: ronda("T", 1) }];
+      const e = T.estadoCruce(st, catId);
+      h += `<h3 class="seccion">Fase final</h3>`;
+      if (!e.sorteado) h += `<p class="small dim">${e.listo ? "Listos los 4 de ganadores y los 4 de perdedores: falta el sorteo de cruces." : "Cuando queden 4 en ganadores y 4 en perdedores se sortean los cruces (el de ganadores empieza 1-0)."}</p>`;
+      else h += columnas(fin);
+      h += `<h3 class="seccion">Cuadro de ganadores</h3>` + columnas([...Array(c.rondasW).keys()].map(i => ({ t: "Ganadores R" + (i + 1), ps: ronda("W", i + 1) })));
+      if (c.rondasL) h += `<h3 class="seccion">Cuadro de perdedores</h3>` + columnas([...Array(c.rondasL).keys()].map(i => ({ t: "Perdedores R" + (i + 1), ps: ronda("L", i + 1) })));
+      return h;
     }
-    return h + `</div>`;
+    return h + columnas([...Array(c.rondasW).keys()].map(i => ({ t: T.rondaNombre(c.tam, i + 1), ps: ronda("W", i + 1) })).concat([{ t: "3er puesto", ps: ronda("T", 1) }]));
   }
 
   function htmlMk(st, p, c, op) {
     const fin = p.estado === "fin";
+    const v = p.ventaja ? st.config.ventajaCruce : 0;
     const linea = lado => {
       const id = p[lado], r = lado === "a" ? p.ra : p.rb;
       const cls = fin && !p.bye ? (p.ganador === id ? "gana" : "pierde") : "";
-      const origen = p.ronda === 1 && id && c.origen && c.origen[id] ? `<span class="o">${esc(c.origen[id])}</span>` : "";
-      const txt = id ? esc(nombre(st, id)) : (p.bye && p.ronda === 1 ? '<span class="dim">— libre —</span>' : '<span class="dim">Por decidir</span>');
-      return `<div class="l ${cls}"><span>${txt}${origen}</span><span class="sc">${fin && !p.bye ? r : ""}</span></div>`;
+      const origen = p.llave === "W" && p.ronda === 1 && id && c.origen && c.origen[id] ? `<span class="o">${esc(c.origen[id])}</span>` : "";
+      const ventaja = v && p.ventaja === lado && id && !fin ? `<span class="o" title="Empieza con ventaja">+${v}</span>` : "";
+      const txt = id ? esc(nombre(st, id)) : (p.bye ? '<span class="dim">— libre —</span>' : '<span class="dim">Por decidir</span>');
+      return `<div class="l ${cls}"><span>${txt}${origen}${ventaja}</span><span class="sc">${fin && !p.bye ? r : ""}</span></div>`;
     };
     const cls = ["mk"];
     if (p.bye) cls.push("bye");
@@ -124,7 +134,7 @@
     const enMesa = st.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
     if (!enMesa.length) return `<div class="vacio">Ahora mismo no hay partidos en juego.</div>`;
     return `<div class="mesas">` + enMesa.map(p => `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${p.mesa}</span><span class="spacer"></span><span class="t">${hace(p.llamado)}</span></div>
-      <div class="small dim">${esc(T.nombrePartido(st, p))}</div>
+      <div class="small dim">${esc(T.nombrePartido(st, p))} · ${esc(T.textoFormato(T.formatoDe(st, p)))}</div>
       <div class="vs"><span>${esc(nombre(st, p.a))}</span><i>contra</i><span>${esc(nombre(st, p.b))}</span></div></div>`).join("") + `</div>`;
   }
 

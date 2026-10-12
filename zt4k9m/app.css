@@ -176,3 +176,9 @@ footer { text-align: center; color: var(--dim); font-size: .8rem; padding: 30px 
 /* modo TV (pantalla grande en el local) */
 body.tv { font-size: 18px; }
 body.tv header.top .tabs, body.tv .no-tv { display: none; }
+
+h3.seccion { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.25rem; color: var(--gold); margin: 18px 0 6px; }
+.partidas { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px 10px; align-items: center; margin: 8px 0 12px; }
+.partidas input { text-align: center; }
+.rapidos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.formato { font-size: .8rem; color: var(--dim); }

@@ -13,5 +13,5 @@ window.TORNEO_CONFIG = {
 
   refrescoSeg: 10,          // cada cuánto se comprueba si hay cambios
   entidad: "Asociación Melide Futbolín",
-  web: "amfmelide.es/torneos/"
+  contacto: "ivanmelide8@gmail.com"
 };
