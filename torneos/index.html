@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Torneos AMF</title>
+<meta name="description" content="Inscripción, grupos, cuadros y avisos de los torneos de futbolín de la Asociación Melide Futbolín">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Torneos AMF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <div class="titulo" id="tTitulo">Torneos AMF</div>
+        <div class="sub" id="tSub">Asociación Melide Futbolín</div>
+      </div>
+      <span class="spacer"></span>
+      <span class="sync" id="sync"></span>
+      <button class="btn sm no-tv" onclick="TC.cambiarTema()" title="Tema claro/oscuro" aria-label="Cambiar tema">◐</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="main"><div class="vacio">Cargando…</div></main>
+<footer class="no-tv"><a href="../index.html">amfmelide.es</a> · <a href="../legal.html">Aviso legal y privacidad</a> · <a href="admin.html" id="lAdmin">Organización</a></footer>
+
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script src="store.js"></script>
+<script src="comun.js"></script>
+<script>
+"use strict";
+const C = window.TORNEO_CONFIG, T = window.TorneoEngine, S = window.TorneoStore;
+const { esc, $, $$, nombre, jugadores } = TC;
+const params = new URLSearchParams(location.search);
+const CODIGO = params.get("t") || "";
+const TV = params.has("tv");
+if (TV) document.body.classList.add("tv");
+
+let ST = null, VERSION = 0, tab = params.get("v") || "inicio", filtro = "", catVista = null;
+let mesaAvisada = null;                                    // para no repetir el pitido
+const kYo = "torneo-yo:" + CODIGO;
+let YO = (() => { try { return JSON.parse(localStorage.getItem(kYo)) || null; } catch (_) { return null; } })();
+function guardarYo(v) { YO = v; try { v ? localStorage.setItem(kYo, JSON.stringify(v)) : localStorage.removeItem(kYo); } catch (_) {} }
+
+/* ---------------- arranque ---------------- */
+(async function inicio() {
+  TC.registrarSW();
+  if (!CODIGO) return listaTorneos();
+  try {
+    await recargar();
+  } catch (e) {
+    $("#main").innerHTML = `<div class="vacio">${esc(e.message)}<br><br><a class="btn" href="index.html">Ver todos los torneos</a></div>`;
+    return;
+  }
+  setInterval(comprobar, (C.refrescoSeg || 10) * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) comprobar(); });
+  setInterval(() => { if (tab === "inicio" || TV) pintar(); }, 30000);  // refresca los "hace x min"
+})();
+
+async function listaTorneos() {
+  $("#tabs").innerHTML = "";
+  try {
+    const lista = await S.listar();
+    if (lista.length === 1) { location.replace("?t=" + encodeURIComponent(lista[0].codigo)); return; }
+    $("#main").innerHTML = `<h2>Torneos</h2>` + (lista.length ? `<div class="grid">` + lista.map(t => `
+      <a class="card" style="text-decoration:none;color:inherit" href="?t=${encodeURIComponent(t.codigo)}">
+        <h3>${esc(t.nombre || t.codigo)}</h3>
+        <div class="dim small">${esc([t.fecha, t.lugar].filter(Boolean).join(" · "))}</div>
+        <div style="margin-top:8px"><span class="pill ${t.fase === "inscripcion" ? "ok" : "gold"}">${esc(TC.FASES[t.fase] || "")}</span></div>
+      </a>`).join("") + `</div>` : `<div class="vacio">Todavía no hay torneos publicados.</div>`);
+  } catch (e) {
+    $("#main").innerHTML = `<div class="vacio">No se pudo cargar la lista de torneos.<br><span class="small">${esc(e.message)}</span></div>`;
+  }
+}
+
+async function recargar() {
+  const r = await S.cargar(CODIGO);
+  const antes = ST;
+  ST = r.datos; VERSION = r.version;
+  if (YO && !T.equipo(ST, YO.equipoId)) guardarYo(null);
+  document.title = ST.nombre + " · Torneos AMF";
+  $("#tTitulo").textContent = ST.nombre;
+  $("#tSub").textContent = [ST.fecha, ST.lugar, TC.FASES[ST.fase]].filter(Boolean).join(" · ");
+  $("#sync").textContent = "Actualizado " + new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  $("#sync").classList.remove("err");
+  if (!catVista || !ST.config.categorias.some(c => c.id === catVista)) catVista = (ST.config.categorias[0] || {}).id;
+  revisarMiLlamada(antes);
+  pintar();
+}
+
+async function comprobar() {
+  try {
+    const v = await S.version(CODIGO);
+    if (v !== VERSION) await recargar();
+    else { $("#sync").classList.remove("err"); }
+  } catch (_) {
+    $("#sync").textContent = "Sin conexión"; $("#sync").classList.add("err");
+  }
+}
+
+// Si mi pareja acaba de ser llamada a una mesa: pitido, vibración y notificación local
+function revisarMiLlamada(antes) {
+  if (!YO) return;
+  const p = ST.partidos.find(x => x.estado === "mesa" && (x.a === YO.equipoId || x.b === YO.equipoId));
+  if (!p) { mesaAvisada = null; return; }
+  const clave = p.id + "@" + p.mesa + "@" + (p.avisos || 0);
+  if (mesaAvisada === clave) return;
+  const primeraCarga = !antes;
+  mesaAvisada = clave;
+  if (primeraCarga) return;
+  TC.pitido();
+  if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 600]);
+  const rival = nombre(ST, p.a === YO.equipoId ? p.b : p.a);
+  if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+    navigator.serviceWorker.getRegistration().then(reg => reg && reg.showNotification("¡Os toca! Mesa " + p.mesa, { body: "Contra " + rival, tag: "llamada", icon: "icon-192.png" }));
+  }
+  tab = "yo";
+}
+
+/* ---------------- pintado ---------------- */
+function pestañas() {
+  const t = [["inicio", "En juego"]];
+  if (ST.config.inscripcionAbierta) t.push(["inscribirse", "Inscribirse"]);
+  t.push(["yo", YO ? "Mi pareja" : "¿Cuándo juego?"]);
+  if (ST.grupos.length) t.push(["grupos", "Grupos"]);
+  if (Object.values(ST.cuadros).some(c => c.generado)) t.push(["cuadros", "Cuadros"]);
+  t.push(["parejas", "Parejas", T.equiposActivos(ST).length]);
+  if (!t.some(x => x[0] === tab)) tab = t[0][0];
+  $("#tabs").innerHTML = t.map(([id, txt, n]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${txt}${n != null ? `<span class="n">${n}</span>` : ""}</button>`).join("");
+}
+
+function pintar() {
+  if (!ST) return;
+  pestañas();
+  const vistas = { inicio: vInicio, inscribirse: vInscribirse, yo: vYo, grupos: vGrupos, cuadros: vCuadros, parejas: vParejas };
+  if (TV) { $("#main").innerHTML = vTV(); return; }
+  const foco = document.activeElement && document.activeElement.id;
+  const pos = foco && document.activeElement.selectionStart;
+  $("#main").innerHTML = (vistas[tab] || vInicio)();
+  if (foco && $("#" + foco)) { const el = $("#" + foco); el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} }
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]");
+  if (b) { tab = b.dataset.tab; pintar(); window.scrollTo({ top: 0 }); return; }
+  const c = e.target.closest("[data-cat]");
+  if (c) { catVista = c.dataset.cat; pintar(); return; }
+  const y = e.target.closest("[data-elegir]");
+  if (y) { guardarYo({ equipoId: y.dataset.elegir }); mesaAvisada = null; revisarMiLlamada(null); tab = "yo"; pintar(); window.scrollTo({ top: 0 }); }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "buscar") { filtro = e.target.value; pintar(); }
+});
+
+function vResumen() {
+  const r = T.resumen(ST);
+  return `<div class="grid-s" style="margin-bottom:16px">
+    <div class="card stat"><b>${r.equipos}</b><span class="dim small">parejas</span></div>
+    <div class="card stat"><b>${r.grupos || "–"}</b><span class="dim small">grupos</span></div>
+    <div class="card stat"><b>${r.jugados}/${r.partidos || "–"}</b><span class="dim small">partidos jugados</span></div>
+    <div class="card stat"><b>${r.enMesa}</b><span class="dim small">en juego ahora</span></div></div>`;
+}
+
+function vInicio() {
+  let h = "";
+  if (YO) h += tarjetaMiPartido();
+  else if (ST.fase !== "inscripcion") h += `<div class="card" style="margin-bottom:16px"><b>¿Quieres saber cuándo juegas?</b> <span class="dim">Elige tu pareja y activa los avisos en el móvil.</span><div style="margin-top:10px"><button class="btn pri" data-tab="yo">Buscar mi pareja</button></div></div>`;
+  if (ST.fase === "inscripcion") {
+    h += `<div class="card" style="margin-bottom:16px"><h3>Inscripciones ${ST.config.inscripcionAbierta ? "abiertas" : "cerradas"}</h3>
+      <p class="dim">${T.equiposActivos(ST).length} de ${ST.config.maxEquipos} parejas inscritas.</p>
+      ${ST.config.inscripcionAbierta ? `<div style="margin-top:10px"><button class="btn pri" data-tab="inscribirse">Inscribir mi pareja</button></div>` : ""}</div>`;
+  }
+  h += vResumen();
+  h += `<h2>En juego</h2>` + TC.htmlMesasPublicas(ST);
+  const cola = T.cola(ST).slice(0, 12);
+  if (cola.length) {
+    h += `<h2 style="margin-top:20px">Próximos partidos</h2><div class="card">` + cola.map((p, i) =>
+      `<div class="pg"><span class="a">${esc(nombre(ST, p.a))}</span><span class="res">${i + 1}º</span><span class="b">${esc(nombre(ST, p.b))}</span><span class="dim small">${esc(T.nombrePartido(ST, p))}</span></div>`).join("") + `</div>`;
+  }
+  const camps = ST.config.categorias.map(c => [c, T.campeon(ST, c.id)]).filter(x => x[1]);
+  if (camps.length) h += `<h2 style="margin-top:20px">Campeones</h2><div class="grid">` + camps.map(([c, id]) =>
+    `<div class="card campeon"><span class="dim">🏆 ${esc(c.nombre)}</span><b>${esc(nombre(ST, id))}</b><span class="small dim">${esc(jugadores(ST, id))}</span></div>`).join("") + `</div>`;
+  return h;
+}
+
+/* ---------- inscripción ---------- */
+function vInscribirse() {
+  if (!ST.config.inscripcionAbierta) return `<div class="vacio">Las inscripciones están cerradas.</div>`;
+  const n = T.equiposActivos(ST).length;
+  if (n >= ST.config.maxEquipos) return `<div class="vacio">El torneo está completo (${n} parejas).</div>`;
+  return `<h2>Inscribe a tu pareja</h2>
+  <form class="card" id="fIns" style="max-width:520px" onsubmit="inscribir(event)">
+    <div class="campo"><label class="f" for="iJ1">Jugador/a 1 *</label><input type="text" id="iJ1" required maxlength="40" autocomplete="name"></div>
+    <div class="campo"><label class="f" for="iJ2">Jugador/a 2 *</label><input type="text" id="iJ2" required maxlength="40"></div>
+    <div class="campo"><label class="f" for="iNom">Nombre de la pareja (opcional)</label><input type="text" id="iNom" maxlength="40" placeholder="Si lo dejas vacío: Jugador 1 / Jugador 2"></div>
+    <div class="campo"><label class="f" for="iTel">Teléfono móvil de contacto *</label><input type="tel" id="iTel" required inputmode="tel" autocomplete="tel" placeholder="600 123 456"></div>
+    <input type="text" id="iWeb" name="web" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+    <label class="check campo small"><input type="checkbox" id="iOk" required> <span>Acepto que la organización use este teléfono sólo para avisarnos durante el torneo (<a href="../legal.html" target="_blank">privacidad</a>). No se publica.</span></label>
+    <button class="btn pri big" style="width:100%" id="bIns">Inscribirnos</button>
+    <p class="small dim" style="margin-top:10px">${n} de ${ST.config.maxEquipos} plazas ocupadas.</p>
+  </form>`;
+}
+
+async function inscribir(ev) {
+  ev.preventDefault();
+  const b = $("#bIns"); b.disabled = true; b.textContent = "Enviando…";
+  try {
+    const r = await S.inscribir(CODIGO, { j1: $("#iJ1").value, j2: $("#iJ2").value, nombre: $("#iNom").value }, $("#iTel").value, null, $("#iWeb").value);
+    guardarYo({ equipoId: r.equipo.id, token: r.token });
+    TC.toast("✅ ¡Pareja inscrita! Ahora activa los avisos en este móvil.", "ok", 6000);
+    tab = "yo";
+    await recargar();
+  } catch (e) {
+    TC.toast(esc(e.message), "bad", 6000);
+    b.disabled = false; b.textContent = "Inscribirnos";
+  }
+}
+
+/* ---------- mi pareja ---------- */
+function tarjetaMiPartido() {
+  const id = YO.equipoId;
+  const enMesa = ST.partidos.find(p => p.estado === "mesa" && (p.a === id || p.b === id));
+  if (enMesa) {
+    const rival = enMesa.a === id ? enMesa.b : enMesa.a;
+    return `<div class="toca" style="margin-bottom:16px"><span>¡OS TOCA JUGAR!</span><b>MESA ${enMesa.mesa}</b>
+      <div>contra <strong>${esc(nombre(ST, rival))}</strong></div><div class="small" style="opacity:.85">${esc(T.nombrePartido(ST, enMesa))}</div></div>`;
+  }
+  const cola = T.cola(ST);
+  const i = cola.findIndex(p => p.a === id || p.b === id);
+  if (i >= 0) {
+    const p = cola[i], rival = p.a === id ? p.b : p.a;
+    return `<div class="card" style="margin-bottom:16px;border-color:var(--gold2)"><span class="dim small">Vuestro próximo partido</span>
+      <h3 style="margin:4px 0">contra ${esc(nombre(ST, rival))}</h3><span class="dim">${esc(T.nombrePartido(ST, p))} · ${i < 3 ? "¡Estad atentos, vais muy pronto!" : `hay ${i} partido(s) antes`}</span></div>`;
+  }
+  return "";
+}
+
+function vYo() {
+  if (!YO) {
+    const lista = T.equiposActivos(ST).filter(e => !filtro || (e.nombre + " " + e.j1 + " " + e.j2).toLowerCase().includes(filtro.toLowerCase()));
+    return `<h2>¿Cuál es tu pareja?</h2>
+      <input type="search" id="buscar" placeholder="Busca por tu nombre o el de la pareja" value="${esc(filtro)}" style="margin-bottom:12px">
+      <div class="grid-s">${lista.slice(0, 60).map(e => `<button class="card" style="text-align:left;cursor:pointer" data-elegir="${esc(e.id)}"><b>${esc(e.nombre)}</b><div class="small dim">${esc(jugadores(ST, e.id))}</div></button>`).join("") || `<div class="vacio">Sin resultados</div>`}</div>`;
+  }
+  const id = YO.equipoId, eq = T.equipo(ST, id);
+  let h = tarjetaMiPartido();
+  h += `<div class="card" style="margin-bottom:16px"><div class="row"><div><h3 style="margin:0">${esc(eq.nombre)}</h3><div class="dim small">${esc(jugadores(ST, id))}</div></div><span class="spacer"></span>
+    <button class="btn sm" onclick="guardarYo(null);pintar()">No somos nosotros</button></div>
+    <div id="avisos" style="margin-top:12px">${htmlAvisos()}</div></div>`;
+  const g = ST.grupos.find(g => g.equipos.includes(id));
+  if (g) h += TC.htmlGrupo(ST, g, { yo: id });
+  const ko = ST.partidos.filter(p => p.tipo === "K" && !p.bye && (p.a === id || p.b === id));
+  if (ko.length) {
+    h += `<h2 style="margin-top:16px">Eliminatorias</h2><div class="card">` + ko.map(p => {
+      const fin = p.estado === "fin";
+      return `<div class="pg ${fin ? "fin" : ""}"><span class="a ${p.ganador === p.a ? "gana" : ""}">${esc(nombre(ST, p.a))}</span><span class="res">${fin ? p.ra + "-" + p.rb : p.estado === "mesa" ? "M" + p.mesa : "vs"}</span><span class="b ${p.ganador === p.b ? "gana" : ""}">${esc(nombre(ST, p.b))}</span><span class="small dim">${esc(T.nombrePartido(ST, p))}</span></div>`;
+    }).join("") + `</div>`;
+  }
+  return h;
+}
+
+function htmlAvisos() {
+  if (!S.pushDisponible) {
+    if (TC.esIOS() && !TC.esPWA()) return `<div class="small"><b>📲 Para recibir avisos en iPhone:</b> pulsa <b>Compartir</b> ⎋ → <b>Añadir a pantalla de inicio</b>, abre la web desde el icono nuevo y vuelve aquí. Mientras tengas esta página abierta también te avisará con un pitido.</div>`;
+    return `<div class="small dim">🔔 Mientras tengas esta página abierta te avisaremos con un pitido y vibración cuando os toque.</div>`;
+  }
+  if (TC.esIOS() && !TC.esPWA()) return `<div class="small"><b>📲 Para recibir avisos en iPhone:</b> pulsa <b>Compartir</b> ⎋ → <b>Añadir a pantalla de inicio</b>, abre la web desde el icono nuevo y activa los avisos allí.</div>`;
+  if (YO.push) return `<div class="row"><span class="pill ok">🔔 Avisos activados en este móvil</span><button class="btn sm" onclick="activarAvisos()">Volver a activar</button></div>`;
+  return `<button class="btn pri" onclick="activarAvisos()">🔔 Avisarme en este móvil cuando nos toque</button>
+    <div class="small dim" style="margin-top:6px">Te llegará una notificación aunque tengas el móvil bloqueado.</div>`;
+}
+
+async function activarAvisos() {
+  try {
+    const sub = await TC.suscripcionPush(C.vapidPublica);
+    let cred = YO.token ? { token: YO.token } : null;
+    if (!cred) {
+      const tel = prompt("Para confirmar que sois vosotros, escribe el teléfono con el que os inscribisteis:");
+      if (!tel) return;
+      cred = { telefono: tel };
+    }
+    await S.suscribir(CODIGO, YO.equipoId, cred, sub);
+    guardarYo(Object.assign({}, YO, { push: true }));
+    TC.toast("🔔 ¡Listo! Os avisaremos cuando os toque jugar.", "ok", 5000);
+    pintar();
+  } catch (e) {
+    TC.toast(esc(e.message), "bad", 7000);
+  }
+}
+
+/* ---------- grupos, cuadros, parejas ---------- */
+function leyendaCategorias() {
+  return `<div class="row small" style="margin-bottom:12px">` + ST.config.categorias.map(c =>
+    `<span><span class="cat-dot" style="background:${TC.colorCat(ST, c.id)}"></span>${esc(c.nombre)}: ${c.posiciones.map(p => p + "º").join(", ")}</span>`).join("") + `</div>`;
+}
+
+function vGrupos() {
+  const f = filtro.toLowerCase();
+  const gs = ST.grupos.filter(g => !f || g.id.toLowerCase() === f || g.equipos.some(id => nombre(ST, id).toLowerCase().includes(f)));
+  return `<h2>Grupos</h2><input type="search" id="buscar" placeholder="Buscar pareja o grupo" value="${esc(filtro)}" style="margin-bottom:12px">` +
+    leyendaCategorias() + `<div class="grid">` + gs.map(g => TC.htmlGrupo(ST, g, { yo: YO && YO.equipoId })).join("") + `</div>`;
+}
+
+function vCuadros() {
+  const cats = ST.config.categorias;
+  return `<h2>Cuadros</h2><div class="row" style="margin-bottom:12px">` + cats.map(c =>
+    `<button class="btn sm ${catVista === c.id ? "pri" : ""}" data-cat="${c.id}">${esc(c.nombre)}</button>`).join("") + `</div>` +
+    TC.htmlCuadro(ST, catVista, { yo: YO && YO.equipoId });
+}
+
+function vParejas() {
+  const f = filtro.toLowerCase();
+  const lista = T.equiposActivos(ST).filter(e => !f || (e.nombre + " " + e.j1 + " " + e.j2).toLowerCase().includes(f));
+  const grupoDe = {};
+  ST.grupos.forEach(g => g.equipos.forEach(id => (grupoDe[id] = g.id)));
+  return `<h2>Parejas inscritas</h2><input type="search" id="buscar" placeholder="Buscar" value="${esc(filtro)}" style="margin-bottom:12px">
+    <div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th>Jugadores</th>${ST.grupos.length ? '<th class="n">Grupo</th>' : ""}</tr></thead><tbody>` +
+    lista.map((e, i) => `<tr class="${YO && YO.equipoId === e.id ? "yo" : ""}"><td class="n dim">${i + 1}</td><td><b>${esc(e.nombre)}</b></td><td class="dim">${esc(jugadores(ST, e.id))}</td>${ST.grupos.length ? `<td class="n">${esc(grupoDe[e.id] || "")}</td>` : ""}</tr>`).join("") +
+    `</tbody></table></div>`;
+}
+
+/* ---------- modo TV: pantalla grande en el local ---------- */
+function vTV() {
+  const cola = T.cola(ST).slice(0, 10);
+  return `<div class="grid" style="grid-template-columns: 2fr 1fr"><div><h2>En juego</h2>${TC.htmlMesasPublicas(ST)}</div>
+    <div><h2>Próximos</h2><div class="card">${cola.map((p, i) => `<div class="pg"><span class="a">${esc(nombre(ST, p.a))}</span><span class="res">${i + 1}</span><span class="b">${esc(nombre(ST, p.b))}</span><span></span></div>`).join("") || '<div class="dim">—</div>'}</div></div></div>`;
+}
+</script>
+</body>
+</html>
