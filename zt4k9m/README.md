@@ -62,21 +62,24 @@ intercalados) sin llamar nunca a una pareja que ya está jugando. En modo autom�
 
 Los teléfonos **no son públicos**: van en una tabla privada que sólo lee la Edge Function con la contraseña de organizador.
 
-## Puesta en marcha (una sola vez)
+## Puesta en marcha (una sola vez, desde el navegador)
 
-Usa el mismo proyecto de Supabase que la Liga. (Si algún día quieres sacarla a otro dominio, basta copiar la carpeta `zt4k9m/`: no depende de nada más de la web.)
+En el código **no hay ninguna clave ni contraseña**: todo pasa por dos Edge Functions y las contraseñas son secretos de Supabase.
 
-1. **Base de datos**: en Supabase → *SQL Editor*, pega y ejecuta `supabase/migrations/20261012000000_torneos.sql`.
-2. **Claves push**: en tu ordenador, `npx web-push generate-vapid-keys`.
-   Copia la *Public Key* en `zt4k9m/config.js` → `vapidPublica`.
-3. **Secretos** (Supabase → *Edge Functions* → *Secrets*, o con la CLI):
-   ```
-   supabase secrets set TORNEO_ADMIN_PASS='tu-contraseña' \
-     VAPID_PUBLIC_KEY='...' VAPID_PRIVATE_KEY='...' VAPID_SUBJECT='mailto:ivanmelide8@gmail.com'
-   ```
-4. **Función**: `supabase functions deploy torneo-api --no-verify-jwt`
-   (o créala desde el panel con el código de `supabase/functions/torneo-api/index.ts` y desactiva "Verify JWT").
-5. Entra en el panel de administración de la Liga, pulsa el botón 🏆, mete la contraseña de torneos y crea el torneo.
+1. **Supabase → SQL Editor → New query**: pega `supabase/migrations/20261012000000_torneos.sql` y pulsa *Run*.
+2. **Edge Functions → Deploy a new function → Via Editor**: nombre `torneo-api`, pega `supabase/functions/torneo-api/index.ts`, *Deploy*.
+   En los ajustes de la función desactiva **Verify JWT**.
+3. Igual con `amf-web` (`supabase/functions/amf-web/index.ts`), también sin *Verify JWT*.
+4. **Edge Functions → Secrets** (Add new secret):
+   `TORNEO_ADMIN_PASS`, `AMF_ADMIN_PASS`, `MESAS_PIN`, `MONTERROSO_PASS`, `SORTEO_PASS`, `TORNEOS_PANEL`
+   (ruta del panel de torneos, ver Notion) y las claves de avisos `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+   `VAPID_SUBJECT` (si no las tienes de amf-avisos, el panel de torneos las genera: *Avisos → Generar claves*).
+5. Fusionar la rama en `main` **después** de los pasos 2-4 (la portada, la liga, el calendario, recuerdos, el sorteo y
+   el control de mesas ya dependen de `amf-web`).
+6. Opcional, cuando dejes de usar amf-avisos: ejecutar `supabase/migrations/20261012020000_cerrar_amf_avisos.sql` y
+   borrar la función `send-notification`.
+
+Al terminar cada torneo se borran solos los teléfonos y las suscripciones de avisos (también hay un botón en *Ajustes*).
 
 ### Probar sin servidor
 
