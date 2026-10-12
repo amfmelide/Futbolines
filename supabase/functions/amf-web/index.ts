@@ -12,6 +12,7 @@
 //   AMF_ADMIN_PASS    contraseña del Admin de la portada (⚙)
 //   MESAS_PIN         PIN del control de mesas (index_futbolines.html)
 //   MONTERROSO_PASS   contraseña de la Liga Monterroso (k7m2x9)
+//   SORTEO_PASS       contraseña del sorteo en directo (sorteo.html)
 //   TORNEOS_PANEL     ruta del panel de torneos (p. ej. zt4k9m/xxxx.html);
 //                     sólo se entrega tras meter la contraseña del Admin
 // (SUPABASE_URL y SUPABASE_ANON_KEY ya existen en todas las funciones.)
@@ -133,6 +134,10 @@ Deno.serve(async (req) => {
     }
     case "mesas": {           // PIN del control de mesas
       const r = await comprobar(req, "mesas", b.pin, Deno.env.get("MESAS_PIN"));
+      return json({ ok: r.ok, espera: r.espera }, r.ok ? 200 : r.status);
+    }
+    case "sorteo": {          // Sorteo en directo
+      const r = await comprobar(req, "sorteo", b.pass, Deno.env.get("SORTEO_PASS"));
       return json({ ok: r.ok, espera: r.espera }, r.ok ? 200 : r.status);
     }
     case "monterroso": {      // Liga Monterroso (k7m2x9)
