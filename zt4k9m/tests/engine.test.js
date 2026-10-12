@@ -143,18 +143,42 @@ test("cruce: el de ganadores empieza 1-0 y se juega a 3", () => {
   assert.equal(T.puedeDeshacer(st, ultL.id), false);
 });
 
-test("formato de partidas: primera ronda a 3 de 5 goles, el resto a 3 de 7", () => {
-  const st = torneoCon(16);
+test("formato de partidas por categoría: Élite a 3 de 7 goles, Oro a 3 de 5", () => {
+  const st = torneoCon(18);                 // grupos de 5 → hay Oro
   T.sortearGrupos(st);
   jugar(st, p => p.tipo === "G");
   T.generarCuadro(st, "elite");
-  const ps = T.partidosCuadro(st, "elite");
-  assert.equal(T.formatoDe(st, ps.find(p => p.llave === "W" && p.ronda === 1)).goles, 5);
-  assert.equal(T.formatoDe(st, ps.find(p => p.llave === "W" && p.ronda === 2)).goles, 7);
-  assert.equal(T.formatoDe(st, ps.find(p => p.llave === "F")).goles, 7);
-  const w1 = ps.find(p => p.llave === "W" && p.ronda === 1 && !p.bye);
-  assert.throws(() => T.registrarResultado(st, w1.id, 2, 1), /3 partidas/);
-  T.registrarResultado(st, w1.id, 3, 2);
+  T.generarCuadro(st, "oro");
+  const e = T.partidosCuadro(st, "elite").find(p => !p.bye), o = T.partidosCuadro(st, "oro").find(p => !p.bye);
+  assert.equal(T.formatoDe(st, e).goles, 7);
+  assert.equal(T.formatoDe(st, o).goles, 5);
+  assert.equal(T.formatoDe(st, o).partidas, 3);
+  assert.throws(() => T.registrarResultado(st, e.id, 2, 1), /3 partidas/);
+  T.registrarResultado(st, e.id, 3, 2);
+});
+
+test("dos divisiones (Élite/Oro y Plata/Bronce): grupos separados y mesas compartidas", () => {
+  const st = T.nuevoTorneo({ semilla: 5, config: { mesas: 6 } });
+  for (let i = 1; i <= 20; i++) T.añadirEquipo(st, { id: "e" + i, nombre: "A" + i, division: "d1" });
+  for (let i = 21; i <= 38; i++) T.añadirEquipo(st, { id: "e" + i, nombre: "B" + i, division: "d2" });
+  T.sortearGrupos(st);
+  const d1 = st.grupos.filter(g => g.division === "d1"), d2 = st.grupos.filter(g => g.division === "d2");
+  assert.equal(d1.length, 5); assert.equal(d2.length, 4);
+  d1.forEach(g => g.equipos.forEach(id => assert.ok(num(id) <= 20)));
+  d2.forEach(g => g.equipos.forEach(id => assert.ok(num(id) > 20)));
+  assert.equal(new Set(st.grupos.map(g => g.id)).size, 9);   // letras sin repetir
+  const llamados = T.asignarMesas(st);
+  assert.equal(llamados.length, 6);
+  jugar(st);
+  assert.equal(T.directosCategoria(st, "elite").length, 20);
+  assert.equal(T.directosCategoria(st, "oro").length, 0);
+  assert.equal(T.directosCategoria(st, "plata").length, 16);   // 2 grupos de 5 + 2 de 4
+  assert.equal(T.directosCategoria(st, "bronce").length, 2);
+  T.directosCategoria(st, "plata").forEach(x => assert.ok(num(x.id) > 20));
+  for (const c of ["elite", "plata", "bronce"]) T.generarCuadro(st, c);
+  jugar(st, null, { sorpresas: true });
+  for (const c of ["elite", "plata", "bronce"]) assert.ok(T.campeon(st, c), c);
+  assert.equal(st.fase, "terminado");
 });
 
 test("deshacer y W.O. en doble K", () => {

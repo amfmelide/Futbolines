@@ -65,12 +65,12 @@
       tamGrupo: 4,                            // 4 → grupos de 4 (y alguno de 5); 5 → de 5 (y alguno de 4)
       numGrupos: 0,                           // 0 = automático
       puntos: { victoria: 2, empate: 1, derrota: 0 },   // = 1 punto por partida ganada
+      // tipo "fijo": se juegan siempre N partidas (puede haber empate)
+      // tipo "al":   gana quien llega antes a N partidas
+      // Cada categoría lleva su propio formato de eliminatoria ("partidas").
       formatos: {
-        // tipo "fijo": se juegan siempre N partidas (puede haber empate)
-        // tipo "al":   gana quien llega antes a N partidas
         grupos: { tipo: "fijo", partidas: 2, goles: 6 },
-        primeraRonda: { tipo: "al", partidas: 3, goles: 5 },
-        eliminatoria: { tipo: "al", partidas: 3, goles: 7 }
+        eliminatoria: { tipo: "al", partidas: 3, goles: 7 }     // si una categoría no dice nada
       },
       ventajaCruce: 1,                        // partidas con las que empieza el de ganadores en los cruces
       mesas: 8,
@@ -79,11 +79,25 @@
       tercerPuesto: false,
       inscripcionAbierta: true,
       maxEquipos: 200,
+      // Divisiones: torneos independientes dentro del mismo evento (sus propios grupos y
+      // categorías) que comparten las mesas. Ej.: Élite/Oro por un lado y Plata/Bronce por otro.
+      divisiones: [{ id: "d1", nombre: "Élite / Oro" }, { id: "d2", nombre: "Plata / Bronce" }],
       categorias: [
-        { id: "elite", nombre: "Élite", posiciones: [1, 2, 3, 4], formato: "doble" },
-        { id: "oro", nombre: "Oro", posiciones: [5], formato: "simple" }
+        { id: "elite", nombre: "Élite", division: "d1", posiciones: [1, 2, 3, 4], formato: "doble", partidas: { tipo: "al", partidas: 3, goles: 7 } },
+        { id: "oro", nombre: "Oro", division: "d1", posiciones: [5], formato: "simple", partidas: { tipo: "al", partidas: 3, goles: 5 } },
+        { id: "plata", nombre: "Plata", division: "d2", posiciones: [1, 2, 3, 4], formato: "doble", partidas: { tipo: "al", partidas: 3, goles: 7 } },
+        { id: "bronce", nombre: "Bronce", division: "d2", posiciones: [5], formato: "simple", partidas: { tipo: "al", partidas: 3, goles: 5 } }
       ]
     };
+  }
+
+  function divisiones(st) {
+    const d = st.config.divisiones;
+    return d && d.length ? d : [{ id: "d1", nombre: "" }];
+  }
+  function divisionDe(st, e) {
+    const ds = divisiones(st);
+    return e && ds.some(d => d.id === e.division) ? e.division : ds[0].id;
   }
 
   function nuevoTorneo(opts) {
@@ -119,6 +133,7 @@
       j1: (datos.j1 || "").trim(),
       j2: (datos.j2 || "").trim(),
       ranking: datos.ranking ? Number(datos.ranking) : null,
+      division: datos.division || null,
       baja: false,
       presente: false,
       alta: datos.alta || Date.now()
@@ -131,8 +146,8 @@
   function formatoDe(st, p) {
     const f = st.config.formatos;
     if (p.tipo === "G") return f.grupos;
-    if ((p.llave === "W" || p.llave === "L") && p.ronda === 1) return f.primeraRonda;
-    return f.eliminatoria;
+    const cat = categoria(st, p.cat);
+    return (cat && cat.partidas) || f.eliminatoria;
   }
   function textoFormato(f) {
     if (!f) return "";
@@ -178,27 +193,33 @@
     return jornadas;
   }
 
-  // Sorteo: cabezas de serie (ranking) en serpiente; el resto al azar.
+  // Sorteo por división: cabezas de serie (ranking) en serpiente; el resto al azar.
   function sortearGrupos(st, opciones) {
     opciones = opciones || {};
     const activos = equiposActivos(st);
     if (activos.length < 2) throw new Error("Hacen falta al menos 2 parejas");
     const rand = rng(opciones.semilla != null ? opciones.semilla : st.semilla);
-    const conRank = activos.filter(e => e.ranking).sort((a, b) => a.ranking - b.ranking);
-    const sinRank = barajar(activos.filter(e => !e.ranking), rand);
-    const orden = conRank.concat(sinRank);
-    const tams = tamañosGrupos(orden.length, st.config.tamGrupo, st.config.numGrupos);
-    const g = tams.length;
-    const grupos = tams.map((t, i) => ({ id: letraGrupo(i), equipos: [] }));
-    let idx = 0, fila = 0;
-    while (idx < orden.length) {
-      const seq = [...Array(g).keys()];
-      if (fila % 2) seq.reverse();
-      for (const k of seq) {
-        if (idx >= orden.length) break;
-        if (grupos[k].equipos.length < tams[k]) grupos[k].equipos.push(orden[idx++].id);
+    const grupos = [];
+    for (const div of divisiones(st)) {
+      const suyos = activos.filter(e => divisionDe(st, e) === div.id);
+      if (!suyos.length) continue;
+      if (suyos.length < 2) throw new Error(`En ${div.nombre || "la división"} hay una sola pareja`);
+      const conRank = suyos.filter(e => e.ranking).sort((a, b) => a.ranking - b.ranking);
+      const orden = conRank.concat(barajar(suyos.filter(e => !e.ranking), rand));
+      const tams = tamañosGrupos(orden.length, st.config.tamGrupo, divisiones(st).length > 1 ? 0 : st.config.numGrupos);
+      const g = tams.length, base = grupos.length;
+      const nuevos = tams.map((t, i) => ({ id: letraGrupo(base + i), division: div.id, equipos: [] }));
+      let idx = 0, fila = 0;
+      while (idx < orden.length) {
+        const seq = [...Array(g).keys()];
+        if (fila % 2) seq.reverse();
+        for (const k of seq) {
+          if (idx >= orden.length) break;
+          if (nuevos[k].equipos.length < tams[k]) nuevos[k].equipos.push(orden[idx++].id);
+        }
+        fila++;
       }
-      fila++;
+      grupos.push(...nuevos);
     }
     st.grupos = grupos;
     st.partidos = st.partidos.filter(p => p.tipo !== "G");
@@ -300,7 +321,9 @@
     const cat = categoria(st, catId);
     if (!cat) return [];
     const filas = [];
+    const div = cat.division || divisiones(st)[0].id;
     st.grupos.forEach((g, gi) => {
+      if ((g.division || divisiones(st)[0].id) !== div) return;
       clasificacionGrupo(st, g.id).forEach(r => {
         if (cat.posiciones.includes(r.pos) && !(equipo(st, r.id) || {}).baja) filas.push(Object.assign({ grupo: g.id, gi }, r));
       });
@@ -317,7 +340,9 @@
   // La caída (perder el primer partido → categoría siguiente) sólo existe desde categorías de cuadro simple.
   function hayCaida(st, i) {
     if (!st.config.caida || i <= 0) return false;
-    return (st.config.categorias[i - 1].formato || "simple") !== "doble";
+    const [sup, cat] = [st.config.categorias[i - 1], st.config.categorias[i]];
+    if ((sup.division || "") !== (cat.division || "")) return false;
+    return (sup.formato || "simple") !== "doble";
   }
   function tendraEquipos(st, i) {
     const cat = st.config.categorias[i];
@@ -734,7 +759,7 @@
   }
 
   return {
-    rng, barajar, uid, letraGrupo, potencia2, configPorDefecto,
+    rng, barajar, uid, letraGrupo, potencia2, configPorDefecto, divisiones, divisionDe,
     nuevoTorneo, añadirEquipo, equipo, partido, equiposActivos, categoria,
     formatoDe, textoFormato, admiteEmpate,
     tamañosGrupos, liguilla, sortearGrupos, clasificacionGrupo, grupoTerminado, gruposTerminados,

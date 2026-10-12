@@ -24,8 +24,9 @@
     const i = st.config.categorias.findIndex(c => c.id === catId);
     return CAT_COLORES[i % CAT_COLORES.length];
   }
-  function catDePosicion(st, pos) {
-    return st.config.categorias.find(c => c.posiciones.includes(pos));
+  function catDePosicion(st, pos, division) {
+    const d0 = T.divisiones(st)[0].id;
+    return st.config.categorias.find(c => c.posiciones.includes(pos) && (c.division || d0) === (division || d0));
   }
 
   function hace(ts) {
@@ -52,7 +53,7 @@
       <div class="scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th class="n">PJ</th><th class="n">G</th>${emp ? '<th class="n">E</th>' : ""}<th class="n">P</th><th class="n" title="Diferencia de partidas">Dif</th>${conGoles ? '<th class="n" title="Diferencia de goles">Goles</th>' : ""}<th class="n">Pts</th></tr></thead><tbody>`;
     const signo = n => (n > 0 ? "+" : "") + n;
     filas.forEach(r => {
-      const cat = catDePosicion(st, r.pos);
+      const cat = catDePosicion(st, r.pos, g.division);
       const color = cat ? colorCat(st, cat.id) : "transparent";
       h += `<tr class="${op.yo === r.id ? "yo" : ""}"><td class="n"><span class="pos" style="box-shadow: inset 0 -3px 0 ${color}" title="${cat ? esc(cat.nombre) : ""}">${r.pos}</span></td>
         <td>${esc(nombre(st, r.id))}${op.jugadores ? `<div class="small dim">${esc(jugadores(st, r.id))}</div>` : ""}</td>

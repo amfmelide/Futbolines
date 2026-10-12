@@ -1,6 +1,6 @@
 -- =====================================================================
 -- TORNEOS · AMF Melide
--- Tablas para la herramienta de torneos (torneos/index.html y admin.html).
+-- Tablas para la herramienta de torneos (carpeta zt4k9m/).
 --   torneos                → estado público del torneo (JSON). Lectura pública.
 --   torneo_inscripciones   → teléfonos de las parejas. PRIVADO (sólo la Edge Function).
 --   torneo_push            → suscripciones Web Push de cada pareja. PRIVADO.

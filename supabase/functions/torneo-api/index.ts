@@ -94,8 +94,11 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
         .eq("codigo", codigo).eq("telefono", telefono);
       if ((count ?? 0) > 0) throw new Fallo("Ese teléfono ya tiene una pareja inscrita");
     }
+    const divs: { id: string }[] = Array.isArray(cfg.divisiones) && cfg.divisiones.length ? cfg.divisiones : [{ id: "d1" }];
+    const division = divs.some((d) => d.id === b.equipo?.division) ? b.equipo.division : divs[0].id;
     const equipo = {
       id: "e" + Date.now().toString(36) + aleatorio(3),
+      division,
       nombre: texto(b.equipo?.nombre) || `${j1} / ${j2}`,
       j1, j2,
       ranking: admin && b.equipo?.ranking ? Number(b.equipo.ranking) : null,

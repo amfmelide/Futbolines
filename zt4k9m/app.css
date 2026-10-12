@@ -182,3 +182,7 @@ h3.seccion { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-
 .partidas input { text-align: center; }
 .rapidos { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
 .formato { font-size: .8rem; color: var(--dim); }
+.ajustes { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.ajustes .ancho { grid-column: 1 / -1; }
+.ajustes .row select, .ajustes .row input { min-width: 0; }
+@media (max-width: 400px) { .ajustes { grid-template-columns: 1fr; } }

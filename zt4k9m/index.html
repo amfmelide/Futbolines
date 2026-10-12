@@ -195,11 +195,14 @@ function vInicio() {
 
 function vFormato() {
   const f = ST.config.formatos;
-  const cats = ST.config.categorias.map(c => `<li><b>${esc(c.nombre)}</b>: ${c.posiciones.map(p => p + "º").join(", ")} de cada grupo · ${c.formato === "doble"
-    ? `doble K (si pierdes en ganadores bajas a perdedores; con 4 y 4 se sortean los cruces y el de ganadores empieza ${ST.config.ventajaCruce}-0)` : "eliminatoria directa"}</li>`).join("");
+  const ds = T.divisiones(ST);
+  const bloque = d => {
+    const cats = ST.config.categorias.filter(c => (c.division || ds[0].id) === d.id).map(c => `<li><b>${esc(c.nombre)}</b>: ${c.posiciones.map(p => p + "º").join(", ")} de cada grupo · ${c.formato === "doble"
+      ? `doble K (si pierdes en ganadores bajas a perdedores; con 4 y 4 se sortean los cruces y el de ganadores empieza ${ST.config.ventajaCruce}-0)` : "eliminatoria directa"} · ${esc(T.textoFormato(T.formatoDe(ST, { tipo: "K", cat: c.id })))}</li>`).join("");
+    return (ds.length > 1 ? `<li><b>${esc(d.nombre)}</b><ul style="padding-left:18px">${cats}</ul></li>` : cats);
+  };
   return `<div class="card small" style="margin-bottom:16px"><h3>Formato</h3><ul style="padding-left:18px" class="stack">
-    <li><b>Grupos</b> de ${ST.config.tamGrupo}, todos contra todos · ${esc(T.textoFormato(f.grupos))}</li>${cats}
-    <li><b>Eliminatorias</b> ${esc(T.textoFormato(f.eliminatoria))} (primera ronda ${esc(T.textoFormato(f.primeraRonda))})</li></ul></div>`;
+    <li><b>Grupos</b> de ${ST.config.tamGrupo}, todos contra todos · ${esc(T.textoFormato(f.grupos))}</li>${ds.map(bloque).join("")}</ul></div>`;
 }
 
 /* ---------- inscripción ---------- */
@@ -212,6 +215,7 @@ function vInscribirse() {
     <div class="campo"><label class="f" for="iJ1">Jugador/a 1 *</label><input type="text" id="iJ1" required maxlength="40" autocomplete="name"></div>
     <div class="campo"><label class="f" for="iJ2">Jugador/a 2 *</label><input type="text" id="iJ2" required maxlength="40"></div>
     <div class="campo"><label class="f" for="iNom">Nombre de la pareja (opcional)</label><input type="text" id="iNom" maxlength="40" placeholder="Si lo dejas vacío: Jugador 1 / Jugador 2"></div>
+    ${T.divisiones(ST).length > 1 ? `<div class="campo"><label class="f" for="iDiv">Torneo *</label><select id="iDiv">${T.divisiones(ST).map(d => `<option value="${esc(d.id)}">${esc(d.nombre)}</option>`).join("")}</select></div>` : ""}
     <div class="campo"><label class="f" for="iTel">Teléfono móvil de contacto *</label><input type="tel" id="iTel" required inputmode="tel" autocomplete="tel" placeholder="600 123 456"></div>
     <input type="text" id="iWeb" name="web" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
     <label class="check campo small"><input type="checkbox" id="iOk" required> <span>Acepto que la organización use este teléfono sólo para avisarnos durante el torneo (<a href="#" onclick="event.preventDefault();privacidad()">privacidad</a>). No se publica.</span></label>
@@ -224,7 +228,7 @@ async function inscribir(ev) {
   ev.preventDefault();
   const b = $("#bIns"); b.disabled = true; b.textContent = "Enviando…";
   try {
-    const r = await S.inscribir(CODIGO, { j1: $("#iJ1").value, j2: $("#iJ2").value, nombre: $("#iNom").value }, $("#iTel").value, null, $("#iWeb").value);
+    const r = await S.inscribir(CODIGO, { j1: $("#iJ1").value, j2: $("#iJ2").value, nombre: $("#iNom").value, division: $("#iDiv") ? $("#iDiv").value : null }, $("#iTel").value, null, $("#iWeb").value);
     guardarYo({ equipoId: r.equipo.id, token: r.token });
     TC.toast("✅ ¡Pareja inscrita! Ahora activa los avisos en este móvil.", "ok", 6000);
     tab = "yo";
@@ -317,8 +321,12 @@ function leyendaCategorias() {
 function vGrupos() {
   const f = filtro.toLowerCase();
   const gs = ST.grupos.filter(g => !f || g.id.toLowerCase() === f || g.equipos.some(id => nombre(ST, id).toLowerCase().includes(f)));
+  const ds = T.divisiones(ST);
   return `<h2>Grupos</h2><input type="search" id="buscar" placeholder="Buscar pareja o grupo" value="${esc(filtro)}" style="margin-bottom:12px">` +
-    leyendaCategorias() + `<div class="grid">` + gs.map(g => TC.htmlGrupo(ST, g, { yo: YO && YO.equipoId })).join("") + `</div>`;
+    leyendaCategorias() + ds.map(d => {
+      const suyos = gs.filter(g => (g.division || ds[0].id) === d.id);
+      return suyos.length ? (ds.length > 1 ? `<h2>${esc(d.nombre)}</h2>` : "") + `<div class="grid" style="margin-bottom:18px">` + suyos.map(g => TC.htmlGrupo(ST, g, { yo: YO && YO.equipoId })).join("") + `</div>` : "";
+    }).join("");
 }
 
 function vCuadros() {

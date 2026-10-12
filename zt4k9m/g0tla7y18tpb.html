@@ -84,13 +84,21 @@ async function pantallaAcceso(msg) {
       <div><label class="f" for="nCodigo">Código (para la dirección web)</label><input type="text" id="nCodigo" required placeholder="open-melide-2026"></div>
       <div class="row"><div style="flex:1"><label class="f" for="nFecha">Fecha</label><input type="date" id="nFecha"></div><div style="flex:1"><label class="f" for="nLugar">Lugar</label><input type="text" id="nLugar" placeholder="Melide"></div></div>
       <div><label class="f" for="nPlantilla">Formato</label><select id="nPlantilla">
-        <option value="melide">Melide: grupos de 4/5 → Élite en doble K (1º-4º) y Oro (5º)</option>
-        <option value="melide5">Igual, pero grupos de 5 (y alguno de 4)</option>
-        <option value="simple">Eliminatoria simple: Élite (1º-2º) y Oro (3º-5º)</option>
+        <option value="melide4">Melide 4 categorías: torneo Élite/Oro + torneo Plata/Bronce (mesas compartidas)</option>
+        <option value="melide2">Sólo Élite/Oro: grupos de 4/5 → Élite en doble K (1º-4º) y Oro (5º)</option>
+        <option value="pb">Sólo Plata/Bronce: grupos de 4/5 → Plata en doble K (1º-4º) y Bronce (5º)</option>
       </select></div>
       <button class="btn pri">Crear torneo</button>
     </form>
   </div>`;
+}
+
+// ---- divisiones (torneos dentro del evento: Élite/Oro y Plata/Bronce) ----
+const multiDiv = () => T.divisiones(ST).length > 1;
+const nombreDiv = id => (T.divisiones(ST).find(d => d.id === id) || {}).nombre || "";
+function selectDivision(idSel, actual) {
+  if (!multiDiv()) return "";
+  return `<div class="campo"><label class="f">Torneo</label><select id="${idSel}">${T.divisiones(ST).map(d => `<option value="${esc(d.id)}" ${actual === d.id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select></div>`;
 }
 
 function slug(s) {
@@ -110,9 +118,9 @@ async function entrar(codigo) {
 }
 
 const PLANTILLAS = {
-  melide: { tamGrupo: 4 },
-  melide5: { tamGrupo: 5 },
-  simple: { tamGrupo: 4, categorias: [{ id: "elite", nombre: "Élite", posiciones: [1, 2], formato: "simple" }, { id: "oro", nombre: "Oro", posiciones: [3, 4, 5], formato: "simple" }] }
+  melide4: {},
+  melide2: (() => { const c = T.configPorDefecto(); return { divisiones: [c.divisiones[0]], categorias: c.categorias.filter(k => k.division === "d1") }; })(),
+  pb: (() => { const c = T.configPorDefecto(); return { divisiones: [c.divisiones[1]], categorias: c.categorias.filter(k => k.division === "d2") }; })()
 };
 
 async function crearTorneo(ev) {
@@ -329,7 +337,7 @@ function mesaOnOff(m) {
 
 /* ---------- avisos push / WhatsApp ---------- */
 function urlPublica(extra) {
-  const base = location.href.replace(/admin\.html.*$/, "index.html");
+  const base = location.href.replace(/[^/]*$/, "index.html");
   return base + "?t=" + encodeURIComponent(CODIGO) + (extra || "");
 }
 
@@ -480,7 +488,7 @@ function sortearCruces(catId) {
   let cruces = [];
   if (!cambio(() => { cruces = T.sortearCruce(ST, catId); }, "Sorteo de cruces: " + cat.nombre)) return;
   const v = ST.config.ventajaCruce;
-  TC.modal(`<h3>🎲 Cruces de ${esc(cat.nombre)}</h3><p class="small dim" style="margin-bottom:10px">El de ganadores empieza ${v}-0 · ${esc(T.textoFormato(ST.config.formatos.eliminatoria))}</p>
+  TC.modal(`<h3>🎲 Cruces de ${esc(cat.nombre)}</h3><p class="small dim" style="margin-bottom:10px">El de ganadores empieza ${v}-0 · ${esc(T.textoFormato(cat.partidas || ST.config.formatos.eliminatoria))}</p>
     ${cruces.map(p => `<div class="card" style="margin-bottom:8px"><b>${esc(nombre(ST, p.a))}</b> <span class="pill gold">${v}-0</span><div class="dim small">contra</div><b>${esc(nombre(ST, p.b))}</b></div>`).join("")}
     <button class="btn pri" data-cerrar style="width:100%">Vale</button>`);
   catVista = catId;
@@ -513,14 +521,14 @@ function vParejas() {
       <span class="spacer"></span>
       <input type="search" id="buscar" placeholder="Buscar nombre o teléfono" value="${esc(filtro)}" style="max-width:260px">
     </div>
-    <div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th>Teléfono</th><th class="n">🔔</th><th class="n" title="Cabeza de serie">Rank</th>${sorteado ? '<th class="n">Gr.</th>' : ""}<th class="n">Presente</th><th></th></tr></thead><tbody>
+    <div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>Pareja</th><th>Teléfono</th><th class="n">🔔</th><th class="n" title="Cabeza de serie">Rank</th>${multiDiv() ? "<th>Torneo</th>" : ""}${sorteado ? '<th class="n">Gr.</th>' : ""}<th class="n">Presente</th><th></th></tr></thead><tbody>
     ${lista.map((e, i) => {
       const tel = PRIV.telefonos[e.id] || "";
       return `<tr style="${e.baja ? "opacity:.45" : ""}"><td class="n dim">${i + 1}</td>
         <td><b>${esc(e.nombre)}</b>${e.baja ? ' <span class="pill bad">baja</span>' : ""}<div class="small dim">${esc(jugadores(ST, e.id))}</div></td>
         <td class="small">${tel ? `<a href="${esc(TC.linkWhatsApp(tel, ""))}" target="_blank" title="WhatsApp">${esc(tel)}</a>` : '<span class="dim">—</span>'}</td>
         <td class="n">${PRIV.push[e.id] ? "✅" : ""}</td>
-        <td class="n">${e.ranking || ""}</td>
+        <td class="n">${e.ranking || ""}</td>${multiDiv() ? `<td class="small">${esc(nombreDiv(T.divisionDe(ST, e)))}</td>` : ""}
         ${sorteado ? `<td class="n">${esc(grupoDe[e.id] || "")}</td>` : ""}
         <td class="n"><input type="checkbox" ${e.presente ? "checked" : ""} onchange="cambio(()=>{T.equipo(ST,'${e.id}').presente=this.checked})" aria-label="Presente"></td>
         <td class="n"><button class="btn sm" onclick="modalPareja('${e.id}')">Editar</button></td></tr>`;
@@ -538,6 +546,7 @@ function modalPareja(id) {
     <div class="campo"><label class="f">Nombre de la pareja</label><input type="text" id="pNom" value="${esc(id ? e.nombre : "")}" placeholder="Opcional"></div>
     <div class="row campo"><div style="flex:2"><label class="f">Teléfono</label><input type="tel" id="pTel" value="${esc(tel)}"></div>
       <div style="flex:1"><label class="f" title="1 = mejor. Se reparten en grupos distintos">Cabeza de serie</label><input type="number" id="pRank" min="1" value="${esc(e.ranking || "")}"></div></div>
+    ${selectDivision("pDiv", id ? T.divisionDe(ST, e) : T.divisiones(ST)[0].id)}
     <div class="row"><button class="btn pri">Guardar</button>
       ${id ? `<button type="button" class="btn ${e.baja ? "" : "bad"}" id="pBaja">${e.baja ? "Volver a dar de alta" : "Dar de baja"}</button>` : ""}
       ${id && !enGrupo ? `<button type="button" class="btn bad" id="pBorrar">Eliminar</button>` : ""}
@@ -546,7 +555,7 @@ function modalPareja(id) {
   </form>`, (el, cerrar) => {
     el.querySelector("#fP").onsubmit = async ev => {
       ev.preventDefault();
-      const datos = { j1: $("#pJ1").value.trim(), j2: $("#pJ2").value.trim(), nombre: $("#pNom").value.trim(), ranking: $("#pRank").value };
+      const datos = { j1: $("#pJ1").value.trim(), j2: $("#pJ2").value.trim(), nombre: $("#pNom").value.trim(), ranking: $("#pRank").value, division: $("#pDiv") ? $("#pDiv").value : null };
       if (!datos.j1 && !datos.j2 && !datos.nombre) return TC.toast("Pon al menos un nombre", "bad");
       const telNuevo = $("#pTel").value.trim();
       let eid = id;
@@ -556,6 +565,7 @@ function modalPareja(id) {
           x.j1 = datos.j1; x.j2 = datos.j2;
           x.nombre = datos.nombre || [datos.j1, datos.j2].filter(Boolean).join(" / ");
           x.ranking = datos.ranking ? Number(datos.ranking) : null;
+          if (datos.division) x.division = datos.division;
         } else eid = T.añadirEquipo(ST, datos).id;
       }, id ? "Pareja editada" : "Pareja añadida");
       if (!ok) return;
@@ -577,7 +587,7 @@ async function guardarTelefono(id, tel) {
 
 function modalImportar() {
   TC.modal(`<h3>Importar parejas</h3>
-    <p class="small dim" style="margin-bottom:8px">Una pareja por línea: <code>Jugador 1; Jugador 2; Teléfono; Nombre pareja; Cabeza de serie</code>. Sólo los dos primeros son obligatorios. Puedes pegar directamente desde Excel (tabuladores).</p>
+    <p class="small dim" style="margin-bottom:8px">Una pareja por línea: <code>Jugador 1; Jugador 2; Teléfono; Nombre pareja; Cabeza de serie${multiDiv() ? "; Torneo (1 = " + esc(T.divisiones(ST)[0].nombre) + ", 2 = " + esc(T.divisiones(ST)[1].nombre) + ")" : ""}</code>. Sólo los dos primeros son obligatorios. Puedes pegar directamente desde Excel (tabuladores).</p>
     <textarea id="imp" placeholder="Ana López; Marta Pérez; 600123456&#10;Juan; Pedro; 611222333; Los Galácticos; 1"></textarea>
     <div class="row" style="margin-top:10px"><button class="btn pri" id="bImp">Importar</button><span class="spacer"></span><button class="btn" data-cerrar>Cancelar</button></div>`,
   (el, cerrar) => {
@@ -586,9 +596,11 @@ function modalImportar() {
       const tels = [];
       const ok = cambio(() => {
         lineas.forEach(l => {
-          const [j1, j2, tel, nom, rank] = l.split(/\t|;/).map(x => (x || "").trim());
+          const [j1, j2, tel, nom, rank, div] = l.split(/\t|;/).map(x => (x || "").trim());
           if (!j1 && !j2) return;
-          const e = T.añadirEquipo(ST, { j1, j2, nombre: nom, ranking: rank });
+          const ds = T.divisiones(ST);
+          const d = ds[Number(div) - 1] || ds.find(x => div && x.nombre.toLowerCase().includes(div.toLowerCase())) || ds[0];
+          const e = T.añadirEquipo(ST, { j1, j2, nombre: nom, ranking: rank, division: d.id });
           if (tel) tels.push([e.id, tel]);
         });
       }, `Importadas ${lineas.length} parejas`);
@@ -605,7 +617,8 @@ function parejasPrueba() {
   if (!n) return;
   const N = ["Ana", "Brais", "Carla", "Diego", "Eva", "Fran", "Iria", "Xoán", "Lucía", "Manu", "Noa", "Óscar", "Paula", "Rubén", "Sara", "Tino", "Uxía", "Vítor", "Alba", "Hugo"];
   cambio(() => {
-    for (let i = 0; i < n; i++) T.añadirEquipo(ST, { j1: N[i % 20] + " " + (i + 1), j2: N[(i * 7 + 3) % 20] + " " + (i + 1), nombre: "Pareja " + (ST.equipos.length + 1) });
+    const ds = T.divisiones(ST);
+    for (let i = 0; i < n; i++) T.añadirEquipo(ST, { j1: N[i % 20] + " " + (i + 1), j2: N[(i * 7 + 3) % 20] + " " + (i + 1), nombre: "Pareja " + (ST.equipos.length + 1), division: ds[i < n * 0.55 ? 0 : ds.length - 1].id });
   }, `${n} parejas de prueba`);
 }
 
@@ -620,8 +633,14 @@ function bajaNoPresentes() {
    ================================================================= */
 function vGrupos() {
   const n = T.equiposActivos(ST).length;
-  const tams = T.tamañosGrupos(n, ST.config.tamGrupo, ST.config.numGrupos);
-  const resumen = Object.entries(tams.reduce((a, t) => ((a[t] = (a[t] || 0) + 1), a), {})).map(([t, k]) => `${k} de ${t}`).join(" + ");
+  const porDiv = T.divisiones(ST).map(d => {
+    const nd = T.equiposActivos(ST).filter(e => T.divisionDe(ST, e) === d.id).length;
+    const t = T.tamañosGrupos(nd, ST.config.tamGrupo, multiDiv() ? 0 : ST.config.numGrupos);
+    return { d, nd, t };
+  });
+  const tams = porDiv.flatMap(x => x.t);
+  const resumen = porDiv.filter(x => x.nd).map(x => (multiDiv() ? x.d.nombre + ": " + x.nd + " → " : "") +
+    Object.entries(x.t.reduce((a, t) => ((a[t] = (a[t] || 0) + 1), a), {})).map(([t, k]) => `${k} de ${t}`).join(" + ")).join(" · ");
   const hayRes = ST.partidos.some(p => p.estado === "fin" && !p.bye);
   let h = `<div class="card row" style="margin-bottom:14px">
     <div><b>${n} parejas</b> → <b>${tams.length} grupos</b> <span class="dim">(${resumen || "—"})</span>
@@ -635,7 +654,11 @@ function vGrupos() {
   h += `<div class="row" style="margin-bottom:10px"><input type="search" id="buscar" placeholder="Buscar pareja o grupo (ej. C)" value="${esc(filtro)}" style="max-width:300px">
     <span class="dim small">Toca un partido para meter el resultado.</span></div>`;
   h += `<div class="row small" style="margin-bottom:12px">` + ST.config.categorias.map(c => `<span><span class="cat-dot" style="background:${TC.colorCat(ST, c.id)}"></span>${esc(c.nombre)}: ${c.posiciones.map(p => p + "º").join(", ")}</span>`).join("") + `</div>`;
-  return h + `<div class="grid">` + gs.map(g => TC.htmlGrupo(ST, g, { admin: true, jugadores: false })).join("") + `</div>`;
+  return h + T.divisiones(ST).map(d => {
+    const suyos = gs.filter(g => (g.division || T.divisiones(ST)[0].id) === d.id);
+    if (!suyos.length) return "";
+    return (multiDiv() ? `<h2>${esc(d.nombre)}</h2>` : "") + `<div class="grid" style="margin-bottom:18px">` + suyos.map(g => TC.htmlGrupo(ST, g, { admin: true, jugadores: false })).join("") + `</div>`;
+  }).join("");
 }
 
 function sortear() {
@@ -750,7 +773,7 @@ async function enviarMensaje() {
 function vAjustes() {
   const c = ST.config;
   const sorteado = ST.grupos.length > 0;
-  return `<form class="grid" style="align-items:start" onsubmit="guardarAjustes(event)">
+  return `<form class="grid ajustes" style="align-items:start" onsubmit="guardarAjustes(event)">
   <div class="card stack">
     <h2>Torneo</h2>
     <div><label class="f">Nombre</label><input type="text" id="cNom" value="${esc(ST.nombre)}" required></div>
@@ -773,13 +796,15 @@ function vAjustes() {
   <div class="card stack">
     <h2>Partidas</h2>
     ${filaFormato("fGrupos", "Grupos", c.formatos.grupos)}
-    ${filaFormato("fPrimera", "1ª ronda de eliminatoria", c.formatos.primeraRonda)}
-    ${filaFormato("fElim", "Resto de eliminatorias", c.formatos.eliminatoria)}
+    <div class="small dim">Las eliminatorias de cada categoría (partidas y goles) se ajustan abajo, en Categorías.</div>
     <div><label class="f">Ventaja en los cruces (partidas con las que empieza el de ganadores)</label><input type="number" id="cVent" min="0" max="5" value="${c.ventajaCruce}"></div>
   </div>
-  <div class="card stack">
+  <div class="card stack ancho">
     <h2>Categorías</h2>
-    <div class="small dim">Qué posiciones del grupo van a cada categoría (ej. «1,2,3,4») y su formato.</div>
+    <div class="small dim">Torneos del evento (cada uno con sus grupos; comparten las mesas):</div>
+    <div id="divs">${T.divisiones(ST).map(d => `<div class="row" data-fdiv="${esc(d.id)}" style="margin-bottom:6px"><input type="text" value="${esc(d.nombre)}" style="flex:1" aria-label="Nombre del torneo">${T.divisiones(ST).length > 1 ? `<button type="button" class="btn sm" onclick="this.parentElement.remove()" aria-label="Quitar">✕</button>` : ""}</div>`).join("")}</div>
+    ${T.divisiones(ST).length < 2 ? `<div><button type="button" class="btn sm" onclick="añadirDivision()">+ Otro torneo (ej. Plata / Bronce)</button></div>` : ""}
+    <div class="small dim">Categorías: posiciones del grupo que van a cada una (ej. «1,2,3,4»), formato y partidas de la eliminatoria.</div>
     <div id="cats">${c.categorias.map((k, i) => filaCat(k, i)).join("")}</div>
     <div class="row"><button type="button" class="btn sm" onclick="añadirCat()">+ Categoría</button></div>
     <div class="small dim"><b>Doble K</b>: quien pierde en ganadores baja a perdedores; cuando quedan 4 y 4 se sortean los cruces. <b>Simple</b>: quien pierde, fuera.</div>
@@ -813,11 +838,22 @@ function filaCat(k, i) {
     <input type="text" class="catNom" value="${esc(k.nombre)}" style="flex:2" aria-label="Nombre">
     <input type="text" class="catPos" value="${esc(k.posiciones.join(","))}" style="flex:1" aria-label="Posiciones">
     <select class="catFmt" style="flex:1.4" aria-label="Formato"><option value="doble" ${k.formato === "doble" ? "selected" : ""}>Doble K</option><option value="simple" ${k.formato !== "doble" ? "selected" : ""}>Simple</option></select>
+    <span class="small dim">a</span><input type="number" class="catPart" min="1" max="9" value="${(k.partidas || {}).partidas || 3}" style="width:60px" aria-label="Partidas ganadas">
+    <span class="small dim">de</span><input type="number" class="catGol" min="1" max="20" value="${(k.partidas || {}).goles || 7}" style="width:60px" aria-label="Goles"><span class="small dim">goles</span>
+    ${T.divisiones(ST).length > 1 ? `<select class="catDiv" style="flex:1.4" aria-label="Torneo">${T.divisiones(ST).map(d => `<option value="${esc(d.id)}" ${(k.division || T.divisiones(ST)[0].id) === d.id ? "selected" : ""}>${esc(d.nombre)}</option>`).join("")}</select>` : ""}
     <button type="button" class="btn sm" onclick="this.parentElement.remove()" aria-label="Quitar">✕</button></div>`;
+}
+function añadirDivision() {
+  // añade Plata/Bronce con las mismas reglas y guarda
+  cambio(() => {
+    const c = T.configPorDefecto();
+    ST.config.divisiones = T.divisiones(ST).concat([c.divisiones[1]]);
+    c.categorias.filter(k => k.division === "d2").forEach(k => { if (!ST.config.categorias.some(x => x.id === k.id)) ST.config.categorias.push(k); });
+  }, "Añadido torneo Plata / Bronce");
 }
 function añadirCat() {
   const n = $$("#cats [data-fcat]").length;
-  $("#cats").insertAdjacentHTML("beforeend", filaCat({ id: "c" + Date.now().toString(36), nombre: "Categoría " + (n + 1), posiciones: [], formato: "simple" }, n));
+  $("#cats").insertAdjacentHTML("beforeend", filaCat({ id: "c" + Date.now().toString(36), nombre: "Categoría " + (n + 1), posiciones: [], formato: "simple", partidas: { tipo: "al", partidas: 3, goles: 5 } }, n));
 }
 
 function guardarAjustes(ev) {
@@ -825,10 +861,14 @@ function guardarAjustes(ev) {
   const cats = $$("#cats [data-fcat]").map(f => ({
     id: f.dataset.fcat, nombre: f.querySelector(".catNom").value.trim() || "Categoría",
     posiciones: f.querySelector(".catPos").value.split(/[^\d]+/).map(Number).filter(n => n > 0),
-    formato: f.querySelector(".catFmt").value
+    formato: f.querySelector(".catFmt").value,
+    partidas: { tipo: "al", partidas: Math.max(1, +f.querySelector(".catPart").value || 3), goles: Math.max(1, +f.querySelector(".catGol").value || 7) },
+    division: f.querySelector(".catDiv") ? f.querySelector(".catDiv").value : T.divisiones(ST)[0].id
   }));
-  const usadas = cats.flatMap(c => c.posiciones);
-  if (new Set(usadas).size !== usadas.length) return TC.toast("Una posición no puede estar en dos categorías", "bad");
+  const divs = $$("#divs [data-fdiv]").map(f => ({ id: f.dataset.fdiv, nombre: f.querySelector("input").value.trim() || "Torneo" }));
+  if (!divs.length) return TC.toast("Hace falta al menos un torneo", "bad");
+  const usadas = cats.flatMap(c => c.posiciones.map(p => c.division + ":" + p));
+  if (new Set(usadas).size !== usadas.length) return TC.toast("Una posición no puede estar en dos categorías del mismo torneo", "bad");
   if (!cats.length) return TC.toast("Hace falta al menos una categoría", "bad");
   const generados = Object.keys(ST.cuadros).filter(id => ST.cuadros[id].generado);
   if (generados.some(id => !cats.some(c => c.id === id))) return TC.toast("No puedes quitar una categoría que ya tiene cuadro", "bad");
@@ -840,7 +880,8 @@ function guardarAjustes(ev) {
     c.inscripcionAbierta = $("#cAbierta").checked;
     c.tamGrupo = Number($("#cTam").value); c.numGrupos = Number($("#cNumG").value) || 0;
     c.puntos = { victoria: Number($("#cPV").value), empate: Number($("#cPE").value), derrota: Number($("#cPD").value) };
-    c.formatos = { grupos: leerFormato("fGrupos"), primeraRonda: leerFormato("fPrimera"), eliminatoria: leerFormato("fElim") };
+    c.formatos = { grupos: leerFormato("fGrupos"), eliminatoria: c.formatos.eliminatoria || { tipo: "al", partidas: 3, goles: 7 } };
+    c.divisiones = divs;
     c.ventajaCruce = Math.max(0, Number($("#cVent").value) || 0);
     c.categorias = cats; c.caida = $("#cCaida").checked; c.tercerPuesto = $("#cTercer").checked;
     if (!c.categorias.some(k => k.id === catVista)) catVista = c.categorias[0].id;
