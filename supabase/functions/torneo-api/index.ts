@@ -6,7 +6,7 @@
 //   TORNEO_ADMIN_PASS   contraseña del organizador
 //   VAPID_PUBLIC_KEY    } claves Web Push  (npx web-push generate-vapid-keys)
 //   VAPID_PRIVATE_KEY   }
-//   VAPID_SUBJECT       mailto:tu-correo@ejemplo.com
+//   VAPID_SUBJECT       mailto:<correo de la asociación>
 // (SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya existen en todas las funciones.)
 //
 // Desplegar sin verificación JWT (la página usa la clave pública):
@@ -76,7 +76,29 @@ async function cargarTorneo(codigo: string) {
 }
 
 // ---------------------------------------------------------------------
+// Borra teléfonos y suscripciones de avisos de un torneo (al terminar ya no hacen falta).
+async function limpiarDatosPrivados(codigo: string) {
+  await db.from("torneo_push").delete().eq("codigo", codigo);
+  await db.from("torneo_inscripciones").delete().eq("codigo", codigo);
+}
+
 const acciones: Record<string, (b: any) => Promise<unknown>> = {
+  // ---------- público (sin claves en la página: se lee a través de aquí) ----------
+  async estado(b) {
+    const { datos, version } = await cargarTorneo(texto(b.codigo));
+    return { datos, version };
+  },
+
+  async version(b) {
+    const { data } = await db.from("torneos").select("version").eq("codigo", texto(b.codigo)).maybeSingle();
+    return { version: data?.version ?? 0 };
+  },
+
+  // Clave PÚBLICA de los avisos (la privada nunca sale del servidor)
+  async config() {
+    return { vapidPublica: VAPID_PUB || null };
+  },
+
   // Inscripción pública (o del organizador, que puede saltarse el cierre y el máximo).
   async inscribir(b) {
     const codigo = texto(b.codigo);
@@ -147,12 +169,30 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV) };
   },
 
+  async listar(b) {
+    exigirAdmin(b.pass);
+    const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase")
+      .order("updated_at", { ascending: false }).limit(50);
+    if (error) throw new Fallo(error.message, 500);
+    return { torneos: (data ?? []).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase })) };
+  },
+
+  // Fin del torneo: se borran teléfonos y avisos (un torneo nuevo empieza de cero)
+  async limpiar(b) {
+    exigirAdmin(b.pass);
+    await limpiarDatosPrivados(texto(b.codigo));
+    return { ok: true };
+  },
+
   async crear(b) {
     exigirAdmin(b.pass);
     const codigo = texto(b.codigo);
     if (!/^[a-z0-9-]{3,60}$/.test(codigo)) throw new Fallo("Código no válido (minúsculas, números y guiones)");
     const { error } = await db.from("torneos").insert({ codigo, datos: b.datos, version: 1 });
     if (error) throw new Fallo(error.code === "23505" ? "Ya existe un torneo con ese código" : error.message, 409);
+    // Por si alguno se quedó sin limpiar: borrar teléfonos y avisos de los torneos ya terminados
+    const { data: viejos } = await db.from("torneos").select("codigo").eq("datos->>fase", "terminado");
+    for (const v of viejos ?? []) await limpiarDatosPrivados(v.codigo);
     return { version: 1 };
   },
 
@@ -163,11 +203,13 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
       if (error.message.includes("conflicto")) throw new Fallo("conflicto_version", 409);
       throw new Fallo(error.message, 500);
     }
+    if (b.datos?.fase === "terminado") await limpiarDatosPrivados(texto(b.codigo));   // torneo acabado → fuera teléfonos y avisos
     return { version: data };
   },
 
   async borrar(b) {
     exigirAdmin(b.pass);
+    await limpiarDatosPrivados(texto(b.codigo));
     await db.from("torneos").delete().eq("codigo", texto(b.codigo));
     return { ok: true };
   },

@@ -1,17 +1,11 @@
 /* ==============================================================
-   CONFIGURACIÓN · lo único que normalmente hay que tocar
+   CONFIGURACIÓN
+   Aquí NO va ninguna clave ni contraseña: todo pasa por la
+   Edge Function "torneo-api", que es la única que las conoce.
    ============================================================== */
 window.TORNEO_CONFIG = {
-  // Mismo proyecto de Supabase que la Liga (la clave es la pública "anon", se puede publicar)
-  supabaseUrl: "https://axjanluawnatwqmwwbgd.supabase.co",
-  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4amFubHVhd25hdHdxbXd3YmdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTc1NzIsImV4cCI6MjA5Mzk5MzU3Mn0.jwn_kQkm85j7dYh2JUm74P_x_5KfdbC8pZBcV1WJ9pE",
+  supabaseUrl: "https://axjanluawnatwqmwwbgd.supabase.co",   // dirección del proyecto (no es secreta)
   funcion: "/functions/v1/torneo-api",
-
-  // Clave PÚBLICA VAPID para los avisos push (npx web-push generate-vapid-keys).
-  // La privada va SOLO en los secretos de Supabase, nunca aquí.
-  vapidPublica: "",
-
   refrescoSeg: 10,          // cada cuánto se comprueba si hay cambios
-  entidad: "Asociación Melide Futbolín",
-  contacto: "ivanmelide8@gmail.com"
+  entidad: "Asociación Melide Futbolín"
 };

@@ -227,8 +227,9 @@ form .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 <nav class="amf-legal" aria-label="Información legal"><a href="legal.html">Aviso legal</a> · <a href="legal.html#privacidad">Privacidad</a> · <a href="legal.html#cookies">Cookies</a></nav>
 <script>
 const SB_URL = "https://axjanluawnatwqmwwbgd.supabase.co";
-const SB_KEY = "sb_publishable_Gqh04bjVCdIalALPEcFOmw_ywOrvDXs";
-const H = {apikey:SB_KEY, "Content-Type":"application/json"};
+// Sin claves en la página: todo pasa por la función amf-web
+const API = SB_URL + "/functions/v1/amf-web";
+const api = (cuerpo) => fetch(API, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cuerpo)});
 
 const MARCAS = {Presas:"var(--presas)"};
 const HEX = {Presas:"#E5302D", Infinity:"#7B5CFF", Tsunami:"#13B5D6"};
@@ -263,7 +264,7 @@ function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");
 
 async function load(){
   try{
-    const r = await fetch(SB_URL+"/rest/v1/calendario_torneos?select=*&order=inicio.asc",{headers:H});
+    const r = await api({accion:"leer", tabla:"calendario_torneos", consulta:"select=*&order=inicio.asc"});
     if(!r.ok) throw 0;
     const rows = await r.json();
     ev = rows.map(t=>({...t, a:new Date(t.inicio+"T00:00"), b:new Date(t.fin+"T00:00")}))
@@ -274,7 +275,7 @@ async function load(){
   }
 }
 async function rpc(fn,body){
-  const r = await fetch(SB_URL+"/rest/v1/rpc/"+fn,{method:"POST",headers:H,body:JSON.stringify(body)});
+  const r = await api({accion:"rpc", fn, datos:body});
   const j = await r.json().catch(()=>null);
   if(!r.ok) throw new Error((j&&j.message)||"Error");
   return j;

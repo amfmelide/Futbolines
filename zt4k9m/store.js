@@ -10,12 +10,12 @@
   const params = new URLSearchParams(location.search);
   let modo = params.has("local") || localStorage.getItem("torneo-modo") === "local" || !C.supabaseUrl ? "local" : "remoto";
 
-  function hdr() { return { apikey: C.supabaseKey, Authorization: "Bearer " + C.supabaseKey }; }
-
+  // Sin claves: todas las lecturas y escrituras van a la Edge Function.
   async function api(accion, cuerpo) {
     const r = await fetch(C.supabaseUrl + C.funcion, {
       method: "POST",
-      headers: Object.assign({ "Content-Type": "application/json" }, hdr()),
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
       body: JSON.stringify(Object.assign({ accion }, cuerpo))
     });
     let j = {};
@@ -28,11 +28,7 @@
     }
     return j;
   }
-  async function rest(ruta) {
-    const r = await fetch(C.supabaseUrl + "/rest/v1/" + ruta, { headers: hdr(), cache: "no-store" });
-    if (!r.ok) throw new Error("No se pudo leer (" + r.status + ")");
-    return r.json();
-  }
+  let vapid = null;                                   // clave pública de avisos (la da el servidor)
 
   /* ---------- local ---------- */
   const leerLS = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) || def; } catch (_) { return def; } };
@@ -54,16 +50,21 @@
   const Store = {
     get modo() { return modo; },
     setModo(m) { modo = m; try { localStorage.setItem("torneo-modo", m); } catch (_) {} },
-    get pushDisponible() { return modo === "remoto" && !!C.vapidPublica && "serviceWorker" in navigator && "PushManager" in window; },
+    get pushDisponible() { return modo === "remoto" && !!vapid && "serviceWorker" in navigator && "PushManager" in window; },
+    get vapidPublica() { return vapid; },
+    async cargarConfig() {
+      if (modo !== "remoto") return;
+      try { vapid = (await api("config", {})).vapidPublica || null; } catch (_) { vapid = null; }
+    },
 
-    async listar() {
+    async listar(pass) {
       if (modo === "local") {
         return idsLocales().map(codigo => {
           const d = leerLS(LS + codigo, {}).datos || {};
           return { codigo, nombre: d.nombre, fecha: d.fecha, lugar: d.lugar, fase: d.fase };
         });
       }
-      return rest("torneos?select=codigo,updated_at,nombre:datos->>nombre,fecha:datos->>fecha,lugar:datos->>lugar,fase:datos->>fase&order=updated_at.desc&limit=50");
+      return (await api("listar", { pass })).torneos;
     },
 
     async cargar(codigo) {
@@ -72,15 +73,12 @@
         if (!r) throw new Error("No existe el torneo «" + codigo + "» en este navegador");
         return r;
       }
-      const filas = await rest("torneos?codigo=eq." + encodeURIComponent(codigo) + "&select=datos,version");
-      if (!filas.length) throw new Error("No existe el torneo «" + codigo + "»");
-      return filas[0];
+      return api("estado", { codigo });
     },
 
     async version(codigo) {
       if (modo === "local") return (leerLS(LS + codigo, {}) || {}).version || 0;
-      const f = await rest("torneos?codigo=eq." + encodeURIComponent(codigo) + "&select=version");
-      return f.length ? f[0].version : 0;
+      return (await api("version", { codigo })).version;
     },
 
     async login(pass) {
@@ -143,6 +141,11 @@
         return { telefono: priv.telefonos[equipoId] };
       }
       return api("telefono", { codigo, equipoId, telefono, pass });
+    },
+
+    async limpiar(codigo, pass) {
+      if (modo === "local") { localStorage.removeItem(LSP + codigo); return { ok: true }; }
+      return api("limpiar", { codigo, pass });
     },
 
     async avisar(codigo, pass, opciones) {

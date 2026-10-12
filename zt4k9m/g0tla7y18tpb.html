@@ -61,18 +61,18 @@ async function pantallaAcceso(msg) {
   $("#tTitulo").textContent = "Panel de torneos";
   $("#tSub").textContent = S.modo === "local" ? "Modo local (sólo este navegador)" : "Conectado a Supabase";
   let lista = [], err = "";
-  try { lista = await S.listar(); } catch (e) { err = e.message; }
+  if (S.modo === "local" || PASS) { try { lista = await S.listar(PASS); } catch (e) { err = e.message; } }
   $("#main").innerHTML = `
   <div class="grid" style="align-items:start">
     <div class="card stack">
       <h2>Entrar</h2>
       ${msg ? `<div class="pill bad">${esc(msg)}</div>` : ""}
-      ${err ? `<div class="small" style="color:var(--bad)">No se pudo conectar: ${esc(err)}.<br>¿Has ejecutado el SQL y desplegado la función? Mientras tanto puedes usar el modo local.</div>` : ""}
+      ${err ? `<div class="small" style="color:var(--bad)">${esc(err)}.<br>Si es la primera vez: ¿has ejecutado el SQL y desplegado la función? Mientras tanto puedes usar el modo local.</div>` : ""}
       <div class="row">
         <button class="btn sm ${S.modo === "remoto" ? "pri" : ""}" onclick="S.setModo('remoto');pantallaAcceso()">☁️ Supabase</button>
         <button class="btn sm ${S.modo === "local" ? "pri" : ""}" onclick="S.setModo('local');pantallaAcceso()">💻 Local</button>
       </div>
-      ${S.modo === "remoto" ? `<div><label class="f" for="aPass">Contraseña de organizador</label><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}"></div>` : `<p class="small dim">En modo local todo se guarda en este navegador. Ideal para probar o para llevar un torneo sin internet desde un portátil.</p>`}
+      ${S.modo === "remoto" ? `<div><label class="f" for="aPass">Contraseña de organizador</label><div class="row"><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}" style="flex:1" onkeydown="if(event.key==='Enter')verTorneos()"><button class="btn pri" type="button" onclick="verTorneos()">Entrar</button></div></div>` : `<p class="small dim">En modo local todo se guarda en este navegador. Ideal para probar o para llevar un torneo sin internet desde un portátil.</p>`}
       <div>
         <label class="f">Torneos</label>
         ${lista.length ? lista.map(t => `<button class="btn" style="width:100%;justify-content:space-between;margin-bottom:6px" onclick="entrar('${esc(t.codigo)}')"><span>${esc(t.nombre || t.codigo)}</span><span class="dim small">${esc(t.fecha || "")} · ${esc(TC.FASES[t.fase] || "")}</span></button>`).join("") : `<div class="dim small">No hay torneos todavía.</div>`}
@@ -121,6 +121,10 @@ async function comprobarPass() {
   PASS = ($("#aPass") || {}).value || PASS;
   try { const r = await S.login(PASS); PUSH_OK = !!r.push; return true; }
   catch (e) { TC.toast(esc(e.message), "bad"); return false; }
+}
+
+async function verTorneos() {
+  if (await comprobarPass()) pantallaAcceso();
 }
 
 async function entrar(codigo) {
@@ -187,7 +191,14 @@ function salir() {
    ================================================================= */
 function cambio(fn, txt) {
   const copia = JSON.stringify(ST);
+  const faseAntes = ST.fase;
   try { fn(); } catch (e) { TC.toast(esc(e.message), "bad", 5000); return false; }
+  if (ST.fase === "terminado" && faseAntes !== "terminado") {
+    // Torneo acabado: el servidor borra teléfonos y avisos al guardar (en local, aquí mismo)
+    if (S.modo === "local") S.limpiar(CODIGO, PASS);
+    PRIV = { telefonos: {}, push: {} };
+    setTimeout(() => TC.toast("🏁 Torneo terminado: se han borrado los teléfonos y los avisos de las parejas", "ok", 7000), 300);
+  }
   HIST.push(copia); if (HIST.length > 40) HIST.shift();
   if (txt) { ST.log = (ST.log || []).slice(-199); ST.log.push({ ts: Date.now(), txt }); }
   pintar();
@@ -759,11 +770,13 @@ function vAvisos() {
   const url = urlPublica();
   let h = `<div class="grid" style="align-items:start"><div class="card stack">
     <h2>Mensaje a las parejas</h2>
-    ${S.modo === "local" ? `<div class="pill warn">En modo local no hay push: usa WhatsApp o megafonía.</div>` : !PUSH_OK ? `<div class="pill warn">Push sin configurar (faltan las claves VAPID en Supabase)</div>` : ""}
+    ${S.modo === "local" ? `<div class="pill warn">En modo local no hay push: usa WhatsApp o megafonía.</div>` : !PUSH_OK ? `<div class="pill warn">Push sin configurar (faltan las claves VAPID en Supabase)</div>
+      <button type="button" class="btn sm" onclick="generarClavesAvisos()">🔑 Generar claves de avisos</button>` : ""}
     <div><label class="f">Para</label><select id="avDest">
       <option value="todos">Todas las parejas (${conPush} con avisos)</option>
       ${ST.config.categorias.filter(c => (ST.cuadros[c.id] || {}).generado).map(c => `<option value="cat:${c.id}">Parejas de ${esc(c.nombre)}</option>`).join("")}
       ${ST.grupos.length ? `<option value="vivas">Parejas que siguen jugando</option>` : ""}
+      <optgroup label="Una pareja">${T.equiposActivos(ST).filter(e => PRIV.push[e.id]).map(e => `<option value="eq:${esc(e.id)}">${esc(e.nombre)}</option>`).join("")}</optgroup>
     </select></div>
     <div><label class="f">Título</label><input type="text" id="avTit" value="${esc(ST.nombre)}" maxlength="80"></div>
     <div><label class="f">Mensaje</label><input type="text" id="avTxt" maxlength="240" placeholder="Empiezan las eliminatorias en 10 minutos"></div>
@@ -781,6 +794,24 @@ function vAvisos() {
   </div></div>`;
   setTimeout(pintarQR, 0);
   return h;
+}
+
+// Crea un par de claves VAPID en este navegador. No se guardan en ningún sitio:
+// se copian a mano a Supabase → Edge Functions → Secrets.
+async function generarClavesAvisos() {
+  try {
+    const par = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+    const jwk = await crypto.subtle.exportKey("jwk", par.privateKey);
+    const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const des = t => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((t.length + 3) % 4)), c => c.charCodeAt(0));
+    const pub = new Uint8Array(65); pub[0] = 4; pub.set(des(jwk.x), 1); pub.set(des(jwk.y), 33);
+    const fila = (nombre, valor) => `<div class="campo"><label class="f">${nombre}</label><div class="row"><input type="text" readonly value="${valor}" style="flex:1;font-family:monospace;font-size:.75rem" onclick="this.select()"><button type="button" class="btn sm" onclick="navigator.clipboard.writeText('${valor}').then(()=>TC.toast('Copiado'))">Copiar</button></div></div>`;
+    TC.modal(`<h3>🔑 Claves de avisos</h3>
+      <p class="small" style="margin-bottom:10px">Cópialas ahora en <b>Supabase → Edge Functions → Secrets</b> con estos nombres. <b>No se guardan en ningún sitio</b>: si cierras esta ventana sin copiarlas, genera otras.</p>
+      ${fila("VAPID_PUBLIC_KEY", b64u(pub))}${fila("VAPID_PRIVATE_KEY", jwk.d)}
+      <p class="small dim">Añade también <b>VAPID_SUBJECT</b> = mailto: y el correo de la asociación. Si ya usabas claves en amf-avisos con estos mismos nombres, no hace falta generar otras.</p>
+      <button class="btn" data-cerrar style="width:100%;margin-top:8px">Cerrar</button>`);
+  } catch (e) { TC.toast("Tu navegador no puede generar claves: " + esc(e.message), "bad"); }
 }
 
 function pintarQR() {
@@ -802,6 +833,11 @@ async function enviarMensaje() {
     const vivas = new Set();
     ST.partidos.forEach(p => { if (p.estado !== "fin" && !p.bye) { p.a && vivas.add(p.a); p.b && vivas.add(p.b); } });
     op.equipoIds = [...vivas];
+  } else if (dest.startsWith("eq:")) op.equipoIds = [dest.slice(3)];
+  else if (T.esNiveles(ST, dest.slice(4))) {
+    const x = T.flujoNiveles(ST, T.categoria(ST, dest.slice(4)).division || T.divisiones(ST)[0].id);
+    const k = x.cats.findIndex(c => c.id === dest.slice(4));
+    op.equipoIds = [...new Set(x.pools[k].W.miembros.concat(x.pools[k].L.miembros))];
   } else op.equipoIds = ST.cuadros[dest.slice(4)].siembra;
   try {
     const r = await S.avisar(CODIGO, PASS, op);
@@ -861,6 +897,8 @@ function vAjustes() {
     <hr style="border:0;border-top:1px solid var(--border)">
     <div class="row"><button type="button" class="btn sm" onclick="exportar()">⬇ Copia de seguridad</button>
     <label class="btn sm">⬆ Restaurar<input type="file" accept=".json" class="oculto" onchange="importar(this.files[0])"></label></div>
+    <div><button type="button" class="btn sm" onclick="limpiarPrivados()">🧹 Borrar teléfonos y avisos de este torneo</button>
+      <div class="small dim" style="margin-top:4px">Se hace solo al terminar el torneo. Un torneo nuevo empieza de cero.</div></div>
     <div class="row"><button type="button" class="btn sm" onclick="salir()">Cambiar de torneo</button>
     <button type="button" class="btn sm bad" onclick="borrarTorneo()">Borrar torneo</button></div>
     <details class="small"><summary>Historial (${(ST.log || []).length})</summary><div style="max-height:240px;overflow:auto;margin-top:6px">${(ST.log || []).slice().reverse().map(l => `<div><span class="dim">${new Date(l.ts).toLocaleTimeString("es-ES")}</span> ${esc(l.txt)}</div>`).join("")}</div></details>
@@ -949,6 +987,12 @@ async function importar(file) {
     cambio(() => { d.codigo = CODIGO; ST = d; }, "Copia restaurada");
   } catch (e) { TC.toast(esc(e.message), "bad"); }
 }
+async function limpiarPrivados() {
+  if (!confirm("Se borrarán los teléfonos de las parejas y todas las suscripciones de avisos de este torneo. ¿Seguir?")) return;
+  try { await S.limpiar(CODIGO, PASS); PRIV = { telefonos: {}, push: {} }; pintar(); TC.toast("Teléfonos y avisos borrados", "ok"); }
+  catch (e) { TC.toast(esc(e.message), "bad"); }
+}
+
 async function borrarTorneo() {
   if (prompt(`Para borrar el torneo escribe su código: ${CODIGO}`) !== CODIGO) return;
   try { await S.borrar(CODIGO, PASS); salir(); } catch (e) { TC.toast(esc(e.message), "bad"); }

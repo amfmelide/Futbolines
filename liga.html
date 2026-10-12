@@ -848,7 +848,7 @@ const CONFIG = {
   idioma:    "es",                        // idioma por defecto: "es" o "gl"
 
   supabaseUrl: "https://axjanluawnatwqmwwbgd.supabase.co",
-  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4amFubHVhd25hdHdxbXd3YmdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTc1NzIsImV4cCI6MjA5Mzk5MzU3Mn0.jwn_kQkm85j7dYh2JUm74P_x_5KfdbC8pZBcV1WJ9pE",
+  webApi:      "/functions/v1/amf-web",     // intermediario: en esta página no hay ninguna clave
   funcionGuardar: "/functions/v1/guardar-liga",   // comprueba la contraseña y guarda (tabla liga_publica)
 
   autoRefrescoSeg: 30,                      // refresco automático de datos
@@ -1742,13 +1742,13 @@ function imprimir(){
    Guardar: a través de la función guardar-liga, que comprueba
    la contraseña en el servidor (nunca en este código).
    ============================================================ */
-const sbOn=()=>Boolean(CONFIG.supabaseUrl&&CONFIG.supabaseKey);
-const sbHeaders=()=>({apikey:CONFIG.supabaseKey,Authorization:"Bearer "+CONFIG.supabaseKey,"Content-Type":"application/json"});
+const sbOn=()=>Boolean(CONFIG.supabaseUrl&&CONFIG.webApi);
+// Todas las llamadas pasan por la función amf-web (sin claves en la página)
+const sbApi=(cuerpo)=>fetch(CONFIG.supabaseUrl+CONFIG.webApi,{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify(cuerpo)});
 async function sbCargar(){
   if(!sbOn()) return {ok:false,datos:null};
   try{
-    const url=`${CONFIG.supabaseUrl}/rest/v1/liga_publica?codigo=eq.${encodeURIComponent(CONFIG.codigo)}&select=datos,updated_at`;
-    const r=await fetch(url,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbApi({accion:"leer",tabla:"liga_publica",consulta:`codigo=eq.${encodeURIComponent(CONFIG.codigo)}&select=datos,updated_at`});
     if(!r.ok) return {ok:false,datos:null};
     const rows=await r.json(); const row=rows[0];
     if(!row) return {ok:true,datos:null};
@@ -1759,14 +1759,14 @@ async function sbCargar(){
 async function sbVersion(){
   if(!sbOn()) return {ok:false,v:null};
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_publica?codigo=eq.${encodeURIComponent(CONFIG.codigo)}&select=updated_at`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbApi({accion:"leer",tabla:"liga_publica",consulta:`codigo=eq.${encodeURIComponent(CONFIG.codigo)}&select=updated_at`});
     if(!r.ok) return {ok:false,v:null};
     const rows=await r.json(); return {ok:true,v:rows[0]?rows[0].updated_at:null};
   }catch{ return {ok:false,v:null}; }
 }
 async function llamarFuncion(body){
   try{
-    const r=await fetch(CONFIG.supabaseUrl+CONFIG.funcionGuardar,{method:"POST",headers:sbHeaders(),body:JSON.stringify(body)});
+    const r=await sbApi({accion:"funcion",fn:"guardar-liga",datos:body});
     let j={}; try{ j=await r.json(); }catch{}
     return {ok:r.ok&&j.ok===true,status:r.status,error:j.error,espera:j.espera||0};
   }catch{ return {ok:false,status:0}; }
@@ -1893,7 +1893,6 @@ function panelAdmin(){
       <button class="btn gold" data-act="publicar">${gl()?"Publicar cambios":"Publicar cambios"}</button>
       ${pendiente?`<span class="dirty">${gl()?"Cambios sen publicar":"Cambios sin publicar"}</span>`:""}
       <span style="flex:1"></span>
-      <button class="btn ghost sm" type="button" onclick="window.open(String.fromCharCode(122,116,52,107,57,109,47,103,48,116,108,97,55,121,49,56,116,112,98,46,104,116,109,108),'_blank','noopener')">🏆</button>
       <button class="btn ghost sm" data-act="deshacer">${gl()?"Desfacer":"Deshacer"}</button>
       <button class="btn ghost sm" data-act="salirAdmin">${T("salir")}</button>
     </div>`;

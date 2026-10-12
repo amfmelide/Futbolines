@@ -57,6 +57,7 @@ function guardarYo(v) { YO = v; try { v ? localStorage.setItem(kYo, JSON.stringi
 (async function inicio() {
   TC.registrarSW();
   if (!CODIGO) return listaTorneos();
+  await S.cargarConfig();
   try {
     await recargar();
   } catch (e) {
@@ -75,9 +76,9 @@ function listaTorneos() {
 
 function privacidad() {
   TC.modal(`<h3>Privacidad</h3><div class="small stack">
-    <p>Responsable: ${esc(C.entidad)}${C.contacto ? " · " + esc(C.contacto) : ""}.</p>
-    <p>Pedimos un teléfono por pareja sólo para avisaros durante el torneo de cuándo y en qué mesa jugáis. No se publica ni se cede a nadie y se borra al terminar la temporada.</p>
-    <p>Si activas los avisos, tu navegador guarda una suscripción que sólo sirve para enviarte esas notificaciones. Puedes quitarla en cualquier momento desde los ajustes del navegador.</p>
+    <p>Responsable: ${esc(C.entidad)}.</p>
+    <p>Pedimos un teléfono por pareja sólo para avisaros durante el torneo de cuándo y en qué mesa jugáis. No se publica ni se cede a nadie y se borra en cuanto termina el torneo.</p>
+    <p>Si activas los avisos, tu navegador guarda una suscripción que sólo sirve para enviarte esas notificaciones. Al terminar el torneo se borran los teléfonos y las suscripciones.</p>
     <p>Para borrar tus datos antes, escribe a la organización.</p></div>
     <button class="btn" data-cerrar style="width:100%;margin-top:12px">Cerrar</button>`);
 }
@@ -297,7 +298,7 @@ function htmlAvisos() {
 
 async function activarAvisos() {
   try {
-    const sub = await TC.suscripcionPush(C.vapidPublica);
+    const sub = await TC.suscripcionPush(S.vapidPublica);
     let cred = YO.token ? { token: YO.token } : null;
     if (!cred) {
       const tel = prompt("Para confirmar que sois vosotros, escribe el teléfono con el que os inscribisteis:");

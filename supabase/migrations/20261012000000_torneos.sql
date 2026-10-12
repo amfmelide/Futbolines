@@ -1,10 +1,10 @@
 -- =====================================================================
 -- TORNEOS · AMF Melide
 -- Tablas para la herramienta de torneos (carpeta zt4k9m/).
---   torneos                → estado público del torneo (JSON). Lectura pública.
+--   torneos                → estado del torneo (JSON). Se lee a través de la Edge Function.
 --   torneo_inscripciones   → teléfonos de las parejas. PRIVADO (sólo la Edge Function).
 --   torneo_push            → suscripciones Web Push de cada pareja. PRIVADO.
--- Todas las escrituras pasan por la Edge Function "torneo-api" (service role).
+-- Todo (lecturas y escrituras) pasa por la Edge Function "torneo-api": en las páginas no hay ninguna clave.
 -- =====================================================================
 
 create table if not exists public.torneos (
@@ -13,9 +13,8 @@ create table if not exists public.torneos (
   version     integer not null default 1,
   updated_at  timestamptz not null default now()
 );
-alter table public.torneos enable row level security;
+alter table public.torneos enable row level security;            -- sin políticas: nadie salvo la Edge Function
 drop policy if exists "torneos lectura publica" on public.torneos;
-create policy "torneos lectura publica" on public.torneos for select to anon, authenticated using (true);
 
 create table if not exists public.torneo_inscripciones (
   id          bigserial primary key,

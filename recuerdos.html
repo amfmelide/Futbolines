@@ -562,7 +562,7 @@ dialog::backdrop{background:rgba(5,5,4,.78)}
    ============================================================= */
 const CONFIG = {
   SUPABASE_URL: "https://axjanluawnatwqmwwbgd.supabase.co",
-  SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4amFubHVhd25hdHdxbXd3YmdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTc1NzIsImV4cCI6MjA5Mzk5MzU3Mn0.jwn_kQkm85j7dYh2JUm74P_x_5KfdbC8pZBcV1WJ9pE",
+  WEB_API: "/functions/v1/amf-web",           // intermediario: en esta página no hay ninguna clave
   FUNCION: "/functions/v1/recuerdos-admin",   // escribe con contraseña (Edge Function)
   URL_PAGINA: "https://amfmelide.es/recuerdos.html",
   IDIOMA: "es",                                // idioma por defecto: "es" o "gl"
@@ -737,8 +737,9 @@ const estado = {
    4 · DATOS (lectura pública y función de administración)
    ============================================================= */
 async function leer(tabla, consulta) {
-  const r = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${tabla}?${consulta}`, {
-    headers: { apikey: CONFIG.SUPABASE_KEY, Authorization: "Bearer " + CONFIG.SUPABASE_KEY }
+  const r = await fetch(CONFIG.SUPABASE_URL + CONFIG.WEB_API, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accion: "leer", tabla, consulta })
   });
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
@@ -765,10 +766,10 @@ async function cargarMedios(id, forzar) {
 async function funcion(action, datos = {}) {
   let r;
   try {
-    r = await fetch(CONFIG.SUPABASE_URL + CONFIG.FUNCION, {
+    r = await fetch(CONFIG.SUPABASE_URL + CONFIG.WEB_API, {
       method: "POST",
-      headers: { "Content-Type": "application/json", apikey: CONFIG.SUPABASE_KEY, Authorization: "Bearer " + CONFIG.SUPABASE_KEY },
-      body: JSON.stringify({ action, pass: estado.pass, ...datos })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accion: "funcion", fn: "recuerdos-admin", datos: { action, pass: estado.pass, ...datos } })
     });
   } catch (e) { throw new Error(t("err_red")); }
   let j = {};
@@ -1604,12 +1605,9 @@ function reducir(src, max, calidad) {
 function subirBlob(url, blob, alProgreso) {
   return new Promise((ok, mal) => {
     const x = new XMLHttpRequest();
-    x.open("PUT", url);
-    x.setRequestHeader("apikey", CONFIG.SUPABASE_KEY);
-    x.setRequestHeader("Authorization", "Bearer " + CONFIG.SUPABASE_KEY);
+    x.open("POST", CONFIG.SUPABASE_URL + CONFIG.WEB_API + "?accion=subir");
+    x.setRequestHeader("x-destino", url);          // la subida pasa por el intermediario
     x.setRequestHeader("Content-Type", blob.type);
-    x.setRequestHeader("Cache-Control", "max-age=31536000");
-    x.setRequestHeader("x-upsert", "false");
     x.upload.onprogress = (e) => { if (e.lengthComputable) alProgreso(e.loaded / e.total); };
     x.onload = () => (x.status >= 200 && x.status < 300 ? ok() : mal(new Error("HTTP " + x.status)));
     x.onerror = () => mal(new Error(t("err_red")));
