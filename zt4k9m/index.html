@@ -14,6 +14,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="../fx.css">
+<script src="../fx.js" defer></script>
 </head>
 <body>
 <header class="top">
@@ -174,7 +176,7 @@ function vResumen() {
 function vInicio() {
   let h = "";
   if (YO) h += tarjetaMiPartido();
-  else if (ST.fase !== "inscripcion") h += `<div class="card" style="margin-bottom:16px"><b>¿Quieres saber cuándo juegas?</b> <span class="dim">Elige tu pareja y activa los avisos en el móvil.</span><div style="margin-top:10px"><button class="btn pri" data-tab="yo">Buscar mi pareja</button></div></div>`;
+  else if (ST.fase !== "inscripcion") h += `<div class="card" style="margin-bottom:16px"><b>¿Quieres saber <span data-fx-rotar="cuándo|en qué mesa|contra quién">cuándo</span> juegas?</b> <span class="dim">Elige tu pareja y activa los avisos en el móvil.</span><div style="margin-top:10px"><button class="btn pri" data-tab="yo">Buscar mi pareja</button></div></div>`;
   if (ST.fase === "inscripcion") {
     h += `<div class="card" style="margin-bottom:16px"><h3>Inscripciones ${ST.config.inscripcionAbierta ? "abiertas" : "cerradas"}</h3>
       <p class="dim">${T.equiposActivos(ST).length} de ${ST.config.maxEquipos} parejas inscritas.</p>

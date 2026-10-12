@@ -1,0 +1,106 @@
+/* =====================================================================
+   FX · capa de efectos común de amfmelide.es (y de la app de torneos)
+   Se carga en todas las páginas con:
+     <link rel="stylesheet" href="fx.css"><script src="fx.js" defer></script>
+   Opciones en <html>:
+     data-fx="ligero"   → sin aparición al hacer scroll ni inclinación (paneles de control)
+     data-fx="off"      → sin efectos
+   Todo usa :where() (especificidad 0): cualquier estilo propio de la página manda.
+   ===================================================================== */
+:root {
+  --fx-ease: cubic-bezier(.22, 1, .36, 1);          /* salida suave, natural */
+  --fx-ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --fx-c1: 233, 205, 148;                             /* dorado AMF */
+  --fx-c2: 30, 136, 229;                              /* azul */
+  --fx-sombra: 0 1px 2px rgba(0,0,0,.18), 0 8px 24px -6px rgba(0,0,0,.35), 0 24px 48px -18px rgba(0,0,0,.35);
+  --fx-sombra-alta: 0 2px 4px rgba(0,0,0,.2), 0 16px 40px -8px rgba(0,0,0,.45), 0 40px 80px -24px rgba(var(--fx-c1), .18);
+}
+
+/* ---------- transiciones suaves entre páginas (navegadores que lo admiten) ---------- */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: fx-salida .28s var(--fx-ease-in-out) both; }
+::view-transition-new(root) { animation: fx-entrada .42s var(--fx-ease) both; }
+@keyframes fx-salida { to { opacity: 0; transform: scale(.985); filter: blur(4px); } }
+@keyframes fx-entrada { from { opacity: 0; transform: scale(1.015); filter: blur(6px); } }
+
+/* ---------- microinteracciones: botones ---------- */
+:where(button, .btn, [class*="btn"], [role="button"], input[type="submit"]) {
+  transition: transform .35s var(--fx-ease), box-shadow .35s var(--fx-ease), filter .25s ease,
+              background-color .25s ease, border-color .25s ease, color .25s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  :where(button, .btn, [class*="btn"], [role="button"]):where(:not(:disabled)):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+  }
+}
+:where(button, .btn, [class*="btn"], [role="button"]):where(:not(:disabled)):active {
+  transform: translateY(0) scale(.97);
+  transition-duration: .08s;
+}
+:where(a) { transition: color .25s ease, opacity .25s ease, text-decoration-color .25s ease; }
+:where(input, select, textarea) { transition: border-color .25s ease, box-shadow .35s var(--fx-ease), background-color .25s ease; }
+:where(input, select, textarea):focus { box-shadow: 0 0 0 4px rgba(var(--fx-c1), .14); }
+
+/* onda al pulsar (la dibuja fx.js en una capa aparte, sin tocar el botón) */
+.fx-onda-capa { position: fixed; pointer-events: none; overflow: hidden; z-index: 2147483600; }
+.fx-onda { position: absolute; border-radius: 50%; transform: translate(-50%, -50%) scale(0);
+  background: radial-gradient(circle, rgba(255,255,255,.45) 0%, rgba(255,255,255,.15) 45%, transparent 70%);
+  animation: fx-onda .65s var(--fx-ease) forwards; }
+@keyframes fx-onda { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+/* ---------- tarjetas: profundidad, inclinación y brillo ---------- */
+.fx-tarjeta { transition: transform .5s var(--fx-ease), box-shadow .5s var(--fx-ease); will-change: transform; }
+.fx-tarjeta.fx-activa { box-shadow: var(--fx-sombra-alta); }
+.fx-brillo::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+  background: radial-gradient(420px circle at var(--fx-x, 50%) var(--fx-y, 50%), rgba(255,255,255,.10), transparent 45%);
+  opacity: 0; transition: opacity .4s ease;
+}
+.fx-brillo.fx-activa::before { opacity: 1; }
+
+/* ---------- cristal (desenfoque) en cabeceras, menús y ventanas ---------- */
+:where(header.top, nav[class*="nav"], .modal, [class*="modal"] > div, [class*="overlay"] > div, .toast) {
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+
+/* ---------- aparición al hacer scroll ---------- */
+.fx-oculto { opacity: 0; transform: translate3d(0, 28px, 0) scale(.985); filter: blur(6px); }
+.fx-oculto.fx-izq { transform: translate3d(-28px, 0, 0); }
+.fx-oculto.fx-der { transform: translate3d(28px, 0, 0); }
+.fx-visible { opacity: 1; transform: none; filter: none;
+  transition: opacity .9s var(--fx-ease), transform .9s var(--fx-ease), filter .9s var(--fx-ease);
+  transition-delay: var(--fx-retraso, 0ms); }
+
+/* ---------- titulares: palabras que entran una a una ---------- */
+.fx-palabra { display: inline-block; opacity: 0; transform: translateY(.45em) rotate(2deg); filter: blur(8px);
+  animation: fx-palabra .9s var(--fx-ease) forwards; animation-delay: var(--fx-retraso, 0ms); }
+@keyframes fx-palabra { to { opacity: 1; transform: none; filter: none; } }
+
+/* texto que se escribe solo / palabra que cambia */
+.fx-cursor::after { content: "▍"; margin-left: .05em; opacity: .8; animation: fx-parpadeo 1s steps(2) infinite; color: rgb(var(--fx-c1)); }
+@keyframes fx-parpadeo { 50% { opacity: 0; } }
+.fx-rotar { display: inline-block; transition: opacity .45s var(--fx-ease), transform .45s var(--fx-ease), filter .45s var(--fx-ease); }
+.fx-rotar.fx-cambiando { opacity: 0; transform: translateY(-.4em); filter: blur(6px); }
+
+/* ---------- fondo vivo y cursor (los dibuja fx.js) ---------- */
+#fx-fondo { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2147483000;
+  mix-blend-mode: screen; opacity: 0; transition: opacity 1.6s ease; }
+#fx-fondo.fx-on { opacity: 1; }
+#fx-cursor, #fx-cursor-aro { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 2147483500; border-radius: 50%;
+  transform: translate3d(-100px, -100px, 0); opacity: 0; transition: opacity .3s ease, width .35s var(--fx-ease), height .35s var(--fx-ease), margin .35s var(--fx-ease), background-color .35s ease, border-color .35s ease; }
+#fx-cursor { width: 8px; height: 8px; margin: -4px 0 0 -4px; background: rgb(var(--fx-c1)); box-shadow: 0 0 18px 4px rgba(var(--fx-c1), .55); mix-blend-mode: screen; }
+#fx-cursor-aro { width: 36px; height: 36px; margin: -18px 0 0 -18px; border: 1.5px solid rgba(var(--fx-c1), .45); }
+#fx-cursor-aro.fx-sobre { width: 58px; height: 58px; margin: -29px 0 0 -29px; border-color: rgba(var(--fx-c1), .8); background: rgba(var(--fx-c1), .07); }
+html.fx-raton #fx-cursor, html.fx-raton #fx-cursor-aro { opacity: 1; }
+
+/* ---------- accesibilidad: sin movimiento si el sistema lo pide ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .fx-oculto { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .fx-palabra { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+  #fx-fondo, #fx-cursor, #fx-cursor-aro { display: none !important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}
+html[data-fx="off"] #fx-fondo, html[data-fx="off"] #fx-cursor, html[data-fx="off"] #fx-cursor-aro { display: none !important; }
+@media print { #fx-fondo, #fx-cursor, #fx-cursor-aro { display: none !important; } }
