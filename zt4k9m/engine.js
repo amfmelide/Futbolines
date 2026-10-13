@@ -408,28 +408,29 @@
   function flujoNiveles(st, div) {
     const cats = catsDe(st, div), K = cats.length;
     const pools = cats.map(c => ({
-      W: { cat: c, llave: "W", miembros: [], set: new Set(), fuera: new Set(), partidos: [] },
-      L: { cat: c, llave: "L", miembros: [], set: new Set(), fuera: new Set(), partidos: [] }
+      W: { cat: c, llave: "W", miembros: [], set: new Set(), fuera: new Set(), partidos: [], origen: {} },
+      L: { cat: c, llave: "L", miembros: [], set: new Set(), fuera: new Set(), partidos: [], origen: {} }
     }));
     const rank = rankingDivision(st, div), seed = {};
     rank.forEach((r, i) => (seed[r.id] = i));
     const F = { cats, pools, seed, rank, iniciado: !!(K && (st.cuadros[cats[0].id] || {}).generado) };
     if (!F.iniciado) return F;
     const meta = k => st.cuadros[cats[k].id] || {};
-    const entra = (k, l, id) => {
+    const entra = (k, l, id, origen) => {
       if (k >= K) return;
       const P = pools[k][l];
-      if (!P.set.has(id)) { P.set.add(id); P.miembros.push(id); }
+      if (!P.set.has(id)) { P.set.add(id); P.miembros.push(id); P.origen[id] = origen; }
     };
+    // origen: "grupo" (pasó directo del grupo), "quinto" (5º de grupo), "perdio" (perdió en ganadores), "baja" (bajó de la categoría superior)
     const caer = (k, id, desdeGrupo) => {
       const doble = cats[k].formato === "doble" && !meta(k).directo;
       if (nivelIdx(st, id, cats) <= k) {
-        if (doble) entra(k, "L", id);
-        else if (desdeGrupo) entra(k + 1, "W", id);
-      } else entra(k + 1, "W", id);
+        if (doble) entra(k, "L", id, desdeGrupo ? "quinto" : "perdio");
+        else if (desdeGrupo) entra(k + 1, "W", id, "quinto");
+      } else entra(k + 1, "W", id, desdeGrupo ? "quinto" : "baja");
     };
     const pos0 = cats[0].posiciones;
-    rank.forEach(r => (pos0.includes(r.pos) ? entra(0, "W", r.id) : caer(0, r.id, true)));
+    rank.forEach(r => (pos0.includes(r.pos) ? entra(0, "W", r.id, "grupo") : caer(0, r.id, true)));
     const idx = {};
     cats.forEach((c, i) => (idx[c.id] = i));
     st.partidos.forEach(p => {
@@ -537,6 +538,58 @@
     avanzarNiveles(st, div);
     actualizarFase(st);
     return st.cuadros[catId];
+  }
+
+  // Esquema de la división: cuántas parejas entran, siguen, bajan y quedan fuera en cada categoría.
+  function resumenNiveles(st, div) {
+    const F = flujoNiveles(st, div);
+    if (!F.iniciado) return null;
+    return F.cats.map((c, k) => {
+      const { W, L } = F.pools[k];
+      const sig = F.pools[k + 1];
+      const todos = new Set([...W.miembros, ...L.miembros]);
+      const bajan = sig ? sig.W.miembros.filter(id => sig.W.origen[id] === "baja") : [];
+      const vivos = new Set([...W.vivos, ...(L.activo ? L.vivos : [])]);
+      const fuera = [...todos].filter(id => !vivos.has(id) && !bajan.includes(id));
+      const m = st.cuadros[c.id] || {};
+      return {
+        cat: c, entran: todos.size,
+        deGrupo: W.miembros.filter(id => W.origen[id] === "grupo").length,
+        quintos: [...todos].filter(id => (W.origen[id] || L.origen[id]) === "quinto").length,
+        bajaron: W.miembros.filter(id => W.origen[id] === "baja").length,
+        aPerdedores: L.miembros.filter(id => L.origen[id] === "perdio").length,
+        enGanadores: W.vivos.length, enPerdedores: L.activo ? L.vivos.length : null,
+        bajan: bajan.length, fuera: fuera.length,
+        estado: campeon(st, c.id) ? "campeon" : m.cruce ? "fase final" : m.directo ? "directo a la final" : W.miembros.length ? "jugando" : "esperando"
+      };
+    });
+  }
+
+  // Camino de una pareja por las categorías (modo niveles)
+  function caminoNiveles(st, id) {
+    const e = equipo(st, id);
+    if (!e) return [];
+    const div = divisionDe(st, e), F = flujoNiveles(st, div);
+    if (!F.iniciado) return [];
+    const pasos = [];
+    const r = F.rank.find(x => x.id === id);
+    if (r) pasos.push({ tipo: "grupo", texto: `${r.pos}º del grupo ${r.grupo}` });
+    F.cats.forEach((c, k) => {
+      ["W", "L"].forEach(l => {
+        const P = F.pools[k][l];
+        if (!P.set.has(id)) return;
+        const o = P.origen[id];
+        pasos.push({ tipo: "entra", cat: c.nombre, llave: l, texto: (l === "L" ? `Perdedores de ${c.nombre}` : c.nombre) + (o === "baja" ? " (baja)" : o === "quinto" ? " (5º de grupo)" : "") });
+        P.partidos.filter(p => p.estado === "fin" && !p.bye && (p.a === id || p.b === id)).forEach(p => {
+          pasos.push({ tipo: p.ganador === id ? "gana" : "pierde", texto: `${nombreRonda(st, p)} ${p.ganador === id ? "✓" : "✗"}`, rival: p.a === id ? p.b : p.a, marcador: p.a === id ? `${p.ra}-${p.rb}` : `${p.rb}-${p.ra}` });
+        });
+      });
+      partidosCuadro(st, c.id).filter(p => ["X", "S", "F", "T"].includes(p.llave) && p.estado === "fin" && !p.bye && (p.a === id || p.b === id)).forEach(p => {
+        pasos.push({ tipo: p.ganador === id ? "gana" : "pierde", texto: `${nombreRonda(st, p)} ${p.ganador === id ? "✓" : "✗"}`, rival: p.a === id ? p.b : p.a, marcador: p.a === id ? `${p.ra}-${p.rb}` : `${p.rb}-${p.ra}` });
+      });
+      if (campeon(st, c.id) === id) pasos.push({ tipo: "campeon", texto: `🏆 Campeones de ${c.nombre}` });
+    });
+    return pasos;
   }
 
   // Resumen para el panel: cuántas parejas hay en cada bolsa.
@@ -1001,7 +1054,7 @@
     formatoDe, textoFormato, admiteEmpate,
     tamañosGrupos, liguilla, sortearGrupos, clasificacionGrupo, grupoTerminado, gruposTerminados,
     rondaNombre, ordenSiembra, directosCategoria, caidosDe, estadoCategoria, generarCuadro, campeon, resolver,
-    estadoCruce, sortearCruce, esNiveles, estadoNiveles, flujoNiveles, catsDe, rankingDivision,
+    estadoCruce, sortearCruce, esNiveles, estadoNiveles, flujoNiveles, catsDe, rankingDivision, resumenNiveles, caminoNiveles,
     registrarResultado, deshacerResultado, puedeDeshacer,
     cola, mesasLibres, llamar, soltar, asignarMesas, ocupados,
     partidosDeEquipo, nombrePartido, nombreRonda, resumen, partidosCuadro

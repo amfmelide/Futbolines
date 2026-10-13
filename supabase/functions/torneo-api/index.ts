@@ -133,7 +133,21 @@ async function cargarTorneo(codigo: string) {
 async function limpiarDatosPrivados(codigo: string) {
   await db.from("torneo_push").delete().eq("codigo", codigo);
   await db.from("torneo_inscripciones").delete().eq("codigo", codigo);
+  await db.from("torneo_propuestas").delete().eq("codigo", codigo);
+  await db.from("torneo_privado").delete().eq("codigo", codigo);      // el QR de las mesas deja de valer
 }
+
+async function tokenMesas(codigo: string, nuevo = false) {
+  if (!nuevo) {
+    const { data } = await db.from("torneo_privado").select("token_mesas").eq("codigo", codigo).maybeSingle();
+    if (data?.token_mesas) return data.token_mesas as string;
+  }
+  const token = aleatorio(9);
+  const { error } = await db.from("torneo_privado").upsert({ codigo, token_mesas: token }, { onConflict: "codigo" });
+  if (error) throw new Fallo(error.message, 500);
+  return token;
+}
+const entero = (v: unknown) => (v === null || v === undefined || v === "" ? null : Math.max(0, Math.min(99, Math.trunc(Number(v)) || 0)));
 
 const acciones: Record<string, (b: any) => Promise<unknown>> = {
   // ---------- público (sin claves en la página: se lee a través de aquí) ----------
@@ -220,10 +234,54 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     return { ok: true };
   },
 
+  // Resultado enviado por una pareja desde el QR de su mesa
+  async proponer(b) {
+    const codigo = texto(b.codigo);
+    const { datos } = await cargarTorneo(codigo);
+    const modo = datos.config?.resultadosParejas ?? "no";
+    if (modo === "no") throw new Fallo("En este torneo los resultados los apunta la organización", 403);
+    // el código del QR se comprueba con freno (no se puede adivinar probando)
+    const { data: priv } = await db.from("torneo_privado").select("token_mesas").eq("codigo", codigo).maybeSingle();
+    const r = await comprobarConFreno("mesa-qr", b.__ip, String(b.k ?? ""), priv?.token_mesas);
+    if (r.espera > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(r.espera / 60)} min.`, 429);
+    if (!r.ok) throw new Fallo("El QR de la mesa no es válido para este torneo", 403);
+    if (await limitarUso("proponer", b.__ip, 60, 3600)) throw new Fallo("Demasiados resultados enviados desde este móvil. Avisa a la organización.", 429);
+    const partidoId = texto(b.partidoId, 80);
+    const p = (datos.partidos ?? []).find((x: any) => x.id === partidoId);
+    if (!p || !p.a || !p.b) throw new Fallo("Ese partido no existe o aún no tiene rivales");
+    if (p.estado === "fin") throw new Fallo("Ese partido ya tiene resultado. Si está mal, avisa a la organización.", 409);
+    const goles = Array.isArray(b.goles) ? b.goles.slice(0, 9).map((g: any) => [entero(g?.[0]) ?? 0, entero(g?.[1]) ?? 0]) : null;
+    await db.from("torneo_propuestas").update({ estado: "reemplazada" }).eq("codigo", codigo).eq("partido_id", partidoId).eq("estado", "pendiente");
+    const { error } = await db.from("torneo_propuestas").insert({
+      codigo, partido_id: partidoId, ra: entero(b.ra), rb: entero(b.rb), goles, wo: b.wo === "a" || b.wo === "b" ? b.wo : null, mesa: entero(b.mesa),
+    });
+    if (error) throw new Fallo(error.message, 500);
+    return { ok: true, modo };
+  },
+
   // ---------- sólo organizador ----------
   async login(b) {
     await exigirAdmin(b);
     return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV) };
+  },
+
+  async propuestas(b) {
+    await exigirAdmin(b);
+    const { data, error } = await db.from("torneo_propuestas").select("*").eq("codigo", texto(b.codigo)).eq("estado", "pendiente").order("creado");
+    if (error) throw new Fallo(error.message, 500);
+    return { propuestas: data ?? [] };
+  },
+
+  async resolverPropuesta(b) {
+    await exigirAdmin(b);
+    const estado = b.estado === "aceptada" ? "aceptada" : "rechazada";
+    await db.from("torneo_propuestas").update({ estado, motivo: texto(b.motivo, 200) || null }).eq("codigo", texto(b.codigo)).eq("id", Number(b.id));
+    return { ok: true };
+  },
+
+  async tokenMesas(b) {
+    await exigirAdmin(b);
+    return { token: await tokenMesas(texto(b.codigo), !!b.nuevo) };
   },
 
   async listar(b) {

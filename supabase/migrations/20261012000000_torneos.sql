@@ -39,6 +39,30 @@ create table if not exists public.torneo_push (
 create index if not exists torneo_push_equipo on public.torneo_push (codigo, equipo_id);
 alter table public.torneo_push enable row level security;            -- sin políticas: privado
 
+-- Código secreto de los QR de las mesas (uno por torneo). PRIVADO.
+create table if not exists public.torneo_privado (
+  codigo       text primary key references public.torneos(codigo) on delete cascade,
+  token_mesas  text not null
+);
+alter table public.torneo_privado enable row level security;
+
+-- Resultados enviados por las parejas desde el QR de la mesa (el organizador los valida o se apuntan solos).
+create table if not exists public.torneo_propuestas (
+  id          bigserial primary key,
+  codigo      text not null references public.torneos(codigo) on delete cascade,
+  partido_id  text not null,
+  ra          integer,
+  rb          integer,
+  goles       jsonb,
+  wo          text,
+  mesa        integer,
+  estado      text not null default 'pendiente' check (estado in ('pendiente', 'aceptada', 'rechazada', 'reemplazada')),
+  motivo      text,
+  creado      timestamptz not null default now()
+);
+create index if not exists torneo_propuestas_pend on public.torneo_propuestas (codigo, estado);
+alter table public.torneo_propuestas enable row level security;
+
 -- Añade una pareja de forma atómica (varias inscripciones a la vez no se pisan).
 create or replace function public.torneo_inscribir(p_codigo text, p_equipo jsonb, p_max integer)
 returns integer language plpgsql security definer set search_path = public as $$

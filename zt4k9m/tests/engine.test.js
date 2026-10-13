@@ -351,3 +351,25 @@ test("niveles: 200 parejas, corregir un resultado borra lo generado después", (
   for (const c of ["elite", "oro", "plata"]) assert.ok(T.campeon(st, c), c);
   assert.equal(st.fase, "terminado");
 });
+
+test("niveles: esquema de flujo y camino de cada pareja", () => {
+  const st = torneoNiveles(40, ["doble", "doble", "simple"], nivelDe);
+  T.sortearGrupos(st);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  jugarTodo(st, true);
+  const res = T.resumenNiveles(st, "d1");
+  assert.equal(res.length, 3);
+  assert.equal(res[0].deGrupo, 32);
+  assert.equal(res[0].quintos + res[1].quintos, 8);
+  assert.equal(res[1].bajaron, res[0].bajan);            // lo que baja de Élite es lo que llega a Oro
+  res.forEach(r => assert.equal(r.estado, "campeon"));
+  // cada pareja: su camino empieza en su grupo y, si bajó, aparece la categoría a la que bajó
+  st.equipos.forEach(e => {
+    const c = T.caminoNiveles(st, e.id);
+    assert.equal(c[0].tipo, "grupo");
+    assert.ok(c.some(p => p.tipo === "entra"));
+  });
+  const campeonOro = T.campeon(st, "oro");
+  assert.ok(T.caminoNiveles(st, campeonOro).some(p => p.tipo === "campeon"));
+});

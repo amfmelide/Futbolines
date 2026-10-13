@@ -6,7 +6,7 @@
 (function () {
   "use strict";
   const C = window.TORNEO_CONFIG || {};
-  const LS = "torneo:", LSP = "torneo-priv:";
+  const LS = "torneo:", LSP = "torneo-priv:", LSR = "torneo-res:";
   const params = new URLSearchParams(location.search);
   let modo = params.has("local") || localStorage.getItem("torneo-modo") === "local" || !C.supabaseUrl ? "local" : "remoto";
 
@@ -144,13 +144,47 @@
     },
 
     async limpiar(codigo, pass) {
-      if (modo === "local") { localStorage.removeItem(LSP + codigo); return { ok: true }; }
+      if (modo === "local") { localStorage.removeItem(LSP + codigo); localStorage.removeItem(LSR + codigo); return { ok: true }; }
       return api("limpiar", { codigo, pass });
     },
 
     async avisar(codigo, pass, opciones) {
       if (modo === "local") return { enviados: 0, fallidos: 0, sinAviso: opciones.equipoIds || [], local: true };
       return api("avisar", Object.assign({ codigo, pass }, opciones));
+    },
+
+    // ---------- resultados enviados por las parejas (QR de las mesas) ----------
+    async proponer(codigo, k, datos) {
+      if (modo === "local") {
+        const r = leerLS(LS + codigo, null);
+        if (!r || (r.datos.config.resultadosParejas || "no") === "no") throw new Error("En este torneo los resultados los apunta la organización");
+        const p = r.datos.partidos.find(x => x.id === datos.partidoId);
+        if (!p || !p.a || !p.b) throw new Error("Ese partido no existe o aún no tiene rivales");
+        if (p.estado === "fin") throw new Error("Ese partido ya tiene resultado. Si está mal, avisa a la organización.");
+        const lista = leerLS(LSR + codigo, []);
+        lista.forEach(x => { if (x.partido_id === datos.partidoId && x.estado === "pendiente") x.estado = "reemplazada"; });
+        lista.push({ id: Date.now(), partido_id: datos.partidoId, ra: datos.ra, rb: datos.rb, goles: datos.goles || null, wo: datos.wo || null, mesa: datos.mesa || null, estado: "pendiente", creado: new Date().toISOString() });
+        escribirLS(LSR + codigo, lista);
+        return { ok: true, modo: r.datos.config.resultadosParejas };
+      }
+      return api("proponer", Object.assign({ codigo, k }, datos));
+    },
+    async propuestas(codigo, pass) {
+      if (modo === "local") return leerLS(LSR + codigo, []).filter(x => x.estado === "pendiente");
+      return (await api("propuestas", { codigo, pass })).propuestas;
+    },
+    async resolverPropuesta(codigo, pass, id, estado, motivo) {
+      if (modo === "local") {
+        const lista = leerLS(LSR + codigo, []);
+        lista.forEach(x => { if (x.id === id) { x.estado = estado; x.motivo = motivo || null; } });
+        escribirLS(LSR + codigo, lista);
+        return { ok: true };
+      }
+      return api("resolverPropuesta", { codigo, pass, id, estado, motivo });
+    },
+    async tokenMesas(codigo, pass, nuevo) {
+      if (modo === "local") return "local";
+      return (await api("tokenMesas", { codigo, pass, nuevo: !!nuevo })).token;
     },
 
     async suscribir(codigo, equipoId, credencial, suscripcion) {

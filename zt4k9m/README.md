@@ -47,6 +47,41 @@ Reglas comunes (todo editable en *Ajustes*):
 3. **Partidas de eliminatoria por categoría**: Élite y Plata a 3 partidas ganadas de 7 goles; Oro y Bronce a 3 de 5.
 4. Los mejores de grupo reciben los pases directos y en la 1ª ronda no se cruzan dos del mismo grupo.
 
+## Resultados desde la mesa (QR)
+
+En *Ajustes → ¿Quién apunta los resultados?* eliges:
+- **Sólo la organización** (como siempre).
+- **Las parejas con el QR de la mesa, y yo los valido**: llegan a una bandeja en *Mesas* y se apuntan con un toque (✓), se editan (✎) o se descartan (✕).
+- **Las parejas con el QR de la mesa, se apuntan solos**: el panel (abierto) los apunta en segundos; sólo quedan en la bandeja los dudosos (partido ya jugado o marcador imposible).
+
+Cada mesa tiene su QR (*Avisos → 🖨 QR de las mesas*). Al escanearlo la pareja ve el partido de esa mesa o elige su grupo
+y la partida, mete los goles de cada partida, revisa y envía. El QR lleva un código secreto del torneo (cambia en cada torneo
+y deja de valer al terminarlo); probar códigos a ciegas está frenado.
+
+## Hojas para imprimir
+
+*Grupos → 🖨 Imprimir hojas* (o *Avisos → 🖨*): grupos con todos los enfrentamientos y casillas para los goles de cada
+partida, eliminatorias (con huecos para los que aún no se conocen), lista de parejas para pasar lista y QR de las mesas.
+Los resultados ya apuntados salen rellenos.
+
+## Sorteo en directo
+
+*Grupos → 🎬 Sorteo en directo* y, en doble K, *🎬 Sortear cruces en directo*: pantalla completa para proyectar con el
+bombo sacando parejas una a una. Botones *Rápido*, *Ver todo* y *Pantalla completa*. El sorteo se hace al pulsar y la
+animación lo va mostrando; se puede volver a ver cuando se quiera.
+
+## Modo por niveles a la vista
+
+En *Cuadros* aparece «Así se mueven las parejas»: por categoría, cuántas entran, siguen en ganadores y en perdedores,
+bajan a la siguiente y están eliminadas. Cada pareja ve su camino en *Mi pareja* (p. ej. 5º grupo B → Oro → R1 ✓ → R2 ✗ → baja a Plata).
+
+## Seguridad
+
+- En el código no hay ninguna clave ni contraseña.
+- **Freno contra quien intenta adivinar contraseñas** (en la base de datos): 5 fallos desde un dispositivo en 15 min →
+  bloqueado 15 min, y cada reincidencia el doble (hasta 24 h); 40 fallos entre todos en 10 min → pausa de 10 min.
+  También limita inscripciones y resultados enviados por dispositivo.
+
 ## Mesas
 
 *Llamar partidos y avisar* rellena las mesas libres con la cola (grupos por jornadas, luego ganadores y perdedores
@@ -67,6 +102,7 @@ Los teléfonos **no son públicos**: van en una tabla privada que sólo lee la E
 En el código **no hay ninguna clave ni contraseña**: todo pasa por dos Edge Functions y las contraseñas son secretos de Supabase.
 
 1. **Supabase → SQL Editor → New query**: pega `supabase/migrations/20261012000000_torneos.sql` y pulsa *Run*.
+   Repite con `supabase/migrations/20261013000000_freno_accesos.sql` (sin él no se puede entrar: el freno es obligatorio).
 2. **Edge Functions → Deploy a new function → Via Editor**: nombre `torneo-api`, pega `supabase/functions/torneo-api/index.ts`, *Deploy*.
    En los ajustes de la función desactiva **Verify JWT**.
 3. Igual con `amf-web` (`supabase/functions/amf-web/index.ts`), también sin *Verify JWT*.
@@ -90,7 +126,7 @@ desde otros móviles.
 ## Tests del motor
 
 ```
-node --test zt4k9m/tests/*.test.js   # 16 tests
+node --test zt4k9m/tests/*.test.js   # 17 tests
 ```
 
 ## Ideas para seguir mejorando

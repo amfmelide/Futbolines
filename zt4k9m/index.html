@@ -49,7 +49,11 @@ const CODIGO = params.get("t") || "";
 const TV = params.has("tv");
 if (TV) document.body.classList.add("tv");
 
-let ST = null, VERSION = 0, tab = params.get("v") || "inicio", filtro = "", catVista = null;
+// QR de la mesa: ?t=CODIGO&mesa=3&k=código-del-torneo
+const MESA = Number(params.get("mesa")) || null;
+const KMESA = params.get("k") || "";
+let ST = null, VERSION = 0, tab = MESA ? "mesa" : (params.get("v") || "inicio"), filtro = "", catVista = null;
+const RM = { grupo: null, partido: null, goles: [], revisar: null, enviado: null, error: "" };   // estado del formulario de la mesa
 let mesaAvisada = null;                                    // para no repetir el pitido
 const kYo = "torneo-yo:" + CODIGO;
 let YO = (() => { try { return JSON.parse(localStorage.getItem(kYo)) || null; } catch (_) { return null; } })();
@@ -126,12 +130,14 @@ function revisarMiLlamada(antes) {
   if (document.hidden && "Notification" in window && Notification.permission === "granted") {
     navigator.serviceWorker.getRegistration().then(reg => reg && reg.showNotification("¡Os toca! Mesa " + p.mesa, { body: "Contra " + rival, tag: "llamada", icon: "icon-192.png" }));
   }
-  tab = "yo";
+  if (tab !== "mesa") tab = "yo";
 }
 
 /* ---------------- pintado ---------------- */
 function pestañas() {
-  const t = [["inicio", "En juego"]];
+  const t = [];
+  if (MESA) t.push(["mesa", "Mesa " + MESA]);
+  t.push(["inicio", "En juego"]);
   if (ST.config.inscripcionAbierta) t.push(["inscribirse", "Inscribirse"]);
   t.push(["yo", YO ? "Mi pareja" : "¿Cuándo juego?"]);
   if (ST.grupos.length) t.push(["grupos", "Grupos"]);
@@ -144,7 +150,7 @@ function pestañas() {
 function pintar() {
   if (!ST) return;
   pestañas();
-  const vistas = { inicio: vInicio, inscribirse: vInscribirse, yo: vYo, grupos: vGrupos, cuadros: vCuadros, parejas: vParejas };
+  const vistas = { mesa: vMesa, inicio: vInicio, inscribirse: vInscribirse, yo: vYo, grupos: vGrupos, cuadros: vCuadros, parejas: vParejas };
   if (TV) { $("#main").innerHTML = vTV(); return; }
   const foco = document.activeElement && document.activeElement.id;
   const pos = foco && document.activeElement.selectionStart;
@@ -157,11 +163,22 @@ document.addEventListener("click", e => {
   if (b) { tab = b.dataset.tab; pintar(); window.scrollTo({ top: 0 }); return; }
   const c = e.target.closest("[data-cat]");
   if (c) { catVista = c.dataset.cat; pintar(); return; }
+  const mg = e.target.closest("[data-mg]");
+  if (mg) { RM.grupo = mg.dataset.mg; RM.partido = null; pintar(); return; }
+  const mp = e.target.closest("[data-mp]");
+  if (mp) { elegirPartidoMesa(mp.dataset.mp); return; }
+  const ma = e.target.closest("[data-mesa-acc]");
+  if (ma) { accionMesa(ma.dataset.mesaAcc); return; }
   const y = e.target.closest("[data-elegir]");
   if (y) { guardarYo({ equipoId: y.dataset.elegir }); mesaAvisada = null; revisarMiLlamada(null); tab = "yo"; pintar(); window.scrollTo({ top: 0 }); }
 });
 document.addEventListener("input", e => {
   if (e.target.id === "buscar") { filtro = e.target.value; pintar(); }
+  if (e.target.dataset.gol) {                         // goles del formulario de la mesa (se guardan aunque la página se repinte)
+    const [i, lado] = e.target.dataset.gol.split(":");
+    RM.goles[+i][+lado] = e.target.value;
+    const m = $("#mesaMarcador"); if (m) m.innerHTML = marcadorMesaHtml();
+  }
 });
 
 function vResumen() {
@@ -207,6 +224,111 @@ function vFormato() {
   };
   return `<div class="card small" style="margin-bottom:16px"><h3>Formato</h3><ul style="padding-left:18px" class="stack">
     <li><b>Grupos</b> de ${ST.config.tamGrupo}, todos contra todos · ${esc(T.textoFormato(f.grupos))}</li>${ds.map(bloque).join("")}</ul></div>`;
+}
+
+/* ---------- QR de la mesa: las parejas meten su resultado ---------- */
+function partidoMesa() { return RM.partido && T.partido(ST, RM.partido); }
+
+function elegirPartidoMesa(id) {
+  const p = T.partido(ST, id);
+  if (!p) return;
+  const f = T.formatoDe(ST, p), v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
+  const n = f.tipo === "fijo" ? f.partidas : 2 * f.partidas - 1 - v;
+  RM.partido = id; RM.goles = Array.from({ length: n }, () => ["", ""]); RM.revisar = null; RM.error = ""; RM.enviado = null;
+  pintar(); window.scrollTo({ top: 0 });
+}
+
+function golesMesa() { return RM.goles.filter(([a, b]) => a !== "" && b !== "").map(([a, b]) => [+a, +b]); }
+function calcularMesa() {
+  const p = partidoMesa(), gs = golesMesa();
+  const v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
+  return { gs, ra: gs.filter(([a, b]) => a > b).length + (p.ventaja === "a" ? v : 0), rb: gs.filter(([a, b]) => b > a).length + (p.ventaja === "b" ? v : 0) };
+}
+function marcadorMesaHtml() {
+  const p = partidoMesa(); if (!p) return "";
+  const { ra, rb } = calcularMesa();
+  return `<b>${esc(nombre(ST, p.a))}</b> <span class="pill gold" style="font-size:1rem">${ra} - ${rb}</span> <b>${esc(nombre(ST, p.b))}</b>`;
+}
+
+function accionMesa(acc) {
+  const p = partidoMesa();
+  if (acc === "volver") { RM.partido = null; RM.revisar = null; RM.error = ""; pintar(); return; }
+  if (acc === "otro") { RM.partido = null; RM.revisar = null; RM.enviado = null; RM.grupo = null; pintar(); return; }
+  if (acc === "corregir") { RM.revisar = null; pintar(); return; }
+  if (acc === "revisar") {
+    const { gs, ra, rb } = calcularMesa();
+    if (!gs.length) { RM.error = "Escribe los goles de cada partida."; pintar(); return; }
+    try {
+      // se comprueba con las mismas reglas que usa la organización
+      T.registrarResultado(JSON.parse(JSON.stringify(ST)), p.id, null, null, { goles: gs });
+    } catch (e) { RM.error = e.message; pintar(); return; }
+    RM.error = ""; RM.revisar = { gs, ra, rb }; pintar(); return;
+  }
+  if (acc === "enviar" && RM.revisar) enviarMesa();
+}
+
+async function enviarMesa() {
+  const p = partidoMesa(), r = RM.revisar;
+  const b = $("[data-mesa-acc='enviar']"); if (b) { b.disabled = true; b.textContent = "Enviando…"; }
+  try {
+    const res = await S.proponer(CODIGO, KMESA, { partidoId: p.id, goles: r.gs, ra: r.ra, rb: r.rb, mesa: MESA });
+    RM.enviado = { texto: `${nombre(ST, p.a)} ${r.ra}-${r.rb} ${nombre(ST, p.b)}`, modo: res.modo };
+    RM.partido = null; RM.revisar = null;
+  } catch (e) { RM.error = e.message; }
+  pintar(); window.scrollTo({ top: 0 });
+}
+
+function vMesa() {
+  const modo = ST.config.resultadosParejas || "no";
+  const enMesa = ST.partidos.filter(p => p.estado === "mesa" && p.mesa === MESA);
+  let h = `<h2>Mesa ${MESA}</h2>`;
+  const tarjetaEnMesa = enMesa.map(p => `<div class="card" style="margin-bottom:12px;border-color:var(--ok)">
+      <span class="dim small">Jugando ahora en esta mesa · ${esc(T.nombrePartido(ST, p))} · ${esc(T.textoFormato(T.formatoDe(ST, p)))}</span>
+      <h3 style="margin:6px 0 10px">${esc(nombre(ST, p.a))} <span class="dim">contra</span> ${esc(nombre(ST, p.b))}</h3>
+      ${modo === "no" ? "" : `<button class="btn pri big" style="width:100%" data-mp="${esc(p.id)}">Apuntar el resultado</button>`}</div>`).join("");
+  if (modo === "no") return h + tarjetaEnMesa + `<div class="card">En este torneo los resultados los apunta la organización. Cuando terminéis, avisad en la mesa de control.</div>`;
+  if (RM.enviado) {
+    return h + `<div class="card" style="border-color:var(--ok)"><h3>✅ Resultado enviado</h3><p style="margin:6px 0 12px">${esc(RM.enviado.texto)}</p>
+      <p class="small dim">${RM.enviado.modo === "directo" ? "Se apunta solo en unos segundos. Si hay un error, avisad en la mesa de control." : "La organización lo revisará y lo apuntará en unos segundos."}</p>
+      <button class="btn" style="margin-top:12px" data-mesa-acc="otro">Apuntar otro partido</button></div>`;
+  }
+  const p = partidoMesa();
+  if (p) {
+    if (p.estado === "fin") { RM.partido = null; return h + `<div class="card">Ese partido ya tiene resultado (${p.ra}-${p.rb}). Si está mal, avisad en la mesa de control.</div><button class="btn" style="margin-top:12px" data-mesa-acc="otro">Elegir otro partido</button>`; }
+    const f = T.formatoDe(ST, p), v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
+    if (RM.revisar) {
+      return h + `<div class="card stack" style="border-color:var(--gold2)"><h3>¿Es correcto?</h3>
+        <div style="font-size:1.15rem">${marcadorMesaHtml()}</div>
+        <div class="small dim">Partidas: ${RM.revisar.gs.map(g => g.join("-")).join(" · ")}${v ? ` · ${esc(nombre(ST, p[p.ventaja]))} empezaba ${v}-0` : ""}</div>
+        <div class="row"><button class="btn ok big" data-mesa-acc="enviar">Sí, enviar</button><button class="btn" data-mesa-acc="corregir">Corregir</button></div>
+        ${RM.error ? `<div class="pill bad">${esc(RM.error)}</div>` : ""}</div>`;
+    }
+    return h + `<div class="card stack">
+      <div class="small dim">${esc(T.nombrePartido(ST, p))} · ${esc(T.textoFormato(f))}${v ? ` · ${esc(nombre(ST, p[p.ventaja]))} empieza ${v}-0` : ""}</div>
+      <div class="partidas"><span></span><b class="small" style="text-align:center">${esc(nombre(ST, p.a))}</b><b class="small" style="text-align:center">${esc(nombre(ST, p.b))}</b>
+        ${RM.goles.map((g, i) => `<span class="small dim">Partida ${i + 1 + v}</span>
+          <input type="number" inputmode="numeric" min="0" max="${f.goles + 5}" id="gol-${i}-0" data-gol="${i}:0" value="${esc(g[0])}" aria-label="Goles de ${esc(nombre(ST, p.a))} en la partida ${i + 1}">
+          <input type="number" inputmode="numeric" min="0" max="${f.goles + 5}" id="gol-${i}-1" data-gol="${i}:1" value="${esc(g[1])}" aria-label="Goles de ${esc(nombre(ST, p.b))} en la partida ${i + 1}">`).join("")}</div>
+      <div id="mesaMarcador" style="text-align:center">${marcadorMesaHtml()}</div>
+      <p class="small dim">Deja vacías las partidas que no se jugaron.</p>
+      ${RM.error ? `<div class="pill bad">${esc(RM.error)}</div>` : ""}
+      <div class="row"><button class="btn pri big" data-mesa-acc="revisar">Revisar y enviar</button><button class="btn" data-mesa-acc="volver">Otro partido</button></div></div>`;
+  }
+  h += tarjetaEnMesa;
+  // elegir grupo o categoría y luego la partida
+  const grupos = ST.grupos.filter(g => ST.partidos.some(x => x.tipo === "G" && x.grupo === g.id && x.estado !== "fin"));
+  const cats = ST.config.categorias.filter(c => T.partidosCuadro(ST, c.id).some(x => x.estado !== "fin" && x.a && x.b && !x.bye));
+  if (!grupos.length && !cats.length) return h + `<div class="vacio">No hay partidos pendientes.</div>`;
+  h += `<h3 style="margin-top:8px">${enMesa.length ? "¿Otro partido? " : ""}Elige tu grupo o categoría</h3><div class="row" style="margin:8px 0 14px">` +
+    grupos.map(g => `<button class="btn sm ${RM.grupo === "G:" + g.id ? "pri" : ""}" data-mg="G:${esc(g.id)}">Grupo ${esc(g.id)}</button>`).join("") +
+    cats.map(c => `<button class="btn sm ${RM.grupo === "K:" + c.id ? "pri" : ""}" data-mg="K:${esc(c.id)}">${esc(c.nombre)}</button>`).join("") + `</div>`;
+  if (RM.grupo) {
+    const [tipo, id] = [RM.grupo.slice(0, 1), RM.grupo.slice(2)];
+    const ps = ST.partidos.filter(x => x.estado !== "fin" && x.a && x.b && !x.bye && (tipo === "G" ? x.tipo === "G" && x.grupo === id : x.tipo === "K" && x.cat === id));
+    h += `<h3>¿Qué partida habéis jugado?</h3><div class="stack">` + ps.map(x => `<button class="card" style="text-align:left;cursor:pointer;width:100%" data-mp="${esc(x.id)}">
+      <b>${esc(nombre(ST, x.a))}</b> <span class="dim">contra</span> <b>${esc(nombre(ST, x.b))}</b><div class="small dim">${esc(T.nombrePartido(ST, x))}${x.estado === "mesa" ? ` · mesa ${x.mesa}` : ""}</div></button>`).join("") + `</div>`;
+  }
+  return h;
 }
 
 /* ---------- inscripción ---------- */
@@ -275,6 +397,8 @@ function vYo() {
   h += `<div class="card" style="margin-bottom:16px"><div class="row"><div><h3 style="margin:0">${esc(eq.nombre)}</h3><div class="dim small">${esc(jugadores(ST, id))}</div></div><span class="spacer"></span>
     <button class="btn sm" onclick="guardarYo(null);pintar()">No somos nosotros</button></div>
     <div id="avisos" style="margin-top:12px">${htmlAvisos()}</div></div>`;
+  const camino = TC.htmlCamino(ST, id);
+  if (camino) h += `<div class="card" style="margin-bottom:16px"><h3>Vuestro camino</h3>${camino}</div>`;
   const g = ST.grupos.find(g => g.equipos.includes(id));
   if (g) h += TC.htmlGrupo(ST, g, { yo: id });
   const ko = ST.partidos.filter(p => p.tipo === "K" && !p.bye && (p.a === id || p.b === id));
@@ -337,6 +461,7 @@ function vCuadros() {
   const cats = ST.config.categorias;
   return `<h2>Cuadros</h2><div class="row" style="margin-bottom:12px">` + cats.map(c =>
     `<button class="btn sm ${catVista === c.id ? "pri" : ""}" data-cat="${c.id}">${esc(c.nombre)}</button>`).join("") + `</div>` +
+    (T.esNiveles(ST, catVista) ? `<h3 class="seccion">Así se mueven las parejas</h3>` + TC.htmlFlujoNiveles(ST, (T.categoria(ST, catVista).division || T.divisiones(ST)[0].id)) : "") +
     TC.htmlCuadro(ST, catVista, { yo: YO && YO.equipoId });
 }
 

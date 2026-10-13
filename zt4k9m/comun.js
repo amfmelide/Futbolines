@@ -136,6 +136,32 @@
     return `<div class="${cls.join(" ")}" data-partido="${esc(p.id)}">${linea("a")}${linea("b")}${info}</div>`;
   }
 
+  /* ---------- modo por niveles: esquema de flujo y camino de cada pareja ---------- */
+  function htmlFlujoNiveles(st, div) {
+    const res = T.resumenNiveles(st, div);
+    if (!res) return "";
+    const est = { campeon: "pill gold", "fase final": "pill ok", "directo a la final": "pill ok", jugando: "pill", esperando: "pill" };
+    return `<div class="flujo" role="list">` + res.map((r, k) => `
+      ${k ? `<div class="flujo-flecha" aria-hidden="true"><span>${r.bajaron}</span>↓ bajan</div>` : ""}
+      <div class="flujo-cat card" role="listitem">
+        <div class="row"><b>${esc(r.cat.nombre)}</b><span class="${est[r.estado]}">${esc(r.estado)}</span><span class="spacer"></span><span class="small dim">${r.cat.formato === "doble" ? "doble K" : "simple"}</span></div>
+        <div class="flujo-nums">
+          <div><b>${r.entran}</b><span>entran</span></div>
+          <div><b>${r.enGanadores}</b><span>en ganadores</span></div>
+          ${r.enPerdedores != null ? `<div><b>${r.enPerdedores}</b><span>en perdedores</span></div>` : ""}
+          ${res[k + 1] ? `<div><b>${r.bajan}</b><span>bajan a ${esc(res[k + 1].cat.nombre)}</span></div>` : ""}
+          <div><b>${r.fuera}</b><span>eliminadas</span></div>
+        </div>
+        <div class="small dim">${[r.deGrupo ? `${r.deGrupo} desde los grupos` : "", r.quintos ? `${r.quintos} quintos de grupo` : "", r.bajaron ? `${r.bajaron} bajaron de ${esc(res[k - 1] ? res[k - 1].cat.nombre : "")}` : "", r.aPerdedores ? `${r.aPerdedores} pasaron a perdedores` : ""].filter(Boolean).join(" · ")}</div>
+      </div>`).join("") + `</div>`;
+  }
+
+  function htmlCamino(st, id) {
+    const pasos = T.caminoNiveles(st, id);
+    if (!pasos.length) return "";
+    return `<div class="camino">` + pasos.map(p => `<span class="paso paso-${p.tipo}" title="${p.rival ? "contra " + esc(nombre(st, p.rival)) + " " + esc(p.marcador) : ""}">${esc(p.texto)}${p.rival ? `<small>${esc(nombre(st, p.rival))} · ${esc(p.marcador)}</small>` : ""}</span>`).join('<span class="paso-sep" aria-hidden="true">→</span>') + `</div>`;
+  }
+
   /* ---------- mesas ---------- */
   function htmlMesasPublicas(st) {
     const enMesa = st.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
@@ -215,6 +241,74 @@
     } catch (_) {}
   }
 
+  /* ---------- sorteo en directo (para proyectar) ----------
+     sorteoEnDirecto({ titulo, columnas:[{titulo, fijos:[texto], huecos:n}], bolas:[{col, texto, sub}] })
+     Las "bolas" salen en orden del bombo y entran en su columna. */
+  function sorteoEnDirecto(op) {
+    const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const capa = document.createElement("div");
+    capa.className = "sd";
+    capa.innerHTML = `<div class="sd-cab"><div class="sd-tit">${esc(op.titulo)}</div><span class="spacer"></span>
+        <button class="btn sm" data-sd="vel">${op.bolas.length > 60 ? "Normal" : "Rápido"}</button><button class="btn sm" data-sd="fin">Ver todo</button>
+        <button class="btn sm" data-sd="full">⛶ Pantalla completa</button><button class="btn sm" data-sd="cerrar">Cerrar</button></div>
+      <div class="sd-cuerpo"><div class="sd-bombo"><div class="sd-bola" aria-live="polite"><span class="sd-nom">Pulsa empezar</span><span class="sd-sub"></span></div>
+        <button class="btn pri big" data-sd="ir">▶ Empezar</button><div class="sd-cuenta small dim"></div></div>
+        <div class="sd-cols">${op.columnas.map((c, i) => `<div class="sd-col"><div class="sd-ct">${esc(c.titulo)}</div>
+          ${(c.fijos || []).map(f => `<div class="sd-fijo">${esc(f)}</div>`).join("")}<div class="sd-lista" data-col="${i}"></div></div>`).join("")}</div></div>`;
+    document.body.appendChild(capa);
+    document.documentElement.style.overflow = "hidden";
+    const bola = capa.querySelector(".sd-bola"), nom = capa.querySelector(".sd-nom"), sub = capa.querySelector(".sd-sub");
+    const cuenta = capa.querySelector(".sd-cuenta");
+    const todos = op.bolas.map(b => b.texto);
+    let i = 0, rapido = op.bolas.length > 60, corriendo = false, cancel = false;   // con muchas parejas empieza en rápido
+    const espera = ms => new Promise(r => setTimeout(r, quieto ? 0 : rapido ? ms / 4 : ms));
+    function colocar(b, animar) {
+      const el = document.createElement("div");
+      el.className = "sd-item" + (animar ? " sd-entra" : "");
+      el.innerHTML = `<b>${esc(b.texto)}</b>${b.sub ? `<span>${esc(b.sub)}</span>` : ""}`;
+      capa.querySelector(`.sd-lista[data-col="${b.col}"]`).appendChild(el);
+      if (animar) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    async function sacar() {
+      if (corriendo) return;
+      corriendo = true;
+      capa.querySelector('[data-sd="ir"]').hidden = true;
+      while (i < op.bolas.length && !cancel) {
+        const b = op.bolas[i];
+        bola.classList.add("sd-gira");
+        const vueltas = quieto ? 0 : rapido ? 6 : 12;
+        for (let k = 0; k < vueltas && !cancel; k++) {           // los nombres pasan cada vez más despacio
+          nom.textContent = todos[Math.floor(Math.random() * todos.length)];
+          sub.textContent = "";
+          await espera(40 + k * k * 1.6);
+        }
+        bola.classList.remove("sd-gira");
+        nom.textContent = b.texto; sub.textContent = b.sub || "";
+        bola.classList.add("sd-sale");
+        await espera(900);
+        bola.classList.remove("sd-sale");
+        colocar(b, true);
+        i++;
+        cuenta.textContent = `${i} de ${op.bolas.length}`;
+        await espera(350);
+      }
+      if (i >= op.bolas.length) { nom.textContent = "¡Sorteo terminado!"; sub.textContent = ""; }
+      corriendo = false;
+    }
+    function verTodo() { cancel = true; while (i < op.bolas.length) colocar(op.bolas[i++], false); cuenta.textContent = `${i} de ${op.bolas.length}`; nom.textContent = "¡Sorteo terminado!"; sub.textContent = ""; capa.querySelector('[data-sd="ir"]').hidden = true; }
+    capa.addEventListener("click", e => {
+      const a = e.target.closest("[data-sd]"); if (!a) return;
+      const acc = a.dataset.sd;
+      if (acc === "ir") sacar();
+      if (acc === "vel") { rapido = !rapido; a.textContent = rapido ? "Normal" : "Rápido"; }
+      if (acc === "fin") verTodo();
+      if (acc === "full") { try { (document.fullscreenElement ? document.exitFullscreen() : capa.requestFullscreen()).catch(() => {}); } catch (_) {} }
+      if (acc === "cerrar") { cancel = true; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {} capa.remove(); document.documentElement.style.overflow = ""; }
+    });
+    cuenta.textContent = `0 de ${op.bolas.length}`;
+    return capa;
+  }
+
   function tema() {
     try { const t = localStorage.getItem("torneo-tema"); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
   }
@@ -228,6 +322,6 @@
   window.TC = {
     esc, $, $$, nombre, jugadores, colorCat, catDePosicion, hace, FASES,
     htmlGrupo, htmlFilaPartido, htmlCuadro, htmlMesasPublicas,
-    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema
+    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema, sorteoEnDirecto, htmlFlujoNiveles, htmlCamino
   };
 })();

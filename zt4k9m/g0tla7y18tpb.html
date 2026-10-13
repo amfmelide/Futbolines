@@ -44,6 +44,8 @@ const { esc, $, $$, nombre, jugadores } = TC;
 let ST = null, VERSION = 0, CODIGO = "", PASS = "", PRIV = { telefonos: {}, push: {} }, PUSH_OK = false;
 let tab = "mesas", filtro = "", catVista = null, auto = true, guardando = null, pendiente = false;
 const HIST = [];
+let PROP = [];                                   // resultados enviados por las parejas desde el QR de la mesa
+const PROP_NO_AUTO = new Set();                  // los que no se pudieron apuntar solos (se revisan a mano)
 try { auto = localStorage.getItem("torneo-auto") !== "0"; } catch (_) {}
 
 /* =================================================================
@@ -176,6 +178,8 @@ async function abrir(codigo) {
   if (ST.fase === "inscripcion") tab = "parejas";
   pintar();
   setInterval(sondear, (C.refrescoSeg || 10) * 1000);
+  setInterval(cargarPropuestas, 8000);
+  cargarPropuestas();
   setInterval(() => { if (tab === "mesas") pintar(); }, 30000);
 }
 
@@ -309,6 +313,7 @@ function vMesas() {
     <button class="btn pri" onclick="rellenar()" ${!libres || !cola.length ? "disabled" : ""}>▶ ${Math.min(libres, cola.length) ? `Llamar a ${Math.min(libres, cola.length)} partido(s) y avisar` : "Llamar partidos y avisar"}</button>
     <label class="check"><input type="checkbox" ${auto ? "checked" : ""} onchange="auto=this.checked;try{localStorage.setItem('torneo-auto',auto?'1':'0')}catch(_){}"> Automático: al meter un resultado se llama al siguiente</label>
     <span class="spacer"></span><span class="dim small">${cola.length} en cola · ${libres} mesa(s) libre(s)</span></div>`;
+  h += htmlPropuestas();
   h += avisoCategorias();
   h += `<div class="mesas">`;
   for (let m = 1; m <= ST.config.mesas; m++) {
@@ -336,11 +341,82 @@ function avisoCategorias() {
   if (!T.gruposTerminados(ST)) return "";
   const cruces = crucesListos();
   const hc = cruces.length ? `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)">🎲 Ya quedan 4 en ganadores y 4 en perdedores de <b>${cruces.map(c => esc(c.nombre)).join(", ")}</b>.
-    ${cruces.map(c => `<button class="btn sm pri" onclick="sortearCruces('${c.id}')">Sortear cruces de ${esc(c.nombre)}</button>`).join(" ")}</div>` : "";
+    ${cruces.map(c => `<button class="btn sm pri" onclick="sortearCruces('${c.id}')">🎬 Sortear cruces de ${esc(c.nombre)} en directo</button>`).join(" ")}</div>` : "";
   const listas = ST.config.categorias.filter(c => !(ST.cuadros[c.id] || {}).generado && T.estadoCategoria(ST, c.id).listo);
   if (!listas.length) return hc;
   return hc + `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)">🏁 Ya se puede generar el cuadro de <b>${listas.map(c => esc(c.nombre)).join(", ")}</b>.
     ${listas.map(c => `<button class="btn sm pri" onclick="generar('${c.id}')">Generar ${esc(c.nombre)}</button>`).join(" ")}</div>`;
+}
+
+/* ---------- resultados enviados desde el QR de la mesa ---------- */
+async function cargarPropuestas() {
+  if (!ST || (ST.config.resultadosParejas || "no") === "no") { if (PROP.length) { PROP = []; pintar(); } return; }
+  if (guardando || $(".modal-bg")) return;
+  let lista;
+  try { lista = await S.propuestas(CODIGO, PASS); } catch (_) { return; }
+  const antes = PROP.map(x => x.id).join();
+  PROP = lista;
+  if (ST.config.resultadosParejas === "directo") {
+    for (const pr of [...PROP]) if (!PROP_NO_AUTO.has(pr.id)) await aplicarPropuesta(pr.id, true);
+  }
+  if (PROP.map(x => x.id).join() !== antes && tab === "mesas") pintar();
+  if (PROP.length && ST.config.resultadosParejas === "validar" && PROP.map(x => x.id).join() !== antes) TC.toast(`📥 ${PROP.length} resultado(s) de las mesas por revisar`);
+}
+
+async function aplicarPropuesta(idProp, auto) {
+  const pr = PROP.find(x => x.id === idProp);
+  if (!pr) return;
+  const p = T.partido(ST, pr.partido_id);
+  if (!p || p.estado === "fin") {
+    if (auto) { PROP_NO_AUTO.add(pr.id); return; }   // conflicto: lo decide el organizador
+    return descartarPropuesta(idProp, p ? "El partido ya tenía resultado" : "El partido ya no existe");
+  }
+  const estabaEnMesa = p.estado === "mesa";
+  const op = pr.goles && pr.goles.length ? { goles: pr.goles } : {};
+  let ok;
+  if (auto) {                                    // en automático, sin avisos de error repetidos
+    try { const prueba = JSON.parse(JSON.stringify(ST)); T.registrarResultado(prueba, p.id, pr.ra, pr.rb, op); } catch (e) { PROP_NO_AUTO.add(pr.id); return; }
+  }
+  ok = cambio(() => T.registrarResultado(ST, p.id, pr.ra, pr.rb, op), `QR mesa ${pr.mesa || "?"}: ${nombre(ST, p.a)} ${pr.ra}-${pr.rb} ${nombre(ST, p.b)}`);
+  if (!ok) { PROP_NO_AUTO.add(pr.id); return; }
+  try { await S.resolverPropuesta(CODIGO, PASS, pr.id, "aceptada"); } catch (_) {}
+  PROP = PROP.filter(x => x.id !== pr.id);
+  if (!auto) TC.toast("Resultado apuntado", "ok");
+  trasResultado(estabaEnMesa);
+  pintar();
+}
+
+async function descartarPropuesta(idProp, motivo) {
+  try { await S.resolverPropuesta(CODIGO, PASS, idProp, "rechazada", motivo || "Descartado por la organización"); } catch (e) { return TC.toast(esc(e.message), "bad"); }
+  PROP = PROP.filter(x => x.id !== idProp);
+  pintar();
+}
+
+function editarPropuesta(idProp) {
+  const pr = PROP.find(x => x.id === idProp);
+  if (pr) modalResultado(pr.partido_id, { ra: pr.ra, rb: pr.rb, goles: pr.goles });
+}
+
+// Al guardar un resultado a mano, los enviados desde la mesa para ese partido quedan resueltos
+async function resolverPropuestasDe(partidoId) {
+  for (const pr of PROP.filter(x => x.partido_id === partidoId)) { try { await S.resolverPropuesta(CODIGO, PASS, pr.id, "aceptada", "Apuntado por la organización"); } catch (_) {} }
+  PROP = PROP.filter(x => x.partido_id !== partidoId);
+}
+
+function htmlPropuestas() {
+  const modo = ST.config.resultadosParejas || "no";
+  if (modo === "no" || !PROP.length) return "";
+  return `<div class="card" style="margin-bottom:14px;border-color:var(--accent)"><h3>📥 Resultados enviados desde las mesas <span class="pill">${PROP.length}</span></h3>
+    <p class="small dim" style="margin-bottom:8px">${modo === "directo" ? "Se apuntan solos; aquí quedan sólo los que necesitan que los mires (partido ya jugado o marcador no válido)." : "Revísalos y apúntalos con un toque."}</p>
+    ${PROP.map(pr => {
+      const p = T.partido(ST, pr.partido_id);
+      if (!p) return `<div class="pg"><span class="a dim">Partido desconocido</span><span class="res">?</span><span class="b"></span><span class="row" style="gap:4px"><button class="btn sm" onclick="descartarPropuesta(${pr.id})">Descartar</button></span></div>`;
+      const conflicto = p.estado === "fin" ? `<div class="small" style="color:var(--warn)">Ya tenía resultado: ${p.ra}-${p.rb}</div>` : "";
+      return `<div class="pg" style="grid-template-columns:1fr auto 1fr auto"><span class="a">${esc(nombre(ST, p.a))}</span><span class="res">${pr.ra}-${pr.rb}</span><span class="b">${esc(nombre(ST, p.b))}</span>
+        <span class="row" style="gap:4px"><span class="small dim">${pr.mesa ? "Mesa " + pr.mesa + " · " : ""}${esc(T.nombrePartido(ST, p))}${pr.goles && pr.goles.length ? " · " + pr.goles.map(g => g.join("-")).join(" ") : ""}</span>
+        ${p.estado === "fin" ? "" : `<button class="btn sm ok" onclick="aplicarPropuesta(${pr.id})">✓ Apuntar</button>`}
+        <button class="btn sm" onclick="editarPropuesta(${pr.id})">✎</button><button class="btn sm" onclick="descartarPropuesta(${pr.id})" aria-label="Descartar">✕</button></span>${conflicto}</div>`;
+    }).join("")}</div>`;
 }
 
 function rellenar() {
@@ -370,6 +446,10 @@ function mesaOnOff(m) {
 }
 
 /* ---------- avisos push / WhatsApp ---------- */
+function urlImprimir(que) {
+  return "imprimir.html?t=" + encodeURIComponent(CODIGO) + (que ? "&que=" + que : "") + (S.modo === "local" ? "&local" : "");
+}
+
 function urlPublica(extra) {
   const base = location.href.replace(/[^/]*$/, "index.html");
   return base + "?t=" + encodeURIComponent(CODIGO) + (extra || "");
@@ -424,13 +504,13 @@ function mostrarWhatsApp(lista) {
 }
 
 /* ---------- resultado ---------- */
-function modalResultado(id) {
+function modalResultado(id, relleno) {
   const p = T.partido(ST, id);
   if (!p || !p.a || !p.b || p.bye) return;
   const fin = p.estado === "fin";
   const fmt = T.formatoDe(ST, p);
   const v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
-  const ini = fin ? [p.ra, p.rb] : [p.ventaja === "a" ? v : 0, p.ventaja === "b" ? v : 0];
+  const ini = relleno ? [relleno.ra ?? 0, relleno.rb ?? 0] : fin ? [p.ra, p.rb] : [p.ventaja === "a" ? v : 0, p.ventaja === "b" ? v : 0];
   // marcadores posibles con este formato
   const posibles = [];
   if (fmt.tipo === "fijo") for (let i = fmt.partidas; i >= 0; i--) posibles.push([i, fmt.partidas - i]);
@@ -440,7 +520,7 @@ function modalResultado(id) {
   }
   const validos = posibles.filter(([x, y]) => (p.ventaja === "a" ? x >= v : true) && (p.ventaja === "b" ? y >= v : true));
   const nPartidas = fmt.tipo === "fijo" ? fmt.partidas : 2 * fmt.partidas - 1 - v;
-  const g = p.goles || [];
+  const g = (relleno && relleno.goles) || p.goles || [];
   const filasGoles = [...Array(nPartidas).keys()].map(i => `<span class="small dim">Partida ${i + 1 + (p.ventaja ? v : 0)}</span>
     <input type="number" min="0" max="${fmt.goles + 5}" class="gA" inputmode="numeric" value="${g[i] ? g[i][0] : ""}" aria-label="Goles ${esc(nombre(ST, p.a))}">
     <input type="number" min="0" max="${fmt.goles + 5}" class="gB" inputmode="numeric" value="${g[i] ? g[i][1] : ""}" aria-label="Goles ${esc(nombre(ST, p.b))}">`).join("");
@@ -483,6 +563,7 @@ function modalResultado(id) {
       if (cambio(() => T.registrarResultado(ST, id, ra, rb, op), `${nombre(ST, p.a)} ${op && op.wo ? "W.O." : ra + "-" + rb} ${nombre(ST, p.b)}`)) {
         cerrar();
         TC.toast("Resultado guardado", "ok");
+        resolverPropuestasDe(id).then(() => pintar());
         trasResultado(estabaEnMesa);
       }
     };
@@ -519,13 +600,9 @@ function crucesListos() {
 
 function sortearCruces(catId) {
   const cat = T.categoria(ST, catId);
-  let cruces = [];
-  if (!cambio(() => { cruces = T.sortearCruce(ST, catId); }, "Sorteo de cruces: " + cat.nombre)) return;
-  const v = ST.config.ventajaCruce;
-  TC.modal(`<h3>🎲 Cruces de ${esc(cat.nombre)}</h3><p class="small dim" style="margin-bottom:10px">El de ganadores empieza ${v}-0 · ${esc(T.textoFormato(cat.partidas || ST.config.formatos.eliminatoria))}</p>
-    ${cruces.map(p => `<div class="card" style="margin-bottom:8px"><b>${esc(nombre(ST, p.a))}</b> <span class="pill gold">${v}-0</span><div class="dim small">contra</div><b>${esc(nombre(ST, p.b))}</b></div>`).join("")}
-    <button class="btn pri" data-cerrar style="width:100%">Vale</button>`);
+  if (!cambio(() => T.sortearCruce(ST, catId), "Sorteo de cruces: " + cat.nombre)) return;
   catVista = catId;
+  verCrucesDirecto(catId);
 }
 
 /* =================================================================
@@ -586,6 +663,7 @@ function modalPareja(id) {
       ${id ? `<button type="button" class="btn ${e.baja ? "" : "bad"}" id="pBaja">${e.baja ? "Volver a dar de alta" : "Dar de baja"}</button>` : ""}
       ${id && !enGrupo ? `<button type="button" class="btn bad" id="pBorrar">Eliminar</button>` : ""}
       <span class="spacer"></span><button type="button" class="btn" data-cerrar>Cancelar</button></div>
+    ${id && T.esNiveles(ST, (T.catsDe(ST, T.divisionDe(ST, e))[0] || {}).id) ? TC.htmlCamino(ST, id) : ""}
     ${enGrupo ? `<p class="small dim" style="margin-top:10px">Dar de baja a una pareja ya sorteada: sus partidos pendientes no se jugarán (márcalos como W.O. si hace falta).</p>` : ""}
   </form>`, (el, cerrar) => {
     el.querySelector("#fP").onsubmit = async ev => {
@@ -685,7 +763,9 @@ function vGrupos() {
     <div><b>${n} parejas</b> → <b>${tams.length} grupos</b> <span class="dim">(${resumen || "—"})</span>
     <div class="small dim">Grupos de ${ST.config.tamGrupo}${ST.config.numGrupos ? ", " + ST.config.numGrupos + " grupos fijos" : ""}. Las cabezas de serie van a grupos distintos; el resto se sortea.</div></div>
     <span class="spacer"></span>
-    <button class="btn ${ST.grupos.length ? "" : "pri"}" onclick="sortear()" ${n < 2 ? "disabled" : ""}>${ST.grupos.length ? "Repetir sorteo" : "🎲 Sortear grupos"}</button></div>`;
+    <button class="btn ${ST.grupos.length ? "" : "pri"}" onclick="sortear()" ${n < 2 ? "disabled" : ""}>${ST.grupos.length ? "Repetir sorteo" : "🎲 Sortear grupos"}</button>
+    <button class="btn ${ST.grupos.length ? "" : "pri"}" onclick="sorteoGruposDirecto()" ${n < 2 ? "disabled" : ""}>${ST.grupos.length ? "🎬 Ver el sorteo en directo" : "🎬 Sorteo en directo"}</button>
+    ${ST.grupos.length ? `<a class="btn" href="${urlImprimir("grupos")}" target="_blank">🖨 Imprimir hojas</a>` : ""}</div>`;
   if (!ST.grupos.length) return h + `<div class="vacio">Aún no se han sorteado los grupos.</div>`;
   if (hayRes) h = h.replace("Repetir sorteo", "Repetir sorteo (borra resultados)");
   const f = filtro.toLowerCase();
@@ -698,6 +778,35 @@ function vGrupos() {
     if (!suyos.length) return "";
     return (multiDiv() ? `<h2>${esc(d.nombre)}</h2>` : "") + `<div class="grid" style="margin-bottom:18px">` + suyos.map(g => TC.htmlGrupo(ST, g, { admin: true, jugadores: false })).join("") + `</div>`;
   }).join("");
+}
+
+// Sorteo en directo: si aún no hay grupos se sortean ahora; si ya los hay, se vuelve a mostrar el mismo sorteo.
+function sorteoGruposDirecto() {
+  if (!ST.grupos.length && !cambio(() => T.sortearGrupos(ST), "Sorteo de grupos (en directo)")) return;
+  const bolas = [];
+  T.divisiones(ST).forEach(d => {
+    const gs = ST.grupos.filter(g => (g.division || T.divisiones(ST)[0].id) === d.id);
+    const max = Math.max(0, ...gs.map(g => g.equipos.length));
+    for (let r = 0; r < max; r++) {
+      const fila = r % 2 ? gs.slice().reverse() : gs;            // mismo orden en serpiente que el sorteo
+      fila.forEach(g => { const id = g.equipos[r]; if (id) bolas.push({ col: ST.grupos.indexOf(g), texto: nombre(ST, id), sub: jugadores(ST, id) }); });
+    }
+  });
+  TC.sorteoEnDirecto({
+    titulo: "Sorteo de grupos · " + ST.nombre,
+    columnas: ST.grupos.map(g => ({ titulo: (multiDiv() ? nombreDiv(g.division) + " · " : "") + "Grupo " + g.id })),
+    bolas
+  });
+}
+
+function verCrucesDirecto(catId) {
+  const cat = T.categoria(ST, catId), v = ST.config.ventajaCruce;
+  const xs = T.partidosCuadro(ST, catId).filter(p => p.llave === "X").sort((a, b) => a.n - b.n);
+  TC.sorteoEnDirecto({
+    titulo: `Sorteo de cruces · ${cat.nombre}`,
+    columnas: xs.map(p => ({ titulo: "Cruce " + p.n, fijos: [(p.a ? nombre(ST, p.a) : "—") + (v ? `  (empieza ${v}-0)` : "")] })),
+    bolas: xs.map((p, i) => ({ col: i, texto: p.b ? nombre(ST, p.b) : "Pasa sin rival", sub: "viene de perdedores" }))
+  });
 }
 
 function sortear() {
@@ -717,7 +826,11 @@ function sortear() {
    ================================================================= */
 function vCuadros() {
   if (!ST.grupos.length) return `<div class="vacio">Primero hay que sortear y jugar los grupos.</div>`;
-  let h = `<div class="grid" style="margin-bottom:16px">`;
+  let h = T.divisiones(ST).filter(d => d.modo === "niveles").map(d => {
+    const f = TC.htmlFlujoNiveles(ST, d.id);
+    return f ? `<h2>Así se mueven las parejas${multiDiv() ? " · " + esc(d.nombre) : ""}</h2>${f}` : "";
+  }).join("");
+  h += `<div class="grid" style="margin-bottom:16px">`;
   ST.config.categorias.forEach(c => {
     const e = T.estadoCategoria(ST, c.id);
     const cu = ST.cuadros[c.id];
@@ -728,10 +841,12 @@ function vCuadros() {
       ${e.niveles ? estadoNivelesHtml(c, cu, e, jugados) : `<div style="margin:8px 0">${cu && cu.generado ? `<span class="pill ok">Cuadro de ${cu.siembra.length} (${cu.tam})</span> <span class="dim small">${jugados} jugados</span>${T.campeon(ST, c.id) ? ` <span class="pill gold">🏆 ${esc(nombre(ST, T.campeon(ST, c.id)))}</span>` : ""}`
         : e.listo ? `<span class="pill gold">Lista: ${n} parejas</span>` : `<span class="pill warn">${esc(e.motivo)}</span>`}</div>`}
       <div class="row">${e.niveles && !e.listo ? "" : `<button class="btn sm ${cu ? "" : "pri"}" onclick="generar('${c.id}')" ${e.listo ? "" : "disabled"}>${cu ? (e.niveles ? "Volver a empezar" : "Regenerar") : (e.niveles ? "▶ Empezar eliminatorias" : "Generar cuadro")}</button>`}
-      ${(() => { const x = T.estadoCruce(ST, c.id); return x.aplica && !x.sorteado ? `<button class="btn sm ${x.listo ? "pri" : ""}" onclick="sortearCruces('${c.id}')" ${x.listo ? "" : "disabled title='Cuando queden 4 en ganadores y 4 en perdedores'"}>🎲 Sortear cruces</button>` : ""; })()}
+      ${(() => { const x = T.estadoCruce(ST, c.id); return x.aplica && !x.sorteado ? `<button class="btn sm ${x.listo ? "pri" : ""}" onclick="sortearCruces('${c.id}')" ${x.listo ? "" : "disabled title='Cuando queden 4 en ganadores y 4 en perdedores'"}>🎬 Sortear cruces en directo</button>`
+        : T.partidosCuadro(ST, c.id).some(p => p.llave === "X") ? `<button class="btn sm" onclick="verCrucesDirecto('${c.id}')">🎬 Ver sorteo de cruces</button>` : ""; })()}
       <button class="btn sm" data-cat="${c.id}">Ver</button></div></div>`;
   });
   h += `</div>`;
+  h += `<div class="row" style="margin-bottom:10px"><a class="btn sm" href="${urlImprimir("cuadros")}" target="_blank">🖨 Imprimir eliminatorias</a></div>`;
   if (catVista) h += `<h2>${esc((ST.config.categorias.find(c => c.id === catVista) || {}).nombre || "")}</h2>` + TC.htmlCuadro(ST, catVista, { admin: true });
   return h;
 }
@@ -791,6 +906,7 @@ function vAvisos() {
     <div class="row"><button class="btn sm" onclick="navigator.clipboard.writeText('${esc(url)}').then(()=>TC.toast('Copiado'))">Copiar</button>
     <a class="btn sm wa" target="_blank" href="https://wa.me/?text=${encodeURIComponent("🏆 " + ST.nombre + " · Inscripción, horarios y avisos: " + url)}">Compartir por WhatsApp</a>
     <a class="btn sm" target="_blank" href="${esc(url)}&tv">Pantalla TV ↗</a></div>
+    <div class="row"><a class="btn sm" target="_blank" href="${urlImprimir("")}">🖨 Imprimir hojas</a><a class="btn sm" target="_blank" href="${urlImprimir("qr")}">🖨 QR de las mesas</a></div>
     <div id="qr" style="background:#fff;padding:10px;border-radius:10px;width:max-content"></div>
     <div class="small dim">${conPush} de ${total} parejas tienen avisos en el móvil · ${conTel} tienen teléfono para WhatsApp.</div>
   </div></div>`;
@@ -878,6 +994,11 @@ function vAjustes() {
     ${filaFormato("fGrupos", "Grupos", c.formatos.grupos)}
     <div class="small dim">Las eliminatorias de cada categoría (partidas y goles) se ajustan abajo, en Categorías.</div>
     <div><label class="f">Ventaja en los cruces (partidas con las que empieza el de ganadores)</label><input type="number" id="cVent" min="0" max="5" value="${c.ventajaCruce}"></div>
+    <div><label class="f" for="cResPar">¿Quién apunta los resultados?</label><select id="cResPar">
+      <option value="no" ${(c.resultadosParejas || "no") === "no" ? "selected" : ""}>Sólo la organización</option>
+      <option value="validar" ${c.resultadosParejas === "validar" ? "selected" : ""}>Las parejas con el QR de la mesa, y yo los valido</option>
+      <option value="directo" ${c.resultadosParejas === "directo" ? "selected" : ""}>Las parejas con el QR de la mesa, se apuntan solos</option>
+    </select><div class="small dim" style="margin-top:4px">Los QR de las mesas se imprimen desde <b>Avisos → Imprimir</b>.</div></div>
   </div>
   <div class="card stack ancho">
     <h2>Categorías</h2>
@@ -967,6 +1088,7 @@ function guardarAjustes(ev) {
     c.formatos = { grupos: leerFormato("fGrupos"), eliminatoria: c.formatos.eliminatoria || { tipo: "al", partidas: 3, goles: 7 } };
     c.divisiones = divs;
     c.ventajaCruce = Math.max(0, Number($("#cVent").value) || 0);
+    c.resultadosParejas = $("#cResPar").value;
     c.categorias = cats; c.caida = $("#cCaida").checked; c.tercerPuesto = $("#cTercer").checked;
     if (!c.categorias.some(k => k.id === catVista)) catVista = c.categorias[0].id;
   }, "Ajustes guardados");
