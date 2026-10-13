@@ -4,6 +4,7 @@
 //
 // Secretos necesarios (supabase secrets set ...):
 //   TORNEO_ADMIN_PASS   contraseña del organizador
+// Necesita también el SQL 20261013000000_freno_accesos.sql (freno contra adivinar contraseñas).
 //   VAPID_PUBLIC_KEY    } claves Web Push  (npx web-push generate-vapid-keys)
 //   VAPID_PRIVATE_KEY   }
 //   VAPID_SUBJECT       mailto:<correo de la asociación>
@@ -38,15 +39,67 @@ class Fallo extends Error {
   constructor(msg: string, public status = 400) { super(msg); }
 }
 
-function esAdmin(pass: unknown): boolean {
-  const ok = Deno.env.get("TORNEO_ADMIN_PASS") ?? "";
-  if (!ok || typeof pass !== "string" || pass.length !== ok.length) return false;
+// ---------- freno contra quien intenta adivinar contraseñas (guardado en la base de datos) ----------
+//  · por IP: 5 fallos en 15 min → bloqueo de 15 min que se duplica en cada reincidencia (hasta 24 h)
+//  · global por acción: 40 fallos en 10 min entre todas las IP → 10 min de pausa
+//  Si falta la tabla (SQL sin ejecutar) se deniega el acceso: nunca se deja pasar sin freno.
+const SB_URL = Deno.env.get("SUPABASE_URL")!;
+const SB_SRV = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+async function rpcFreno(fn: string, args: Record<string, unknown>): Promise<number> {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SB_SRV, Authorization: "Bearer " + SB_SRV, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error("Falta el SQL del freno de accesos (20261013000000_freno_accesos.sql)");
+  const t = await r.text();
+  return t ? Number(JSON.parse(t)) || 0 : 0;
+}
+function ipDe(req: Request) {
+  return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "?";
+}
+function igualSeguro(a: unknown, secreto: string | undefined) {
+  if (!secreto || typeof a !== "string" || a.length !== secreto.length) return false;
   let d = 0;
-  for (let i = 0; i < ok.length; i++) d |= ok.charCodeAt(i) ^ pass.charCodeAt(i);
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ secreto.charCodeAt(i);
   return d === 0;
 }
-function exigirAdmin(pass: unknown) {
-  if (!esAdmin(pass)) throw new Fallo("Contraseña incorrecta", 401);
+async function esperaFreno(accion: string, ip: string) {
+  const [a, b] = await Promise.all([rpcFreno("acceso_espera", { p_clave: `${accion}|${ip}` }), rpcFreno("acceso_espera", { p_clave: `${accion}|*` })]);
+  return Math.max(a, b);
+}
+async function apuntarFallo(accion: string, ip: string) {
+  const [a, b] = await Promise.all([
+    rpcFreno("acceso_fallo", { p_clave: `${accion}|${ip}`, p_max: 5, p_ventana_seg: 900, p_castigo_seg: 900 }),
+    rpcFreno("acceso_fallo", { p_clave: `${accion}|*`, p_max: 40, p_ventana_seg: 600, p_castigo_seg: 600 }),
+  ]);
+  await new Promise((r) => setTimeout(r, 600));          // cada intento fallido tarda más
+  return Math.max(a, b);
+}
+// Comprueba un valor contra un secreto con freno. {ok, espera}
+async function comprobarConFreno(accion: string, ip: string, valor: unknown, secreto: string | undefined) {
+  const espera = await esperaFreno(accion, ip);
+  if (espera > 0) return { ok: false, espera };
+  if (igualSeguro(valor, secreto)) { await rpcFreno("acceso_ok", { p_clave: `${accion}|${ip}` }); return { ok: true, espera: 0 }; }
+  return { ok: false, espera: await apuntarFallo(accion, ip) };
+}
+// Límite de uso (no de contraseña): p. ej. inscripciones o resultados enviados por las parejas
+async function limitarUso(accion: string, ip: string, max: number, ventanaSeg: number) {
+  const espera = await rpcFreno("acceso_espera", { p_clave: `${accion}|${ip}` });
+  if (espera > 0) return espera;
+  await rpcFreno("acceso_fallo", { p_clave: `${accion}|${ip}`, p_max: max, p_ventana_seg: ventanaSeg, p_castigo_seg: ventanaSeg });
+  return 0;
+}
+
+// Contraseña de organizador con freno. Sin contraseña → false sin contar como fallo.
+async function adminValido(b: any): Promise<boolean> {
+  if (b.pass == null || b.pass === "") return false;
+  const r = await comprobarConFreno("torneo-admin", b.__ip, b.pass, Deno.env.get("TORNEO_ADMIN_PASS"));
+  if (r.espera > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(r.espera / 60)} min.`, 429);
+  return r.ok;
+}
+async function exigirAdmin(b: any) {
+  if (!(await adminValido(b))) throw new Fallo("Contraseña incorrecta", 401);
 }
 
 async function sha256(txt: string) {
@@ -102,11 +155,12 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   // Inscripción pública (o del organizador, que puede saltarse el cierre y el máximo).
   async inscribir(b) {
     const codigo = texto(b.codigo);
-    const admin = esAdmin(b.pass);
+    const admin = await adminValido(b);
     const { datos } = await cargarTorneo(codigo);
     const cfg = datos.config ?? {};
     if (!admin && !cfg.inscripcionAbierta) throw new Fallo("Las inscripciones están cerradas");
     if (!admin && b.web) throw new Fallo("Error");                   // campo trampa anti-bots
+    if (!admin && (await limitarUso("inscribir", b.__ip, 10, 3600))) throw new Fallo("Demasiadas inscripciones desde este dispositivo. Prueba más tarde.", 429);
     const telefono = normalizarTelefono(b.telefono);
     if (!admin && !/^\d{9,15}$/.test(telefono)) throw new Fallo("Teléfono no válido");
     const j1 = texto(b.equipo?.j1), j2 = texto(b.equipo?.j2);
@@ -148,8 +202,11 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     if (!ins) throw new Fallo("Esa pareja no tiene teléfono registrado; pide al organizador que lo añada", 404);
     const okToken = b.token && ins.token_hash && (await sha256(String(b.token))) === ins.token_hash;
     const tel = normalizarTelefono(b.telefono);
+    const esperaTel = await esperaFreno("suscribir", b.__ip);
+    if (esperaTel > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(esperaTel / 60)} min.`, 429);
     const okTel = tel && ins.telefono && tel.slice(-9) === String(ins.telefono).slice(-9);
-    if (!okToken && !okTel && !esAdmin(b.pass)) throw new Fallo("El teléfono no coincide con el de la inscripción", 403);
+    if (!okToken && !okTel && !b.pass) await apuntarFallo("suscribir", b.__ip);
+    if (!okToken && !okTel && !(await adminValido(b))) throw new Fallo("El teléfono no coincide con el de la inscripción", 403);
     const { error } = await db.from("torneo_push").upsert(
       { codigo, equipo_id: equipoId, endpoint: sub.endpoint, suscripcion: sub, ultimo_ok: new Date().toISOString() },
       { onConflict: "endpoint" },
@@ -165,12 +222,12 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   // ---------- sólo organizador ----------
   async login(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV) };
   },
 
   async listar(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase")
       .order("updated_at", { ascending: false }).limit(50);
     if (error) throw new Fallo(error.message, 500);
@@ -179,13 +236,13 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   // Fin del torneo: se borran teléfonos y avisos (un torneo nuevo empieza de cero)
   async limpiar(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     await limpiarDatosPrivados(texto(b.codigo));
     return { ok: true };
   },
 
   async crear(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     const codigo = texto(b.codigo);
     if (!/^[a-z0-9-]{3,60}$/.test(codigo)) throw new Fallo("Código no válido (minúsculas, números y guiones)");
     const { error } = await db.from("torneos").insert({ codigo, datos: b.datos, version: 1 });
@@ -197,7 +254,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async guardar(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     const { data, error } = await db.rpc("torneo_guardar", { p_codigo: texto(b.codigo), p_datos: b.datos, p_version: b.version });
     if (error) {
       if (error.message.includes("conflicto")) throw new Fallo("conflicto_version", 409);
@@ -208,7 +265,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async borrar(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     await limpiarDatosPrivados(texto(b.codigo));
     await db.from("torneos").delete().eq("codigo", texto(b.codigo));
     return { ok: true };
@@ -216,7 +273,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   // Teléfonos y nº de móviles con avisos activados de cada pareja.
   async privado(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     const codigo = texto(b.codigo);
     const [{ data: ins }, { data: subs }] = await Promise.all([
       db.from("torneo_inscripciones").select("equipo_id, telefono").eq("codigo", codigo),
@@ -229,7 +286,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async telefono(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     const codigo = texto(b.codigo), equipo_id = texto(b.equipoId);
     const telefono = normalizarTelefono(b.telefono) || null;
     const { error } = await db.from("torneo_inscripciones").upsert({ codigo, equipo_id, telefono }, { onConflict: "codigo,equipo_id" });
@@ -239,7 +296,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   // Envía un push a los móviles de las parejas indicadas.
   async avisar(b) {
-    exigirAdmin(b.pass);
+    await exigirAdmin(b);
     if (!VAPID_PUB || !VAPID_PRIV) throw new Fallo("Faltan las claves VAPID en los secretos de Supabase", 500);
     const codigo = texto(b.codigo);
     const ids: string[] = Array.isArray(b.equipoIds) ? b.equipoIds.map(String).slice(0, 400) : [];
@@ -275,6 +332,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
   try {
     const b = await req.json();
+    if (b && typeof b === "object") b.__ip = ipDe(req);        // la pone el servidor; el cliente no puede falsearla en el cuerpo
     const fn = acciones[b?.accion];
     if (!fn) return json({ error: "Acción desconocida" }, 400);
     return json(await fn(b));

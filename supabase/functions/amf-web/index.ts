@@ -15,7 +15,8 @@
 //   SORTEO_PASS       contraseña del sorteo en directo (sorteo.html)
 //   TORNEOS_PANEL     ruta del panel de torneos (p. ej. zt4k9m/xxxx.html);
 //                     sólo se entrega tras meter la contraseña del Admin
-// (SUPABASE_URL y SUPABASE_ANON_KEY ya existen en todas las funciones.)
+// (SUPABASE_URL, SUPABASE_ANON_KEY y SUPABASE_SERVICE_ROLE_KEY ya existen en todas las funciones.)
+// Necesita el SQL supabase/migrations/20261013000000_freno_accesos.sql (freno contra adivinar contraseñas).
 //
 // Desplegar sin verificación JWT:  supabase functions deploy amf-web --no-verify-jwt
 // =====================================================================
@@ -31,35 +32,61 @@ const CORS = {
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...CORS, "Content-Type": "application/json" } });
 
-// Comparación en tiempo constante (no da pistas por el tiempo de respuesta)
-function igual(a: unknown, secreto: string | undefined) {
+// ---------- freno contra quien intenta adivinar contraseñas (guardado en la base de datos) ----------
+//  · por IP: 5 fallos en 15 min → bloqueo de 15 min que se duplica en cada reincidencia (hasta 24 h)
+//  · global por acción: 40 fallos en 10 min entre todas las IP → 10 min de pausa
+//  Si falta la tabla (SQL sin ejecutar) se deniega el acceso: nunca se deja pasar sin freno.
+const SB_URL = Deno.env.get("SUPABASE_URL")!;
+const SB_SRV = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+async function rpcFreno(fn: string, args: Record<string, unknown>): Promise<number> {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SB_SRV, Authorization: "Bearer " + SB_SRV, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error("Falta el SQL del freno de accesos (20261013000000_freno_accesos.sql)");
+  const t = await r.text();
+  return t ? Number(JSON.parse(t)) || 0 : 0;
+}
+function ipDe(req: Request) {
+  return req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "?";
+}
+function igualSeguro(a: unknown, secreto: string | undefined) {
   if (!secreto || typeof a !== "string" || a.length !== secreto.length) return false;
   let d = 0;
   for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ secreto.charCodeAt(i);
   return d === 0;
 }
+async function esperaFreno(accion: string, ip: string) {
+  const [a, b] = await Promise.all([rpcFreno("acceso_espera", { p_clave: `${accion}|${ip}` }), rpcFreno("acceso_espera", { p_clave: `${accion}|*` })]);
+  return Math.max(a, b);
+}
+async function apuntarFallo(accion: string, ip: string) {
+  const [a, b] = await Promise.all([
+    rpcFreno("acceso_fallo", { p_clave: `${accion}|${ip}`, p_max: 5, p_ventana_seg: 900, p_castigo_seg: 900 }),
+    rpcFreno("acceso_fallo", { p_clave: `${accion}|*`, p_max: 40, p_ventana_seg: 600, p_castigo_seg: 600 }),
+  ]);
+  await new Promise((r) => setTimeout(r, 600));          // cada intento fallido tarda más
+  return Math.max(a, b);
+}
+// Comprueba un valor contra un secreto con freno. {ok, espera}
+async function comprobarConFreno(accion: string, ip: string, valor: unknown, secreto: string | undefined) {
+  const espera = await esperaFreno(accion, ip);
+  if (espera > 0) return { ok: false, espera };
+  if (igualSeguro(valor, secreto)) { await rpcFreno("acceso_ok", { p_clave: `${accion}|${ip}` }); return { ok: true, espera: 0 }; }
+  return { ok: false, espera: await apuntarFallo(accion, ip) };
+}
+// Límite de uso (no de contraseña): p. ej. inscripciones o resultados enviados por las parejas
+async function limitarUso(accion: string, ip: string, max: number, ventanaSeg: number) {
+  const espera = await rpcFreno("acceso_espera", { p_clave: `${accion}|${ip}` });
+  if (espera > 0) return espera;
+  await rpcFreno("acceso_fallo", { p_clave: `${accion}|${ip}`, p_max: max, p_ventana_seg: ventanaSeg, p_castigo_seg: ventanaSeg });
+  return 0;
+}
 
-// Freno contra adivinar contraseñas: 8 fallos por IP y acción → 15 min bloqueado (por instancia).
-const fallos = new Map<string, { n: number; hasta: number }>();
-function bloqueado(clave: string) {
-  const f = fallos.get(clave);
-  return f && f.hasta > Date.now() ? Math.ceil((f.hasta - Date.now()) / 1000) : 0;
-}
-function fallo(clave: string) {
-  const f = fallos.get(clave) ?? { n: 0, hasta: 0 };
-  f.n++;
-  if (f.n >= 8) { f.hasta = Date.now() + 15 * 60_000; f.n = 0; }
-  fallos.set(clave, f);
-}
 async function comprobar(req: Request, accion: string, valor: unknown, secreto: string | undefined) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "?";
-  const k = accion + "|" + ip;
-  const espera = bloqueado(k);
-  if (espera) return { ok: false, status: 429, espera };
-  if (igual(valor, secreto)) { fallos.delete(k); return { ok: true, status: 200, espera: 0 }; }
-  fallo(k);
-  await new Promise((r) => setTimeout(r, 400));
-  return { ok: false, status: 401, espera: 0 };
+  const r = await comprobarConFreno(accion, ipDe(req), valor, secreto);
+  return { ok: r.ok, status: r.ok ? 200 : r.espera > 0 ? 429 : 401, espera: r.espera };
 }
 
 const cabecerasSB = { apikey: ANON, Authorization: "Bearer " + ANON };
@@ -94,6 +121,11 @@ Deno.serve(async (req) => {
 
   let b: any;
   try { b = await req.json(); } catch { return json({ error: "Petición no válida" }, 400); }
+  try { return await atender(req, b); }
+  catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }, 503); }
+});
+
+async function atender(req: Request, b: any): Promise<Response> {
 
   switch (b?.accion) {
     // ---------- lecturas públicas ----------
@@ -146,4 +178,4 @@ Deno.serve(async (req) => {
     }
   }
   return json({ error: "Acción desconocida" }, 400);
-});
+}
