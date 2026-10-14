@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es" data-fx="off">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hojas para imprimir · Torneos AMF</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* Hojas en papel: siempre blanco y negro, A4, sin depender del tema del móvil */
+:root { --tinta: #111; --gris: #666; --linea: #999; --suave: #eee; --oro: #8a6d38; color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; color: var(--tinta); font-family: 'Barlow', Arial, sans-serif; font-size: 12pt; }
+.barra { position: sticky; top: 0; z-index: 2; background: #0a0e1a; color: #e8edf5; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.barra b { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: .04em; color: #e9cd94; }
+.barra label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.barra button { font: inherit; font-weight: 700; padding: 8px 16px; border-radius: 8px; border: 0; background: linear-gradient(180deg, #e9cd94, #b08d4f); color: #1a1406; cursor: pointer; }
+.aviso { padding: 10px 16px; background: #fff7e0; border-bottom: 1px solid #e9cd94; font-size: .9rem; }
+main { padding: 16px; max-width: 210mm; margin: 0 auto; }
+.hoja { break-after: page; page-break-after: always; padding-block: 6mm; }
+.hoja:last-child { break-after: auto; page-break-after: auto; }
+.cab { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--tinta); padding-bottom: 4px; margin-bottom: 10px; gap: 10px; }
+.cab h1 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 26pt; margin: 0; letter-spacing: .03em; }
+.cab .meta { color: var(--gris); font-size: 10pt; text-align: right; }
+h2 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; font-size: 18pt; margin: 12px 0 6px; letter-spacing: .04em; }
+.bloque { break-inside: avoid; page-break-inside: avoid; margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+th, td { border: 1px solid var(--linea); padding: 5px 6px; vertical-align: middle; }
+th { background: var(--suave); font-size: 9pt; text-transform: uppercase; letter-spacing: .05em; text-align: left; }
+td.n, th.n { text-align: center; width: 1%; white-space: nowrap; }
+.caja { display: inline-block; width: 9mm; height: 7mm; border: 1.3px solid var(--tinta); vertical-align: middle; }
+.guion { margin: 0 3px; color: var(--gris); }
+.partida { white-space: nowrap; text-align: center; }
+.partida small { display: block; color: var(--gris); font-size: 8pt; }
+.ventaja { font-size: 8.5pt; color: var(--oro); }
+.vacio { color: var(--gris); border-bottom: 1px solid var(--linea); display: inline-block; min-width: 45mm; }
+.qrs { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; }
+.qr { border: 2px solid var(--tinta); border-radius: 6mm; padding: 6mm; text-align: center; break-inside: avoid; page-break-inside: avoid; }
+.qr .mesa { font-family: 'Bebas Neue', sans-serif; font-size: 40pt; line-height: 1; }
+.qr .codigo { margin: 4mm auto; width: 48mm; height: 48mm; }
+.qr .codigo img, .qr .codigo canvas { width: 48mm !important; height: 48mm !important; }
+.qr p { margin: 2mm 0 0; font-size: 10pt; color: var(--gris); }
+@media print {
+  .barra, .aviso { display: none !important; }
+  main { padding: 0; max-width: none; }
+  @page { size: A4; margin: 12mm; }
+}
+@media (max-width: 600px) { .qrs { grid-template-columns: 1fr; } table { font-size: 10pt; } }
+</style>
+</head>
+<body>
+<div class="barra">
+  <b>🖨 Hojas</b>
+  <label><input type="checkbox" id="oGrupos" checked> Grupos</label>
+  <label><input type="checkbox" id="oCuadros" checked> Eliminatorias</label>
+  <label><input type="checkbox" id="oParejas"> Lista de parejas</label>
+  <label><input type="checkbox" id="oQR"> QR de las mesas</label>
+  <button type="button" id="bImprimir">Imprimir</button>
+</div>
+<div class="aviso" id="aviso" hidden></div>
+<main id="hojas"><p>Cargando…</p></main>
+
+<script src="config.js"></script>
+<script src="engine.js"></script>
+<script src="store.js"></script>
+<script>
+"use strict";
+const T = window.TorneoEngine, S = window.TorneoStore;
+const params = new URLSearchParams(location.search);
+const CODIGO = params.get("t") || "";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let ST = null, TOKEN = null;
+const nombre = id => { const e = id && T.equipo(ST, id); return e ? e.nombre : ""; };
+const jug = id => { const e = id && T.equipo(ST, id); return e ? [e.j1, e.j2].filter(Boolean).join(" y ") : ""; };
+const pase = () => { try { return (JSON.parse(sessionStorage.getItem("torneo-admin")) || {}).pass || ""; } catch (_) { return ""; } };
+
+// Casillas para apuntar a mano los goles de cada partida
+function casillas(p) {
+  const f = T.formatoDe(ST, p), v = p.ventaja ? ST.config.ventajaCruce || 0 : 0;
+  const n = f.tipo === "fijo" ? f.partidas : 2 * f.partidas - 1 - v;
+  let h = "";
+  for (let i = 0; i < n; i++) h += `<td class="partida"><span class="caja"></span><span class="guion">-</span><span class="caja"></span><small>P${i + 1 + v}</small></td>`;
+  return h;
+}
+function cabecera(titulo) {
+  return `<div class="cab"><h1>${esc(titulo)}</h1><div class="meta">${esc(ST.nombre)}<br>${esc([ST.fecha, ST.lugar].filter(Boolean).join(" · "))}</div></div>`;
+}
+
+function hojasGrupos() {
+  if (!ST.grupos.length) return `<div class="hoja">${cabecera("Grupos")}<p>Todavía no se han sorteado los grupos.</p></div>`;
+  const f = ST.config.formatos.grupos;
+  return ST.grupos.map(g => {
+    const ps = ST.partidos.filter(p => p.tipo === "G" && p.grupo === g.id).sort((a, b) => a.ronda - b.ronda || a.n - b.n);
+    const nP = f.tipo === "fijo" ? f.partidas : 2 * f.partidas - 1;
+    return `<div class="bloque"><h2>Grupo ${esc(g.id)} <span style="font-family:Barlow;font-size:10pt;color:#666">· ${esc(T.textoFormato(f))}</span></h2>
+      <table><thead><tr><th class="n">#</th><th>Pareja</th><th>Jugadores</th><th class="n">PJ</th><th class="n">G</th><th class="n">E</th><th class="n">P</th><th class="n">Dif</th><th class="n">Pts</th><th class="n">Puesto</th></tr></thead><tbody>
+      ${g.equipos.map((id, i) => `<tr><td class="n">${i + 1}</td><td><b>${esc(nombre(id))}</b></td><td>${esc(jug(id))}</td>${"<td></td>".repeat(7)}</tr>`).join("")}</tbody></table>
+      <table style="margin-top:6px"><thead><tr><th class="n">J</th><th>Pareja</th>${Array.from({ length: nP }, (_, i) => `<th class="n">Partida ${i + 1}</th>`).join("")}<th>Pareja</th><th class="n">Mesa</th></tr></thead><tbody>
+      ${ps.map(p => `<tr><td class="n">${p.ronda}</td><td><b>${esc(nombre(p.a))}</b></td>${p.estado === "fin" ? `<td class="partida" colspan="${nP}"><b>${p.ra} - ${p.rb}</b>${p.goles && p.goles.length ? `<small>${p.goles.map(x => x.join("-")).join(" · ")}</small>` : ""}</td>` : casillas(p)}<td><b>${esc(nombre(p.b))}</b></td><td class="n">${p.estado === "mesa" ? p.mesa : ""}</td></tr>`).join("")}
+      </tbody></table></div>`;
+  }).join("");
+}
+
+function hojasCuadros() {
+  const cats = ST.config.categorias.filter(c => (ST.cuadros[c.id] || {}).generado);
+  if (!cats.length) return `<div class="hoja">${cabecera("Eliminatorias")}<p>Todavía no hay cuadros generados.</p></div>`;
+  return cats.map(c => {
+    const ps = T.partidosCuadro(ST, c.id).filter(p => !p.bye);
+    const orden = { W: 0, L: 1, X: 2, S: 3, F: 4, T: 5 };
+    ps.sort((a, b) => orden[a.llave] - orden[b.llave] || a.ronda - b.ronda || a.n - b.n);
+    const fmt = T.formatoDe(ST, { tipo: "K", cat: c.id });
+    let h = `<div class="hoja">${cabecera(c.nombre)}<p style="margin:0 0 8px;color:#666">${esc(T.textoFormato(fmt))}${c.formato === "doble" ? ` · doble K · en los cruces el de ganadores empieza ${ST.config.ventajaCruce}-0` : ""}</p>`;
+    let ultimo = "";
+    ps.forEach(p => {
+      const ronda = T.nombreRonda(ST, p);
+      if (ronda !== ultimo) { if (ultimo) h += `</tbody></table></div>`; ultimo = ronda;
+        h += `<div class="bloque"><h2>${esc(ronda)}</h2><table><tbody>`; }
+      const nom = id => id ? `<b>${esc(nombre(id))}</b>` : `<span class="vacio">&nbsp;</span>`;
+      h += `<tr><td style="width:34%">${nom(p.a)}${p.ventaja === "a" && p.a ? ` <span class="ventaja">(empieza ${ST.config.ventajaCruce}-0)</span>` : ""}</td>
+        ${p.estado === "fin" ? `<td class="partida" colspan="5"><b>${p.ra} - ${p.rb}</b></td>` : casillas(p)}
+        <td style="width:34%">${nom(p.b)}</td><td class="n">Mesa<br><span class="caja"></span></td></tr>`;
+    });
+    if (ultimo) h += `</tbody></table></div>`;
+    return h + `</div>`;
+  }).join("");
+}
+
+function hojaParejas() {
+  const ds = T.divisiones(ST);
+  const grupoDe = {};
+  ST.grupos.forEach(g => g.equipos.forEach(id => (grupoDe[id] = g.id)));
+  return `<div class="hoja">${cabecera("Parejas")}<table><thead><tr><th class="n">#</th><th>Pareja</th><th>Jugadores</th>${ds.length > 1 ? "<th>Torneo</th>" : ""}<th class="n">Grupo</th><th class="n">Presente</th><th class="n">Pagado</th></tr></thead><tbody>
+    ${T.equiposActivos(ST).map((e, i) => `<tr><td class="n">${i + 1}</td><td><b>${esc(e.nombre)}</b></td><td>${esc(jug(e.id))}</td>${ds.length > 1 ? `<td>${esc((ds.find(d => d.id === T.divisionDe(ST, e)) || {}).nombre || "")}</td>` : ""}<td class="n">${esc(grupoDe[e.id] || "")}</td><td class="n"><span class="caja"></span></td><td class="n"><span class="caja"></span></td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+
+function hojaQR() {
+  if ((ST.config.resultadosParejas || "no") === "no") return `<div class="hoja">${cabecera("QR de las mesas")}<p>Para usar los QR, activa en <b>Ajustes → ¿Quién apunta los resultados?</b> la opción de las parejas.</p></div>`;
+  if (!TOKEN) return `<div class="hoja">${cabecera("QR de las mesas")}<p>Abre esta página desde el panel del organizador (hace falta haber entrado con la contraseña).</p></div>`;
+  let h = `<div class="hoja">${cabecera("QR de las mesas")}<div class="qrs">`;
+  for (let m = 1; m <= ST.config.mesas; m++) h += `<div class="qr"><div class="mesa">MESA ${m}</div><div class="codigo" data-mesa="${m}"></div>
+    <p><b>Al terminar vuestro partido:</b> escanead, elegid vuestro grupo y la partida, y apuntad los goles.</p></div>`;
+  return h + `</div></div>`;
+}
+function urlMesa(m) {
+  const base = location.href.replace(/[^/]*$/, "index.html");
+  return `${base}?t=${encodeURIComponent(CODIGO)}&mesa=${m}&k=${encodeURIComponent(TOKEN)}${S.modo === "local" ? "&local" : ""}`;
+}
+function pintarQRs() {
+  const els = document.querySelectorAll(".codigo[data-mesa]");
+  if (!els.length) return;
+  const hacer = () => els.forEach(el => { el.innerHTML = ""; new QRCode(el, { text: urlMesa(el.dataset.mesa), width: 360, height: 360, correctLevel: QRCode.CorrectLevel.M }); });
+  if (window.QRCode) return hacer();
+  const sc = document.createElement("script");
+  sc.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+  sc.onload = hacer;
+  document.head.appendChild(sc);
+}
+
+function pintar() {
+  let h = "";
+  if (document.getElementById("oGrupos").checked) h += `<div class="hoja">${cabecera("Grupos")}${hojasGrupos()}</div>`;
+  if (document.getElementById("oCuadros").checked) h += hojasCuadros();
+  if (document.getElementById("oParejas").checked) h += hojaParejas();
+  if (document.getElementById("oQR").checked) h += hojaQR();
+  document.getElementById("hojas").innerHTML = h || "<p>Marca arriba lo que quieres imprimir.</p>";
+  pintarQRs();
+}
+
+(async function () {
+  const que = params.get("que");
+  if (que) ["oGrupos", "oCuadros", "oParejas", "oQR"].forEach(id => (document.getElementById(id).checked = id.toLowerCase().includes(que.toLowerCase())));
+  try {
+    ST = (await S.cargar(CODIGO)).datos;
+  } catch (e) { document.getElementById("hojas").innerHTML = `<p>${esc(e.message)}</p>`; return; }
+  document.title = "Hojas · " + ST.nombre;
+  try { TOKEN = await S.tokenMesas(CODIGO, pase()); } catch (_) { TOKEN = null; }
+  document.querySelectorAll(".barra input").forEach(i => i.addEventListener("change", pintar));
+  document.getElementById("bImprimir").addEventListener("click", () => window.print());
+  const av = document.getElementById("aviso");
+  av.hidden = false;
+  av.textContent = "Consejo: imprime en A4 vertical. Los resultados ya apuntados salen rellenos; el resto, con casillas para escribir a mano.";
+  pintar();
+})();
+</script>
+</body>
+</html>

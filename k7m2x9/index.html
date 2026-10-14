@@ -413,6 +413,8 @@ footer button:hover{color:var(--acc)}
 .anotar th{background:#eee}
 .anotar td.eq{text-align:left;width:26%}
 </style>
+<link rel="stylesheet" href="../fx.css">
+<script src="../fx.js" defer></script>
 </head>
 <body>
 
@@ -702,12 +704,9 @@ const CONFIG = {
   supabaseUrl: "",
   supabaseKey: "",
 
-  // Si pones la URL de la Edge Function, la contraseña se comprueba
-  // en el servidor y adminPassLocal deja de usarse.
-  loginUrl:  "",
-  // Contraseña de arranque. En cuanto entres, cámbiala desde
-  // Admin → Datos: se guarda como huella y deja de verse en claro.
-  adminPassLocal: "",
+  // La contraseña NO está en este archivo (ni siquiera su huella):
+  // la comprueba el servidor (función amf-web, secreto MONTERROSO_PASS).
+  loginUrl:  "https://axjanluawnatwqmwwbgd.supabase.co/functions/v1/amf-web",
 
   // true = el botón Admin no se ve. Para entrar, añade #admin al
   // final de la dirección o pulsa cinco veces sobre el escudo.
@@ -1290,7 +1289,7 @@ const SEED = {
   "ajustes": [],
   "final": null,
   "palmares": [],
-  "passHash": "99ab605c623543d951c01abbf22c35e6b21a38f5bddf90ac8afb09f5fb85386c"
+  "passHash": null
 };
 const SEED_LISTO = true;
 /*DATOS-FIN*/
@@ -2793,20 +2792,16 @@ async function huella(txt){
   return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
 }
 async function comprobarPass(v){
-  if(ST&&ST.passHash){
-    const hh=await huella(v);
-    return Boolean(hh)&&hh===ST.passHash;
-  }
   if(CONFIG.loginUrl){
     try{
-      const r=await fetch(CONFIG.loginUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pass:v})});
+      const r=await fetch(CONFIG.loginUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"monterroso",pass:v})});
       if(!r.ok) return false;
       const d=await r.json();
       if(d&&d.ok){ adminToken=d.token||null; return true; }
       return false;
     }catch{ return false; }
   }
-  return v===CONFIG.adminPassLocal;
+  return false;
 }
 
 function renderSync(){
@@ -2928,9 +2923,7 @@ function loginAdmin(){
            autocapitalize="off" autocorrect="off" spellcheck="false" name="clave-liga">
     <div id="pwErr"></div>
     <button class="btn full" onclick="tryLogin()">${LANG==="gl"?"Entrar":"Entrar"}</button>
-    ${(!ST.passHash&&CONFIG.adminPassLocal==="launion2026")?`<p class="err" style="margin:14px 0 0">${
-      LANG==="es"?"Sigues con la contraseña de fábrica. Cámbiala en Admin → Datos."
-                 :"Segues co contrasinal de fábrica. Cámbiao en Admin → Datos."}</p>`:""}`;
+`;
   setTimeout(()=>$("#pw")?.focus(),60);
   $("#pw").onkeydown=e=>{ if(e.key==="Enter") tryLogin(); };
 }
@@ -3373,23 +3366,6 @@ function archivarTemporada(){
 }
 function quitarPalmares(i){ snapshot(); ST.palmares.splice(i,1); render(); panelAdmin(); }
 
-async function cambiarPass(){
-  const es=LANG==="es";
-  const a=prompt(es?"Contraseña nueva (mínimo 8 caracteres):":"Contrasinal novo (mínimo 8 caracteres):","");
-  if(a===null) return;
-  if(a.trim().length<8) return alert(es?"Demasiado corta.":"Demasiado curta.");
-  const b=prompt(es?"Repítela:":"Repítea:","");
-  if(b===null) return;
-  if(a!==b) return alert(es?"No coinciden.":"Non coinciden.");
-  const hh=await huella(a);
-  if(!hh) return alert(es?"Tu navegador no puede cifrarla. Ábrela desde https."
-                         :"O teu navegador non pode cifrala. Ábrea desde https.");
-  snapshot(); ST.passHash=hh;
-  anotar("seguridad","contraseña cambiada");
-  panelAdmin();
-  alert(es?"Cambiada. Ahora pulsa Descargar web actualizada y sube el archivo, o no se guardará."
-          :"Cambiada. Agora pulsa Descargar web actualizada e sobe o arquivo, ou non se gardará.");
-}
 function admDatos(){
   $("#admBody").innerHTML=`
     <p class="sub">${LANG==="es"?"Copia de seguridad y traspaso entre dispositivos.":"Copia de seguridade e traspaso entre dispositivos."}</p>
@@ -3400,13 +3376,8 @@ function admDatos(){
       <input type="file" id="imp" accept="application/json" style="display:none" onchange="importar(event)">
     </div>
     <div class="warn-box" style="margin-bottom:14px">
-      ${ST.passHash
-        ? (LANG==="es"?"La contraseña está guardada cifrada. Nadie puede leerla en el archivo."
-                      :"O contrasinal está gardado cifrado. Ninguén pode lelo no arquivo.")
-        : (LANG==="es"?"<b>La contraseña está escrita en claro dentro del archivo.</b> Cualquiera que mire el código la ve. Cámbiala aquí."
-                      :"<b>O contrasinal está escrito en claro dentro do arquivo.</b> Calquera que mire o código veo. Cámbiao aquí.")}
-      <div style="margin-top:10px"><button class="btn sm" onclick="cambiarPass()">${
-        LANG==="es"?"Cambiar contraseña":"Cambiar contrasinal"}</button></div>
+      ${LANG==="es"?"La contraseña no está en este archivo: la comprueba el servidor. Para cambiarla: Supabase → Edge Functions → Secrets → <b>MONTERROSO_PASS</b>."
+                  :"O contrasinal non está neste arquivo: compróbao o servidor. Para cambialo: Supabase → Edge Functions → Secrets → <b>MONTERROSO_PASS</b>."}
     </div>
     <label class="f">${LANG==="es"?"Estado actual":"Estado actual"}</label>
     <textarea class="f" readonly rows="7" style="font-family:var(--mono);font-size:11.5px;color:var(--dim)">${esc(JSON.stringify(ST))}</textarea>`;
@@ -3456,7 +3427,7 @@ async function descargarWeb(){
 
   const datos={grupos:ST.grupos,calendario:ST.calendario,jornadas:ST.jornadas,
                ajustes:ST.ajustes,final:ST.final,palmares:ST.palmares,
-               passHash:ST.passHash||null};
+               passHash:null};
   const bloque="/*DATOS-INICIO*/\nconst SEED = "+JSON.stringify(datos,null,2)+
                ";\nconst SEED_LISTO = true;\n";
   const salida=fuente.slice(0,ini)+bloque+fuente.slice(fin);
@@ -3610,7 +3581,7 @@ function normalizar(d){
   s.jornadas=s.jornadas||{};
   s.ajustes=s.ajustes||[];
   s.palmares=s.palmares||[];
-  s.passHash=s.passHash||null;
+  s.passHash=null;                 // ya no se usa: la contraseña la comprueba el servidor
   s.grupos.forEach(g=>{
     if(!s.calendario[g.id]) s.calendario[g.id]=[];
     if(!s.jornadas[g.id]) s.jornadas[g.id]=s.calendario[g.id].map(()=>({fecha:"",lugar:""}));
