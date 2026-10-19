@@ -2294,6 +2294,12 @@ function estadoInicial(){
     if(vista.tab==="estadisticas") renderEstadisticas();
     arrancarAutoRefresco();
   }
+  /* Enlace directo al acceso de la organización: liga.html?admin=1
+     (se quita de la dirección al abrir, para que no quede al compartir). La contraseña la comprueba el servidor. */
+  if(new URLSearchParams(location.search).get("admin")==="1"){
+    history.replaceState(null,"",location.pathname+location.hash);
+    abrirAdmin();
+  }
 })();
 </script>
 <script>
