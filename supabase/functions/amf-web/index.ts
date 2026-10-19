@@ -11,7 +11,7 @@
 // Secretos (Supabase → Edge Functions → Secrets):
 //   AMF_ADMIN_PASS    contraseña del Admin de la portada (⚙)
 //   MESAS_PIN         PIN del control de mesas (index_futbolines.html)
-//   MONTERROSO_PASS   contraseña de la Liga Monterroso (k7m2x9)
+//   MONTERROSO_PASS   contraseña de la Liga Monterroso (k7m2x9): entrar y guardar ("union-guardar")
 //   SORTEO_PASS       contraseña del sorteo en directo (sorteo.html)
 //   TORNEOS_PANEL     ruta del panel de torneos (p. ej. zt4k9m/xxxx.html);
 //                     sólo se entrega tras meter la contraseña del Admin
@@ -175,6 +175,24 @@ async function atender(req: Request, b: any): Promise<Response> {
     case "monterroso": {      // Liga Monterroso (k7m2x9)
       const r = await comprobar(req, "monterroso", b.pass, Deno.env.get("MONTERROSO_PASS"));
       return json({ ok: r.ok, espera: r.espera }, r.ok ? 200 : r.status);
+    }
+    case "union-guardar": {   // Liga La Unión (k7m2x9): guarda toda la liga en su fila de liga_publica
+      const codigo = String(b.codigo ?? "");
+      if (!/^liga-launion-[a-z0-9-]{1,30}$/.test(codigo)) return json({ ok: false, error: "Código no permitido" }, 400);
+      const datos = b.datos;
+      if (!datos || typeof datos !== "object" || !Array.isArray(datos.grupos)) return json({ ok: false, error: "Datos no válidos" }, 400);
+      if (JSON.stringify(datos).length > 500_000) return json({ ok: false, error: "Datos demasiado grandes" }, 413);
+      const r = await comprobar(req, "monterroso", b.pass, Deno.env.get("MONTERROSO_PASS"));
+      if (!r.ok) return json({ ok: false, espera: r.espera }, r.status);
+      delete datos.passHash;
+      const ahora = new Date().toISOString();
+      const w = await fetch(`${URL_SB}/rest/v1/liga_publica?on_conflict=codigo`, {
+        method: "POST",
+        headers: { apikey: SB_SRV, Authorization: "Bearer " + SB_SRV, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{ codigo, datos, updated_at: ahora }]),
+      });
+      if (!w.ok) return json({ ok: false, error: `No se pudo guardar (${w.status}): ${(await w.text()).slice(0, 200)}` }, 502);
+      return json({ ok: true, updated_at: ahora });
     }
   }
   return json({ error: "Acción desconocida" }, 400);
