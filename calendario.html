@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14171e">
 <title>Calendario de torneos · AMF Melide</title>
+<meta name="description" content="Calendario de torneos de futbolín de la Asociación Melide Futbolín (AMF) en Melide, A Coruña.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Asociación Melide Futbolín">
+<meta property="og:title" content="Calendario de torneos · AMF Melide">
+<meta property="og:description" content="Calendario de torneos de futbolín de la Asociación Melide Futbolín (AMF) en Melide, A Coruña.">
+<meta property="og:url" content="https://amfmelide.es/calendario.html">
+<meta property="og:image" content="https://amfmelide.es/og-amf.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>
 :root{
   --presas:#E5302D; --infinity:#7B5CFF; --tsunami:#13B5D6;
@@ -226,7 +239,7 @@ form .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 <div class="toast" id="toast"></div>
 
-<nav class="amf-legal" aria-label="Información legal"><a href="legal.html">Aviso legal</a> · <a href="legal.html#privacidad">Privacidad</a> · <a href="legal.html#cookies">Cookies</a></nav>
+<nav class="amf-legal" aria-label="Información legal"><a href="legal.html">Aviso legal</a> · <a href="legal.html#privacidad">Privacidad</a> · <a href="legal.html#cookies">Cookies</a> · <a href="legal.html#condiciones">Condiciones</a> · <a href="legal.html#ia">Uso de IA</a><span style="display:block;padding:0 4px">Esta web recoge datos personales en sus formularios · Parte del contenido se ha creado con ayuda de IA</span></nav>
 <script>
 const SB_URL = "https://axjanluawnatwqmwwbgd.supabase.co";
 // Sin claves en la página: todo pasa por la función amf-web
@@ -447,5 +460,7 @@ $("grid").addEventListener("touchend",e=>{if(sx===null)return;const dx=e.changed
   await load();
 })();
 </script>
+<!-- Estadísticas de visitas sin cookies (ver legal.html#cookies) -->
+<script data-goatcounter="https://amfmelide.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>

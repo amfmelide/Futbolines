@@ -14,7 +14,7 @@
 <meta property="og:title" content="Recuerdos · AMF Melide">
 <meta property="og:description" content="La historia del futbolín en Melide: fotos y vídeos de cada torneo y cada edición.">
 <meta property="og:url" content="https://amfmelide.es/recuerdos.html">
-<meta property="og:image" content="https://amfmelide.es/photofut.PNG">
+<meta property="og:image" content="https://amfmelide.es/og-amf.jpg">
 <meta property="og:locale" content="es_ES">
 <meta property="og:locale:alternate" content="gl_ES">
 <meta name="twitter:card" content="summary_large_image">
@@ -468,6 +468,8 @@ dialog::backdrop{background:rgba(5,5,4,.78)}
     <span>© <span id="anio-actual"></span> Asociación Melide Futbolín · Melide (A Coruña)</span>
     <a href="index.html" data-t="volver_web">Volver a la web</a>
     <a href="legal.html">Aviso legal · Privacidad · Cookies</a>
+    <a href="legal.html#ia">Uso de IA</a>
+    <span>Esta web recoge datos personales · Parte del contenido se ha creado con ayuda de IA (las fotos y vídeos son reales)</span>
   </div>
 </footer>
 
@@ -1177,6 +1179,25 @@ function mostrarNoEncontrada() {
    ============================================================= */
 const Visor = {
   i: 0, dx: 0, dy: 0, x0: 0, y0: 0, arrastre: false, eje: "",
+  // Zoom (doble toque o pellizco) y desplazamiento de la foto ampliada
+  z: 1, tx: 0, ty: 0, dedos: new Map(), pellizco: null, paneo: null, ultimoToque: 0,
+  aplicarZoom(animar) {
+    const img = $("#visor-img"), esc = $("#visor-escena");
+    const mx = Math.max(0, (img.offsetWidth * this.z - esc.clientWidth) / 2);
+    const my = Math.max(0, (img.offsetHeight * this.z - esc.clientHeight) / 2);
+    this.tx = Math.min(mx, Math.max(-mx, this.tx)); this.ty = Math.min(my, Math.max(-my, this.ty));
+    img.style.transition = animar && !movReducido.matches ? "transform .25s cubic-bezier(.2,.7,.1,1), opacity .35s" : "opacity .35s";
+    img.style.transform = this.z > 1 ? `translate3d(${this.tx}px,${this.ty}px,0) scale(${this.z})` : "";
+  },
+  quitarZoom(animar) { this.z = 1; this.tx = this.ty = 0; this.aplicarZoom(animar); },
+  zoomEn(cx, cy) {
+    if (this.z > 1) { this.quitarZoom(true); return; }
+    const r = $("#visor-img").getBoundingClientRect();
+    this.z = 2.5;
+    this.tx = -(cx - (r.left + r.width / 2)) * (this.z - 1);
+    this.ty = -(cy - (r.top + r.height / 2)) * (this.z - 1);
+    this.aplicarZoom(true);
+  },
   abrir(i) {
     this.i = i; this.origen = document.activeElement; this.pintar();
     const d = $("#visor");
@@ -1190,6 +1211,7 @@ const Visor = {
   alCerrar() {
     document.body.classList.remove("bloqueado");
     $("#visor-pista").style.transform = ""; $("#visor").style.background = "";
+    this.quitarZoom(false); this.dedos.clear(); this.pellizco = this.paneo = null;
     const b = document.querySelector(`.foto[data-i="${this.i}"]`);
     (b || this.origen)?.focus?.({ preventScroll: true });
   },
@@ -1197,6 +1219,7 @@ const Visor = {
     const fotos = estado.fotosActuales || [];
     const f = fotos[this.i]; if (!f) return;
     const img = $("#visor-img");
+    this.quitarZoom(false);
     img.classList.add("baja");
     img.src = f.miniatura || f.url;
     img.alt = f.pie || `${estado.edActual.titulo} — ${t("foto_n", { n: this.i + 1 })}`;
@@ -1245,13 +1268,28 @@ const Visor = {
       else if (e.key === "ArrowLeft") { e.preventDefault(); this.mover(-1); }
     });
     // Deslizar con el dedo: lateral = cambiar foto, hacia abajo = cerrar
+    // Doble toque = ampliar/reducir; pellizco = zoom; con zoom, un dedo mueve la foto
     escena.addEventListener("pointerdown", (e) => {
       if (e.target.closest("button")) return;
+      this.dedos.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
+      try { escena.setPointerCapture(e.pointerId); } catch (_) {}
+      if (this.dedos.size === 2) {
+        const [a, b] = [...this.dedos.values()];
+        this.pellizco = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: this.z };
+        this.arrastre = false; this.paneo = null; this.volverSitio(); return;
+      }
+      if (this.z > 1) { this.paneo = { x: e.clientX - this.tx, y: e.clientY - this.ty }; return; }
       this.arrastre = true; this.eje = ""; this.x0 = e.clientX; this.y0 = e.clientY; this.dx = this.dy = 0;
       pista.style.transition = "none";
-      escena.setPointerCapture(e.pointerId);
     });
     escena.addEventListener("pointermove", (e) => {
+      const p = this.dedos.get(e.pointerId); if (p) { p.x = e.clientX; p.y = e.clientY; }
+      if (this.pellizco && this.dedos.size === 2) {
+        const [a, b] = [...this.dedos.values()];
+        this.z = Math.min(4, Math.max(1, this.pellizco.z * Math.hypot(a.x - b.x, a.y - b.y) / this.pellizco.d));
+        this.aplicarZoom(false); return;
+      }
+      if (this.paneo) { this.tx = e.clientX - this.paneo.x; this.ty = e.clientY - this.paneo.y; this.aplicarZoom(false); return; }
       if (!this.arrastre) return;
       this.dx = e.clientX - this.x0; this.dy = e.clientY - this.y0;
       if (!this.eje && Math.hypot(this.dx, this.dy) > 8) this.eje = Math.abs(this.dx) > Math.abs(this.dy) ? "x" : "y";
@@ -1261,7 +1299,19 @@ const Visor = {
         d.style.background = `rgba(6,6,5,${Math.max(0.35, 0.97 - this.dy / 500)})`;
       }
     });
-    const fin = () => {
+    const fin = (e) => {
+      const p = this.dedos.get(e.pointerId); this.dedos.delete(e.pointerId);
+      if (this.dedos.size < 2) this.pellizco = null;
+      if (!this.dedos.size) {
+        this.paneo = null;
+        if (this.z < 1.05 && this.z !== 1) this.quitarZoom(true);
+        // Doble toque: dos toques cortos, sin mover el dedo, en menos de 300 ms
+        if (e.type === "pointerup" && p && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 10) {
+          const ahora = Date.now();
+          if (ahora - this.ultimoToque < 300) { this.ultimoToque = 0; this.arrastre = false; this.volverSitio(); this.zoomEn(e.clientX, e.clientY); return; }
+          this.ultimoToque = ahora;
+        }
+      }
       if (!this.arrastre) return;
       this.arrastre = false;
       const w = escena.clientWidth;
@@ -1734,5 +1784,7 @@ async function arrancarDatos() {
 
 init();
 </script>
+<!-- Estadísticas de visitas sin cookies (ver legal.html#cookies) -->
+<script data-goatcounter="https://amfmelide.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
