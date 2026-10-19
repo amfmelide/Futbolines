@@ -1975,10 +1975,11 @@ function guardarMatch(i){
   if(sets.length===3&&(a===3||b===3||(sets[0][0]>sets[0][1])===(sets[1][0]>sets[1][1]))) return err(es?"El tercer set solo se juega si van 1-1.":"O terceiro set só se xoga se van 1-1.");
   snapshot(); m.s=sets; m.wo=null;
   render(); panelAdmin();
-  const e=$(`#me${i}`); if(e){ e.className="msg ok"; e.textContent=`${Math.max(a,b)}-${Math.min(a,b)} ✓ · ${es?"pulsa Publicar cambios":"preme Publicar cambios"}`; }
+  const e=$(`#me${i}`); if(e){ e.className="msg ok"; e.textContent=`${Math.max(a,b)}-${Math.min(a,b)} ✓ · ${es?"publicando…":"publicando…"}`; }
+  publicar(false);   /* el resultado se publica al guardarlo (antes había que pulsar además "Publicar cambios") */
 }
-function marcarWO(i,lado){ snapshot(); const m=matchActual(i); m.wo=m.wo===lado?null:lado; m.s=null; render(); panelAdmin(); }
-function borrarMatch(i){ snapshot(); const m=matchActual(i); m.s=null; m.wo=null; render(); panelAdmin(); }
+function marcarWO(i,lado){ snapshot(); const m=matchActual(i); m.wo=m.wo===lado?null:lado; m.s=null; render(); panelAdmin(); publicar(false); }
+function borrarMatch(i){ snapshot(); const m=matchActual(i); m.s=null; m.wo=null; render(); panelAdmin(); publicar(false); }
 
 /* --- Fechas y lugar por jornada --- */
 function admFechas(){
