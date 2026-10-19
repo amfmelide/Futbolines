@@ -447,7 +447,7 @@
 <!-- MAIN -->
 <div id="main">
   <header>
-    <a href="index.html" class="logo" id="logo-amf" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">AMF</a>
+    <a href="index.html" class="logo" id="logo-amf" style="-webkit-touch-callout:none;-webkit-user-select:none;user-select:none" onclick="return toqueLogo(event)" oncontextmenu="return false" onmousedown="startLogoPress()" onmouseup="cancelLogoPress()" onmouseleave="cancelLogoPress()" ontouchstart="startLogoPress()" ontouchend="cancelLogoPress()">AMF</a>
     <h1>ASOCIACIÓN MELIDE FUTBOLÍN</h1>
     <p class="subtitle">V Máster de Melide · Septiembre 2027</p>
   </header>
@@ -798,7 +798,18 @@ const WEB_API = 'https://axjanluawnatwqmwwbgd.supabase.co/functions/v1/amf-web';
 let adminBuffer = '';
 let adminAuthed = false;
 let logoPressTimer = null;
-function startLogoPress() { logoPressTimer = setTimeout(() => abrirAdmin(), 2000); }
+function startLogoPress() { logoPressTimer = setTimeout(() => { logoPressTimer = null; abrirAdmin(); }, 2000); }
+    /* Acceso oculto: 5 toques seguidos sobre "AMF" (o mantener pulsado 2 s).
+       Tocar el logo ya no recarga la página: ya estamos en la portada. */
+    let logoToques = 0, logoUltimo = 0;
+    function toqueLogo(e) {
+      if (e) e.preventDefault();
+      const t = Date.now();
+      logoToques = (t - logoUltimo < 900) ? logoToques + 1 : 1;
+      logoUltimo = t;
+      if (logoToques >= 5) { logoToques = 0; abrirAdmin(); }
+      return false;
+    }
 function cancelLogoPress() { if (logoPressTimer) { clearTimeout(logoPressTimer); logoPressTimer = null; } }
 function abrirAdmin() {
   adminBuffer = ''; adminAuthed = false;
