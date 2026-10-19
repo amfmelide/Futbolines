@@ -701,10 +701,11 @@ const CONFIG = {
   idioma:    "es",          // "es" o "gl": idioma por defecto
   bilingue:  true,          // false oculta el selector de idioma
 
-  // Sin base de datos. La web se actualiza cuando tú descargas
-  // el archivo desde el panel y lo vuelves a subir.
-  supabaseUrl: "",
+  // Base de datos: la liga se guarda en el servidor y se ve al momento.
+  // Todo pasa por la función amf-web (en esta página no hay ninguna clave).
+  supabaseUrl: "https://axjanluawnatwqmwwbgd.supabase.co",
   supabaseKey: "",
+  webApi:      "/functions/v1/amf-web",
 
   // La contraseña NO está en este archivo (ni siquiera su huella):
   // la comprueba el servidor (función amf-web, secreto MONTERROSO_PASS).
@@ -2548,7 +2549,19 @@ function pintarTv(){
    Todo lo que se envía pasa por una cola: si no hay red, se
    guarda y sale solo cuando vuelve la conexión.
    ============================================================ */
-const sbOn=()=>Boolean(CONFIG.supabaseUrl&&CONFIG.supabaseKey);
+const sbOn=()=>Boolean(CONFIG.supabaseUrl&&(CONFIG.supabaseKey||CONFIG.webApi));
+/* Sin clave en la página: lecturas y guardado pasan por la función amf-web.
+   Toda la liga (estructura y resultados) va en una sola fila de liga_publica. */
+const viaWeb=()=>Boolean(CONFIG.webApi&&!CONFIG.supabaseKey);
+function sbWeb(cuerpo){
+  return fetch(CONFIG.supabaseUrl+CONFIG.webApi,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cuerpo),cache:"no-store"});
+}
+function sbLeer(tabla,consulta){
+  if(viaWeb()) return tabla==="liga_publica"
+    ? sbWeb({accion:"leer",tabla,consulta})
+    : Promise.resolve(new Response("[]",{status:200,headers:{"Content-Type":"application/json"}}));
+  return fetch(`${CONFIG.supabaseUrl}/rest/v1/${tabla}?${consulta}`,{headers:sbHeaders(),cache:"no-store"});
+}
 const sbHeaders=()=>({apikey:CONFIG.supabaseKey,Authorization:"Bearer "+CONFIG.supabaseKey,"Content-Type":"application/json"});
 const clavePartido=(gid,jor,idx)=>`${gid}|${jor}|${idx}`;
 
@@ -2556,8 +2569,7 @@ const clavePartido=(gid,jor,idx)=>`${gid}|${jor}|${idx}`;
 async function sbCargar(){
   if(!sbOn()) return null;
   try{
-    const url=`${CONFIG.supabaseUrl}/rest/v1/liga_publica?codigo=eq.${encodeURIComponent(CODIGO)}&select=datos,updated_at`;
-    const r=await fetch(url,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_publica",`codigo=eq.${encodeURIComponent(CODIGO)}&select=datos,updated_at`);
     if(!r.ok) return null;
     const row=(await r.json())[0];
     if(!row) return null;
@@ -2568,8 +2580,7 @@ async function sbCargar(){
 async function sbCargarPartidos(){
   if(!sbOn()) return [];
   try{
-    const url=`${CONFIG.supabaseUrl}/rest/v1/liga_partidos?codigo=eq.${encodeURIComponent(CODIGO)}&select=grupo,jornada,idx,sets,wo,apl,autor,updated_at&order=updated_at.desc`;
-    const r=await fetch(url,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_partidos",`codigo=eq.${encodeURIComponent(CODIGO)}&select=grupo,jornada,idx,sets,wo,apl,autor,updated_at&order=updated_at.desc`);
     return r.ok?await r.json():[];
   }catch{ return []; }
 }
@@ -2585,7 +2596,7 @@ function fusionarPartidos(filas){
 async function sbVersion(){
   if(!sbOn()) return null;
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_publica?codigo=eq.${encodeURIComponent(CODIGO)}&select=updated_at`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_publica",`codigo=eq.${encodeURIComponent(CODIGO)}&select=updated_at`);
     if(!r.ok) return null;
     const rows=await r.json(); return rows[0]?rows[0].updated_at:null;
   }catch{ return null; }
@@ -2593,7 +2604,7 @@ async function sbVersion(){
 async function sbSelloPartidos(){
   if(!sbOn()) return null;
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_partidos?codigo=eq.${encodeURIComponent(CODIGO)}&select=updated_at&order=updated_at.desc&limit=1`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_partidos",`codigo=eq.${encodeURIComponent(CODIGO)}&select=updated_at&order=updated_at.desc&limit=1`);
     if(!r.ok) return null;
     const rows=await r.json(); return rows[0]?rows[0].updated_at:"";
   }catch{ return null; }
@@ -2626,8 +2637,27 @@ async function porFuncion(accion,datos){
   });
   return r.ok;
 }
+/* Guarda toda la liga en el servidor (función amf-web, con la contraseña). */
+async function guardarWeb(op){
+  if(!adminPass) return false;             // sin sesión no se intenta: así no cuenta como intento fallido
+  if(op&&op.tipo==="partido"){             // aplica el resultado por si la página se recargó antes de enviarlo
+    const m=((ST.calendario||{})[op.gid]||[])[op.jor-1]?.[op.idx];
+    if(m){ m.s=op.sets||null; m.wo=op.wo||null; if(op.apl!==undefined) m.apl=op.apl||null; }
+  }
+  const datos=clone(ST); delete datos.passHash;
+  try{
+    const r=await sbWeb({accion:"union-guardar",pass:adminPass,codigo:CODIGO,datos});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&j.ok){ versionRemota=j.updated_at||versionRemota; return true; }
+    return false;
+  }catch{ return false; }
+}
 async function enviarOp(op){
   const ahora=new Date().toISOString();
+  if(viaWeb()){
+    if(op.tipo==="partido"||op.tipo==="estructura") return guardarWeb(op);
+    return true;                           // registro, copias y propuestas no se usan en este modo
+  }
   if(CONFIG.escrituraUrl){
     if(op.tipo==="partido")    return porFuncion("partido",{grupo:op.gid,jornada:op.jor,idx:op.idx,sets:op.sets,wo:op.wo,apl:op.apl||null,autor:op.autor||autor});
     if(op.tipo==="estructura") return porFuncion("estructura",{datos:op.datos}).then(ok=>{ if(ok) versionRemota=ahora; return ok; });
@@ -2724,7 +2754,7 @@ async function leerRegistro(){
   let remoto=[];
   if(sbOn()){
     try{
-      const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_log?codigo=eq.${encodeURIComponent(CODIGO)}&select=autor,accion,detalle,ts&order=ts.desc&limit=100`,{headers:sbHeaders(),cache:"no-store"});
+      const r=await sbLeer("liga_log",`codigo=eq.${encodeURIComponent(CODIGO)}&select=autor,accion,detalle,ts&order=ts.desc&limit=100`);
       if(r.ok) remoto=await r.json();
     }catch{}
   }
@@ -2736,7 +2766,7 @@ async function leerRegistro(){
 async function cargarPropuestas(){
   if(!sbOn()){ propuestas=[]; return; }
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_propuestas?codigo=eq.${encodeURIComponent(CODIGO)}&select=id,grupo,jornada,idx,sets,autor,ts&order=ts.desc&limit=60`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_propuestas",`codigo=eq.${encodeURIComponent(CODIGO)}&select=id,grupo,jornada,idx,sets,autor,ts&order=ts.desc&limit=60`);
     const brutas=r.ok?await r.json():[];
     propuestas=brutas.filter(pr=>{
       const js=(ST.calendario||{})[pr.grupo]||[];
@@ -2799,7 +2829,7 @@ async function comprobarPass(v){
       const r=await fetch(CONFIG.loginUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"monterroso",pass:v})});
       if(!r.ok) return false;
       const d=await r.json();
-      if(d&&d.ok){ adminToken=d.token||null; return true; }
+      if(d&&d.ok){ adminToken=d.token||null; adminPass=v; return true; }
       return false;
     }catch{ return false; }
   }
@@ -2845,11 +2875,11 @@ function arrancarAutoRefresco(){
 
 /* ---------- copias de seguridad ---------- */
 async function copiaDelDia(){
-  if(!sbOn()||!CONFIG.copiaDiaria) return;
+  if(!sbOn()||viaWeb()||!CONFIG.copiaDiaria) return;
   const hoy=new Date().toISOString().slice(0,10);
   try{ if(localStorage.getItem("liga-copia-"+CODIGO)===hoy) return; }catch{}
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_copias?codigo=eq.${encodeURIComponent(CODIGO)}&dia=eq.${hoy}&select=dia`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_copias",`codigo=eq.${encodeURIComponent(CODIGO)}&dia=eq.${hoy}&select=dia`);
     if(r.ok && (await r.json()).length){ try{ localStorage.setItem("liga-copia-"+CODIGO,hoy); }catch{} return; }
   }catch{ return; }
   const completo=clone(ST);
@@ -2860,13 +2890,13 @@ async function copiaDelDia(){
 async function listarCopias(){
   if(!sbOn()) return [];
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_copias?codigo=eq.${encodeURIComponent(CODIGO)}&select=dia,ts&order=dia.desc&limit=30`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_copias",`codigo=eq.${encodeURIComponent(CODIGO)}&select=dia,ts&order=dia.desc&limit=30`);
     return r.ok?await r.json():[];
   }catch{ return []; }
 }
 async function traerCopia(dia){
   try{
-    const r=await fetch(`${CONFIG.supabaseUrl}/rest/v1/liga_copias?codigo=eq.${encodeURIComponent(CODIGO)}&dia=eq.${dia}&select=datos`,{headers:sbHeaders(),cache:"no-store"});
+    const r=await sbLeer("liga_copias",`codigo=eq.${encodeURIComponent(CODIGO)}&dia=eq.${dia}&select=datos`);
     if(!r.ok) return null;
     const f=(await r.json())[0];
     return f?f.datos:null;
@@ -2978,7 +3008,7 @@ function panelAdmin(){
     fechas:admFechas,ajustes:admAjustes,final:admFinal,propuestas:admPropuestas,
     registro:admRegistro,palmares:admPalmares,copias:admCopias,datos:admDatos})[vista.admTab]();
 }
-function salirAdmin(){ admin=false; adminToken=null; closeM("mAdmin"); arrancarAutoRefresco(); }
+function salirAdmin(){ admin=false; adminToken=null; adminPass=null; closeM("mAdmin"); arrancarAutoRefresco(); }
 
 function admResultados(){
   const gid=vista.cal, js=jornadasDe(gid);
@@ -3494,8 +3524,8 @@ function legalHTML(){
       Esos datos se tratan para organizar y difundir la competición, con el consentimiento que cada
       participante da al inscribirse.</p>
     <p style="font-size:13.5px;color:var(--dim);margin-bottom:10px">
-      No se usan cookies, ni analítica, ni recursos de terceros: los datos, las fuentes y las imágenes
-      están en la propia página, así que tu navegador no se conecta a ningún otro servidor al visitarla.</p>
+      No se usan cookies ni analítica. Las fuentes y las imágenes están en la propia página; solo se
+      consulta el servidor de la liga (Supabase) para mostrar la clasificación y los resultados.</p>
     <p style="font-size:13.5px;color:var(--dim)">
       Cualquier participante puede pedir que se corrijan o se retiren sus datos escribiendo a
       <b style="color:var(--txt)">${esc(L.contacto)}</b>. También puede reclamar ante la Agencia Española de
@@ -3513,8 +3543,8 @@ function legalHTML(){
       Eses datos trátanse para organizar e difundir a competición, co consentimento que cada
       participante dá ao inscribirse.</p>
     <p style="font-size:13.5px;color:var(--dim);margin-bottom:10px">
-      Non se usan cookies, nin analítica, nin recursos de terceiros: os datos, as fontes e as imaxes
-      están na propia páxina, así que o teu navegador non se conecta a ningún outro servidor ao visitala.</p>
+      Non se usan cookies nin analítica. As fontes e as imaxes están na propia páxina; só se
+      consulta o servidor da liga (Supabase) para mostrar a clasificación e os resultados.</p>
     <p style="font-size:13.5px;color:var(--dim)">
       Calquera participante pode pedir que se corrixan ou se retiren os seus datos escribindo a
       <b style="color:var(--txt)">${esc(L.contacto)}</b>. Tamén pode reclamar ante a Axencia Española de

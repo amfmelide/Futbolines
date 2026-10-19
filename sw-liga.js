@@ -3,7 +3,7 @@
    · Página y datos de la liga → primero la red; si no hay conexión, la última copia guardada.
    · Iconos e imágenes propias → copia guardada y se actualiza en segundo plano.
    Solo guarda datos públicos de la liga en este navegador. Los envíos (POST) nunca se tocan. */
-const CACHE = "liga-melide-v1";
+const CACHE = "liga-melide-v2";
 const BASE = ["/liga.html", "/liga.webmanifest", "/liga-icon-192.png", "/liga-icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -38,8 +38,18 @@ async function copiaYActualiza(req) {
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
-  if (req.method !== "GET") return;
   const url = new URL(req.url);
+  // Lecturas de la liga a través de la función amf-web (POST): red primero, copia para ver sin cobertura
+  if (req.method === "POST" && url.pathname.endsWith("/functions/v1/amf-web")) {
+    e.respondWith((async () => {
+      let c = null;
+      try { c = JSON.parse(await req.clone().text()); } catch (_) {}
+      if (!c || c.accion !== "leer" || c.tabla !== "liga_publica") return fetch(req);
+      return redPrimero(req, "/__liga_publica?" + (c.consulta || ""));
+    })());
+    return;
+  }
+  if (req.method !== "GET") return;
   // Datos públicos de la liga en Supabase (solo lectura)
   if (url.hostname.endsWith(".supabase.co") && url.pathname.startsWith("/rest/v1/liga_publica")) {
     e.respondWith(redPrimero(req, url.href));
