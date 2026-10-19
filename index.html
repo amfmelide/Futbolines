@@ -822,7 +822,12 @@ async function checkAdminPin() {
     (d.enlaces || []).forEach(l => {
       const a = document.createElement('a');
       a.className = 'admin-menu-btn';
-      a.href = l.url;
+      // Limpia el enlace por si el secreto se guardó con comillas, espacios o el dominio delante
+      let u = String(l.url || '').replace(/[`'"\s]/g, '');
+      const k = u.indexOf('zt4k9m/');
+      if (k > 0) u = u.slice(k);
+      u = u.replace(/^\/+/, '');
+      a.href = u;
       if (l.nueva) { a.target = '_blank'; a.rel = 'noopener'; }
       a.innerHTML = '<span class="btn-icon"></span><div><div></div><div style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-top:2px;"></div></div>';
       a.querySelector('.btn-icon').textContent = l.icono || '';
