@@ -53,10 +53,11 @@ test("monster DYP: nadie repite compañero mientras se pueda y los descansos se 
   C.siguienteRonda(st);
   assert.equal(st.fase, "terminado");
   const desc = {};
-  (st.descansos || []).forEach(d => d.ids.forEach(id => (desc[id] = (desc[id] || 0) + 1)));
+  st.jugadores.forEach(j => (desc[j.id] = 0));
+  (st.descansos || []).forEach(d => d.ids.forEach(id => (desc[id] = desc[id] + 1)));
   const v = Object.values(desc);
   assert.equal(v.reduce((a, b) => a + b, 0), 10);          // 2 descansan por ronda × 5
-  assert.ok(Math.max(...v) - Math.min(...v, Math.max(...v)) <= 1);
+  assert.ok(Math.max(...v) - Math.min(...v) <= 1, "descansos mal repartidos: " + v);
   const tabla = C.clasificacion(st);
   assert.equal(tabla.length, 10);
   assert.equal(C.podio(st).length, 3);
@@ -88,48 +89,66 @@ test("suizo con parejas fijas", () => {
   assert.equal(C.nombreJugador(st, p.j2), "B1");
 });
 
-test("vidas: se pierden vidas hasta que quedan 4; semifinales a sorteo y final", () => {
-  for (const n of [8, 10, 12, 18, 24]) {
-    const st = conJugadores("vidas", n, { vidas: 2 });
+test("vidas individual: cada jugador 3 vidas, pareja a sorteo cada ronda y fase final con 8 o menos", () => {
+  for (const n of [9, 10, 12, 16, 20, 23]) {
+    const st = conJugadores("vidas", n);
+    assert.equal(st.config.vidas, 3);
     C.empezar(st);
+    assert.equal(st.parejas.length, 0, "en las rondas no hay parejas fijas");
     let guard = 0;
     while (st.fase === "juego") {
+      // en cada ronda sólo juegan los vivos, en parejas de 2 contra 2
+      const vivos = new Set(C.vivos(st));
+      C.rondaActual(st).forEach(p => p.a.concat(p.b).forEach(id => assert.ok(vivos.has(id), "juega alguien sin vidas")));
       jugarTodo(st);
       if (st.fase === "juego") C.siguienteRonda(st);
-      assert.ok(guard++ < 50, "no termina");
+      assert.ok(guard++ < 80, "no termina");
     }
     assert.equal(st.fase, "final");
+    const v = C.vidasDe(st);
     const quedan = C.vivos(st).length;
-    assert.ok(quedan === 3 || quedan === 4, "quedan " + quedan);
-    const semis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1 && !p.bye);
-    assert.equal(semis.length, quedan === 4 ? 2 : 1);
-    assert.ok(semis.every(p => p.a && p.b));
+    assert.ok(quedan <= 8 && quedan >= 4, "quedan " + quedan);
+    assert.ok(Object.values(v).every(x => x >= 0 && x <= 3));
+    // las parejas de la final son de jugadores vivos y nadie repite
+    const enFinal = st.parejas.flatMap(p => [p.j1, p.j2]);
+    assert.equal(new Set(enFinal).size, enFinal.length);
+    enFinal.forEach(id => assert.ok(v[id] > 0));
+    assert.equal(enFinal.length, quedan - (quedan % 2));
     jugarTodo(st);
     assert.equal(st.fase, "terminado");
     const pod = C.podio(st);
-    assert.deepEqual(pod.map(x => x.pos), quedan === 4 ? [1, 2, 3, 3] : [1, 2, 3]);
+    assert.equal(pod[0].pos, 1);
+    assert.equal(pod[0].ids.length, 2);
   }
 });
 
-test("vidas: sin repesca; si quedan 3, uno pasa directo a la final por sorteo", () => {
-  const st = conJugadores("vidas", 10, { vidas: 1 });       // 5 parejas, 1 vida: tras la 1ª ronda quedan 3
+test("vidas: los descansos se reparten (nadie descansa dos veces mientras otro no ha descansado)", () => {
+  const st = conJugadores("vidas", 14, { vidas: 9 });          // muchas vidas para que sigan todos
   C.empezar(st);
-  jugarTodo(st);
-  const vivos = C.vivos(st);
-  assert.equal(vivos.length, 3);
-  C.siguienteRonda(st);
-  assert.equal(st.fase, "final");
-  const fin = st.partidos.filter(p => p.fase === "final");
-  const enJuego = new Set(fin.flatMap(p => [p.a, p.b]).filter(Boolean));
-  assert.deepEqual([...enJuego].sort(), vivos.slice().sort(), "sólo juegan los que siguen vivos");
-  assert.equal(fin.filter(p => p.ronda === 1 && p.bye).length, 1, "uno pasa directo");
-  jugarTodo(st);
-  assert.equal(st.fase, "terminado");
-  assert.deepEqual(C.podio(st).map(x => x.pos), [1, 2, 3]);
+  for (let r = 0; r < 6; r++) { jugarTodo(st); C.siguienteRonda(st); }
+  const desc = {};
+  C.vivos(st).forEach(id => (desc[id] = 0));
+  (st.descansos || []).forEach(d => d.ids.forEach(id => { if (id in desc) desc[id]++; }));
+  const v = Object.values(desc);
+  assert.ok(Math.max(...v) - Math.min(...v) <= 1, "descansos: " + v);
 });
 
-test("vidas: por defecto 3 vidas", () => {
-  assert.equal(C.nuevoTorneo({ modo: "vidas" }).config.vidas, 3);
+test("vidas: perder quita una vida a los dos jugadores de la pareja", () => {
+  const st = conJugadores("vidas", 12);
+  C.empezar(st);
+  const p = C.rondaActual(st)[0];
+  C.registrarResultado(st, p.id, 1, 0);
+  const v = C.vidasDe(st);
+  p.b.forEach(id => assert.equal(v[id], 2));
+  p.a.forEach(id => assert.equal(v[id], 3));
+});
+
+test("vidas: con 8 jugadores o menos se va directo a la fase final", () => {
+  const st = conJugadores("vidas", 7);
+  C.empezar(st);
+  assert.equal(st.fase, "final");
+  assert.equal(st.parejas.length, 3);
+  assert.ok(st.fueraFinal);
 });
 
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {

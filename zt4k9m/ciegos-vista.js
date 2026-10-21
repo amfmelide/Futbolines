@@ -33,7 +33,7 @@
       const fin = p.estado === "fin";
       const res = fin ? `${p.ra}-${p.rb}` : p.estado === "mesa" ? "M" + p.mesa : "vs";
       return `<div class="pg ${fin ? "fin" : ""} ${op.admin ? "click" : ""}" data-partido="${esc(p.id)}"><span class="a ${fin && p.ganador === "a" ? "gana" : ""}">${lado(st, p.a)}</span><span class="res" ${p.estado === "mesa" ? 'style="color:var(--ok)"' : ""}>${res}</span><span class="b ${fin && p.ganador === "b" ? "gana" : ""}">${lado(st, p.b)}</span><span></span></div>`;
-    }).join("") + (st.modo === "monster" && (st.descansos || []).some(d => d.ronda === r) ? `<div class="small dim" style="padding-top:8px">Descansan: ${st.descansos.filter(d => d.ronda === r).flatMap(d => d.ids).map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "") + `</div>`;
+    }).join("") + (E.individual(st) && (st.descansos || []).some(d => d.ronda === r) ? `<div class="small dim" style="padding-top:8px">Descansan: ${st.descansos.filter(d => d.ronda === r).flatMap(d => d.ids).map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "") + `</div>`;
   }
 
   // Cuadro de eliminatoria (Ciegos, o la fase final de Vidas)
@@ -74,12 +74,12 @@
   function htmlTabla(st) {
     if (st.modo === "ciegos") return "";
     const t = E.clasificacion(st);
-    const nombreFila = f => st.modo === "monster" ? esc(E.nombreJugador(st, f.id)) : lado(st, f.id);
-    const enFinal = st.ko ? new Set(st.partidos.filter(p => p.fase === "final").flatMap(p => [p.a, p.b]).filter(Boolean)) : null;
-    return `<div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>${st.modo === "monster" ? "Jugador" : "Pareja"}</th>
-      ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${st.modo === "monster" ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +
-      t.map(f => `<tr class="${st.modo === "vidas" && f.vidas === 0 && !(enFinal && enFinal.has(f.id)) ? "fuera" : ""}"><td class="n dim">${f.pos}</td><td><b>${nombreFila(f)}</b>${enFinal && enFinal.has(f.id) ? ' <span class="pill ok">fase final</span>' : ""}</td>
-        ${st.modo === "vidas" ? `<td class="n">${corazones(f.vidas, st.config.vidas)}</td>` : `<td class="n"><b>${f.puntos}</b></td>`}<td class="n">${f.pj}</td><td class="n">${f.pg}</td><td class="n">${f.pp}</td><td class="n">${f.pf - f.pc > 0 ? "+" : ""}${f.pf - f.pc}</td>${st.modo === "suizo" ? `<td class="n dim">${f.buchholz}</td>` : ""}${st.modo === "monster" ? `<td class="n dim">${f.descansos}</td>` : ""}</tr>`).join("") +
+    const nombreFila = f => E.individual(st) ? esc(E.nombreJugador(st, f.id)) : lado(st, f.id);
+    const enFinal = st.ko ? new Set(st.partidos.filter(p => p.fase === "final").flatMap(p => [p.a, p.b]).filter(Boolean).flatMap(l => E.individual(st) ? E.jugadoresDe(st, l) : [l])) : null;
+    return `<div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>${E.individual(st) ? "Jugador" : "Pareja"}</th>
+      ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${E.individual(st) ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +
+      t.map(f => `<tr class="${st.modo === "vidas" && f.vidas === 0 && !(enFinal && enFinal.has(f.id)) ? "fuera" : ""}"><td class="n dim">${f.pos}</td><td><b>${nombreFila(f)}</b>${enFinal && enFinal.has(f.id) ? ' <span class="pill ok">fase final</span>' : ""}${st.fueraFinal === f.id ? ' <span class="pill warn">fuera por impar</span>' : ""}</td>
+        ${st.modo === "vidas" ? `<td class="n">${corazones(f.vidas, st.config.vidas)}</td>` : `<td class="n"><b>${f.puntos}</b></td>`}<td class="n">${f.pj}</td><td class="n">${f.pg}</td><td class="n">${f.pp}</td><td class="n">${f.pf - f.pc > 0 ? "+" : ""}${f.pf - f.pc}</td>${st.modo === "suizo" ? `<td class="n dim">${f.buchholz}</td>` : ""}${E.individual(st) ? `<td class="n dim">${f.descansos}</td>` : ""}</tr>`).join("") +
       `</tbody></table></div>`;
   }
 
@@ -111,7 +111,7 @@
       ciegos: `Cada jugador se apunta solo y <b>las parejas se sortean</b>. Después, <b>eliminatoria directa</b>: quien pierde, fuera. ${f}.`,
       monster: `En cada ronda <b>te toca un compañero distinto</b> (y rivales distintos). Cada victoria suma 1 punto a cada jugador. ${E.rondasTotales(st)} rondas. Si sobran jugadores, descansan por turnos. ${f}.`,
       suizo: `Por parejas${st.config.parejas === "fijas" ? "" : " sorteadas"}. En cada ronda juegas contra alguien que va igual que tú en la clasificación, sin repetir rival. Victoria = 1 punto; desempata la suma de puntos de tus rivales (Bh). ${E.rondasTotales(st) || "?"} rondas. ${f}.`,
-      vidas: `Por parejas${st.config.parejas === "fijas" ? "" : " sorteadas"}. Cada pareja empieza con <b>${st.config.vidas} vida(s)</b> y pierde una en cada derrota. Sin repesca. Cuando quedan 4 en pie: <b>semifinales a sorteo y final</b> (si caen varios a la vez y quedan 3, el sorteo decide quién pasa directo a la final). ${f}.`
+      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. En cada ronda <b>se sortea tu pareja</b> (y tus rivales) entre los que siguen vivos; si sobran jugadores, descansan por turnos. Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan 8 o menos en pie: <b>parejas a sorteo, semifinales y final</b> (con 6 una pareja pasa directa a la final; con 4 o 5, final directa; si son impares, se queda fuera quien tenga menos vidas). ${f}.`
     };
     return r[st.modo];
   }

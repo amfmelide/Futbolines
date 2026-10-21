@@ -211,8 +211,8 @@ function vJugadores() {
       (ST.parejas.length ? `<h2>Parejas</h2>${CV.htmlParejas(ST)}` : `<h2>Jugadores</h2><div class="grid-s">${E.activos(ST).map(j => `<div class="card"><b>${esc(j.nombre)}</b></div>`).join("")}</div>`);
   }
   const js = E.activos(ST);
-  const necesita = ST.modo === "monster" ? "4 jugadores o más" : ST.modo === "vidas" ? "4 parejas o más" : "2 parejas o más";
-  const par = !fijas && ST.modo !== "monster" && js.length % 2;
+  const necesita = E.individual(ST) ? "4 jugadores o más" : "2 parejas o más";
+  const par = !fijas && !E.individual(ST) && js.length % 2;
   let h = `<div class="card small" style="margin-bottom:14px"><b>${esc(E.MODOS[ST.modo].nombre)}:</b> ${CV.reglas(ST)}</div>
   <div class="grid" style="align-items:start">
     <div class="card stack">
@@ -225,10 +225,10 @@ function vJugadores() {
     </div>
     <div class="card stack">
       <h2>Empezar</h2>
-      <div class="big-n"><b>${fijas ? ST.parejas.length : js.length}</b> ${fijas ? "parejas" : "jugadores"}${!fijas && ST.modo !== "monster" ? ` · ${Math.floor(js.length / 2)} parejas` : ""}</div>
+      <div class="big-n"><b>${fijas ? ST.parejas.length : js.length}</b> ${fijas ? "parejas" : "jugadores"}${!fijas && !E.individual(ST) ? ` · ${Math.floor(js.length / 2)} parejas` : ""}</div>
       ${par ? `<div class="pill warn">Número impar: falta o sobra un jugador para hacer parejas</div>` : ""}
       <div class="small dim">Hacen falta ${necesita}.</div>
-      <button class="btn pri big" onclick="empezar()" ${par ? "disabled" : ""}>${ST.modo === "monster" ? "▶ Empezar la ronda 1" : fijas ? "▶ Empezar" : "🎲 Sortear parejas y empezar"}</button>
+      <button class="btn pri big" onclick="empezar()" ${par ? "disabled" : ""}>${E.individual(ST) ? "▶ Empezar la ronda 1" : fijas ? "▶ Empezar" : "🎲 Sortear parejas y empezar"}</button>
     </div>
   </div>
   <h2 style="margin-top:18px">${fijas ? "Parejas apuntadas" : "Apuntados"}</h2>`;
@@ -262,12 +262,12 @@ function quitarPareja(id) {
   cambio(() => { const p = E.pareja(ST, id); ST.parejas = ST.parejas.filter(x => x.id !== id); ST.jugadores = ST.jugadores.filter(j => j.id !== p.j1 && j.id !== p.j2); });
 }
 function empezar() {
-  const sortea = !E.parejasFijas(ST) && ST.modo !== "monster";
+  const sortea = !E.parejasFijas(ST) && !E.individual(ST);
   if (!confirm(sortea ? "Se sortean las parejas y empieza el torneo. ¿Seguir?" : "¿Empezar el torneo?")) return;
   if (!cambio(() => E.empezar(ST), "Torneo empezado")) return;
   if (auto) cambio(() => E.asignarMesas(ST));
   tab = "juego"; pintar();
-  if (sortea) sorteoParejas();
+  if (sortea || ST.fase === "final") sorteoParejas();
 }
 function sorteoParejas() {
   TC.sorteoEnDirecto({
@@ -289,12 +289,12 @@ function vJuego() {
     <span class="spacer"></span><span class="dim small">${pend.length} esperando · ${libres} mesa(s) libre(s)</span></div>`;
   // ¿siguiente ronda?
   if (E.puedeSiguienteRonda(ST) && ST.fase === "juego") {
-    const fin = ST.modo === "vidas" && E.vivos(ST).length <= 4;
+    const fin = ST.modo === "vidas" && E.vivos(ST).length <= 8;
     const tot = E.rondasTotales(ST);
     const ultima = tot && ST.ronda >= tot;
     h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>Ronda ${ST.ronda} terminada.</b>
-      <div class="row" style="margin-top:8px"><button class="btn pri big" onclick="siguiente()">${fin ? "🎲 Sortear semifinales" : ultima ? "🏁 Cerrar y ver la clasificación final" : `▶ Ronda ${ST.ronda + 1}`}</button></div>
-      ${fin ? `<div class="small dim" style="margin-top:6px">Quedan ${E.vivos(ST).length} en pie${E.vivos(ST).length < 4 ? `: el sorteo decide quién pasa directo a la final` : ""}.</div>` : ""}</div>`;
+      <div class="row" style="margin-top:8px"><button class="btn pri big" onclick="siguiente()">${fin ? "🎲 Sortear parejas y semifinales" : ultima ? "🏁 Cerrar y ver la clasificación final" : `▶ Ronda ${ST.ronda + 1}`}</button></div>
+      ${fin ? `<div class="small dim" style="margin-top:6px">Quedan ${E.vivos(ST).length} jugadores en pie: se sortean ${Math.floor(E.vivos(ST).length / 2)} parejas${E.vivos(ST).length % 2 ? " (impar: se queda fuera quien tenga menos vidas)" : ""}.</div>` : ""}</div>`;
   }
   // mesas
   const enMesa = ST.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
@@ -305,7 +305,7 @@ function vJuego() {
   // ronda actual / cuadro
   if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST, { admin: true });
   if (ST.modo !== "ciegos" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
-  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> parejas en pie.</div>`;
+  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
   return h;
 }
 function rellenar() { cambio(() => E.asignarMesas(ST)); }
@@ -313,10 +313,7 @@ function siguiente() {
   const antes = ST.fase;
   if (!cambio(() => E.siguienteRonda(ST), "Siguiente ronda")) return;
   if (auto) cambio(() => E.asignarMesas(ST));
-  if (antes === "juego" && ST.fase === "final") {
-    const semis = ST.partidos.filter(p => p.fase === "final" && p.ronda === 1);
-    TC.sorteoEnDirecto({ titulo: "Semifinales · " + ST.nombre, columnas: semis.map((p, i) => ({ titulo: "Semifinal " + (i + 1) })), bolas: semis.flatMap((p, i) => [{ col: i, texto: E.nombreLado(ST, p.a) }, { col: i, texto: E.nombreLado(ST, p.b) }]) });
-  }
+  if (antes === "juego" && ST.fase === "final") sorteoParejas();       // Vidas: parejas de la fase final
   if (ST.fase === "terminado") TC.toast("🏁 Torneo terminado", "ok", 5000);
 }
 
@@ -378,7 +375,7 @@ function vAjustes() {
       <input type="number" id="fGol" min="1" max="20" value="${f.goles}" style="flex:1" aria-label="Goles"><span class="small dim">goles</span></div>
     ${ST.modo === "monster" || ST.modo === "suizo" ? `<div><label class="f">Rondas (0 = automático: ${ST.modo === "monster" ? "5" : "según parejas"})</label><input type="number" id="cRondas" min="0" max="30" value="${c.rondas}"></div>` : ""}
     ${ST.modo === "vidas" ? `<div><label class="f">Vidas de cada pareja</label><input type="number" id="cVidas" min="1" max="9" value="${c.vidas}" ${insc ? "" : "disabled"}></div>` : ""}
-    ${ST.modo === "suizo" || ST.modo === "vidas" ? `<div><label class="f">Parejas</label><select id="cParejas" ${insc ? "" : "disabled"}><option value="sorteo" ${c.parejas !== "fijas" ? "selected" : ""}>A sorteo (cada uno se apunta solo)</option><option value="fijas" ${c.parejas === "fijas" ? "selected" : ""}>Fijas (se apuntan por parejas)</option></select></div>` : ""}
+    ${ST.modo === "suizo" ? `<div><label class="f">Parejas</label><select id="cParejas" ${insc ? "" : "disabled"}><option value="sorteo" ${c.parejas !== "fijas" ? "selected" : ""}>A sorteo (cada uno se apunta solo)</option><option value="fijas" ${c.parejas === "fijas" ? "selected" : ""}>Fijas (se apuntan por parejas)</option></select></div>` : ""}
     ${ST.modo === "ciegos" ? `<label class="check"><input type="checkbox" id="cTercer" ${c.tercerPuesto ? "checked" : ""} ${insc ? "" : "disabled"}> Partido por el 3er puesto</label>` : ""}
   </div>
   <div class="card stack">
