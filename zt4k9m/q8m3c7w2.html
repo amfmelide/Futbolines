@@ -287,6 +287,7 @@ function vJuego() {
     <button class="btn pri" onclick="rellenar()" ${!libres || !pend.length ? "disabled" : ""}>▶ Llamar a mesa</button>
     <label class="check"><input type="checkbox" ${auto ? "checked" : ""} onchange="auto=this.checked;try{localStorage.setItem('ciegos-auto',auto?'1':'0')}catch(_){}"> Automático: al meter un resultado se llama al siguiente</label>
     <span class="spacer"></span><span class="dim small">${pend.length} esperando · ${libres} mesa(s) libre(s)</span></div>`;
+  if (ST.modo === "vidas" && ST.fase === "juego") return h + vJuegoVidas();
   // ¿siguiente ronda?
   if (E.puedeSiguienteRonda(ST) && ST.fase === "juego") {
     const fin = ST.modo === "vidas" && E.vivos(ST).length <= 8;
@@ -304,9 +305,55 @@ function vJuego() {
       <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
   // ronda actual / cuadro
   if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST, { admin: true });
-  if (ST.modo !== "ciegos" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
+  if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
+  if (ST.modo !== "ciegos" && ST.modo !== "vidas" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
   if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
   return h;
+}
+function htmlMesasPanel() {
+  const enMesa = ST.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
+  if (!enMesa.length) return "";
+  return `<div class="mesas">` + enMesa.map(p => `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${p.mesa}</span><span class="spacer"></span><span class="t">⏱ ${TC.hace(p.llamado)}</span></div>
+      <div class="small dim">${esc(E.nombrePartido(ST, p))}</div>
+      <div class="vs"><span>${esc(E.nombreLado(ST, p.a))}</span><i>contra</i><span>${esc(E.nombreLado(ST, p.b))}</span></div>
+      <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
+}
+
+// Vidas: sin rondas. Al acabar un partido, en cuanto hay 4 libres se sortea otro.
+function vJuegoVidas() {
+  const e = E.estadoVidas(ST);
+  let h = "";
+  if (e.listaFinal) h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>Quedan ${e.vivos.length} jugadores en pie.</b>
+      <div class="small dim" style="margin:4px 0 8px">Se sortean ${Math.floor(e.vivos.length / 2)} parejas${e.vivos.length % 2 ? " (impar: se queda fuera quien tenga menos vidas)" : ""} → ${e.vivos.length >= 8 ? "semifinales y final" : e.vivos.length >= 6 ? "una semifinal (una pareja pasa directa) y final" : "final directa"}.</div>
+      <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de la fase final</button></div>`;
+  else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>Quedan ${e.vivos.length} en pie.</b> <span class="dim">Cuando acaben los partidos en juego se sortean las parejas de la fase final.</span></div>`;
+  else h += `<div class="card row" style="margin-bottom:14px"><div><b>${e.libres.length}</b> libre(s) esperando${e.libres.length >= 4 ? "" : ` <span class="dim small">· hacen falta 4 para un partido</span>`}</div><span class="spacer"></span>
+      <button class="btn pri" onclick="sortearLibres()" ${e.libres.length >= 4 ? "" : "disabled"}>🎲 Sortear con los libres</button></div>`;
+  const mesas = htmlMesasPanel();
+  if (mesas) h += `<h2>En mesa</h2>` + mesas;
+  const esperan = E.pendientes(ST).filter(p => p.estado === "pendiente" && p.fase === "ronda");
+  if (esperan.length) h += `<h2 style="margin-top:16px">Esperando mesa</h2><div class="card">` + esperan.map(p => `<div class="pg click" data-partido="${p.id}"><span class="a">${esc(E.nombreLado(ST, p.a))}</span><span class="res">vs</span><span class="b">${esc(E.nombreLado(ST, p.b))}</span><span class="dim small">${esc(E.nombrePartido(ST, p))}</span></div>`).join("") + `</div>`;
+  h += `<h2 style="margin-top:16px">Vidas</h2>` + CV.htmlTableroVidas(ST);
+  const jugados = ST.partidos.filter(p => p.fase === "ronda" && p.estado === "fin").reverse();
+  if (jugados.length) h += `<details style="margin-top:14px"><summary><b>Partidos jugados (${jugados.length})</b></summary><div class="card" style="margin-top:8px">` + jugados.map(p => `<div class="pg fin click" data-partido="${p.id}"><span class="a ${p.ganador === "a" ? "gana" : ""}">${esc(E.nombreLado(ST, p.a))}</span><span class="res">${p.ra}-${p.rb}</span><span class="b ${p.ganador === "b" ? "gana" : ""}">${esc(E.nombreLado(ST, p.b))}</span><span class="dim small">${esc(E.nombrePartido(ST, p))}</span></div>`).join("") + `</div></details>`;
+  return h;
+}
+function sortearLibres() {
+  let nuevos = [];
+  if (!cambio(() => { nuevos = E.sortearVidas(ST); if (auto) E.asignarMesas(ST); }, "Sorteo con los libres")) return;
+  avisarNuevos(nuevos);
+}
+function avisarNuevos(nuevos) {
+  (nuevos || []).filter(p => p.fase === "ronda").forEach(p => TC.toast(`🎲 ${esc(E.nombreLado(ST, p.a))} <b>vs</b> ${esc(E.nombreLado(ST, p.b))}${p.mesa ? ` · <b>Mesa ${p.mesa}</b>` : ""}`, "ok", 6000));
+}
+// Tras meter un resultado (modo automático): llamar al siguiente o, en Vidas, sortear con los que han quedado libres
+function trasResultado(estaba) {
+  if (!auto || ST.fase === "terminado") return;
+  const antes = ST.fase;
+  let nuevos = [];
+  cambio(() => { if (ST.modo === "vidas" && ST.fase === "juego") nuevos = E.sortearVidas(ST); if (estaba || nuevos.length || ST.fase !== antes) E.asignarMesas(ST); });
+  if (antes === "juego" && ST.fase === "final") sorteoParejas();
+  else avisarNuevos(nuevos);
 }
 function rellenar() { cambio(() => E.asignarMesas(ST)); }
 function siguiente() {
@@ -337,7 +384,7 @@ function modalResultado(id) {
       const estaba = p.estado === "mesa";
       if (cambio(() => E.registrarResultado(ST, id, x, y), `${E.nombreLado(ST, p.a)} ${x}-${y} ${E.nombreLado(ST, p.b)}`)) {
         cerrar(); TC.toast("Resultado guardado", "ok");
-        if (auto && estaba && ST.fase !== "terminado") cambio(() => E.asignarMesas(ST));
+        trasResultado(estaba);
         if (ST.fase === "terminado") TC.toast("🏁 ¡Torneo terminado!", "ok", 6000);
       }
     });
@@ -353,7 +400,7 @@ function vTabla() {
   if (ST.fase === "terminado") h += `<div class="row" style="margin-bottom:14px"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen para redes</button></div>`;
   if (ST.ko) h += `<h2>${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST, { admin: true });
   if (ST.modo !== "ciegos") h += `<h2 style="margin-top:16px">Clasificación</h2>` + CV.htmlTabla(ST);
-  if (ST.modo !== "ciegos") for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r, { admin: r === ST.ronda && ST.fase === "juego" })}</details>`;
+  if (ST.modo !== "ciegos" && ST.modo !== "vidas") for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r, { admin: r === ST.ronda && ST.fase === "juego" })}</details>`;
   return h;
 }
 

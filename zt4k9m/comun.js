@@ -244,69 +244,152 @@
   /* ---------- sorteo en directo (para proyectar) ----------
      sorteoEnDirecto({ titulo, columnas:[{titulo, fijos:[texto], huecos:n}], bolas:[{col, texto, sub}] })
      Las "bolas" salen en orden del bombo y entran en su columna. */
+  /* ---------- sorteo en directo ----------
+     Una tira de nombres que gira como una tragaperras, frena en el elegido y la tarjeta vuela a su sitio.
+     op = { titulo, columnas: [{ titulo, fijos? }], bolas: [{ col, texto, sub? }] }  (bolas en el orden del sorteo) */
   function sorteoEnDirecto(op) {
     const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const total = op.bolas.length;
+    const huecos = op.columnas.map((_, i) => op.bolas.filter(b => b.col === i).length);
     const capa = document.createElement("div");
     capa.className = "sd";
     capa.innerHTML = `<div class="sd-cab"><div class="sd-tit">${esc(op.titulo)}</div><span class="spacer"></span>
-        <button class="btn sm" data-sd="vel">${op.bolas.length > 60 ? "Normal" : "Rápido"}</button><button class="btn sm" data-sd="fin">Ver todo</button>
-        <button class="btn sm" data-sd="full">⛶ Pantalla completa</button><button class="btn sm" data-sd="cerrar">Cerrar</button></div>
-      <div class="sd-cuerpo"><div class="sd-bombo"><div class="sd-bola" aria-live="polite"><span class="sd-nom">Pulsa empezar</span><span class="sd-sub"></span></div>
-        <button class="btn pri big" data-sd="ir">▶ Empezar</button><div class="sd-cuenta small dim"></div></div>
-        <div class="sd-cols">${op.columnas.map((c, i) => `<div class="sd-col"><div class="sd-ct">${esc(c.titulo)}</div>
-          ${(c.fijos || []).map(f => `<div class="sd-fijo">${esc(f)}</div>`).join("")}<div class="sd-lista" data-col="${i}"></div></div>`).join("")}</div></div>`;
+        <button class="btn sm" data-sd="pausa">⏸ Pausa</button><button class="btn sm" data-sd="vel">${total > 40 ? "Normal" : "⚡ Rápido"}</button><button class="btn sm" data-sd="fin">Ver todo</button>
+        <button class="btn sm" data-sd="full">⛶</button><button class="btn sm" data-sd="cerrar">Cerrar</button></div>
+      <div class="sd-barra"><i></i></div>
+      <div class="sd-escena">
+        <div class="sd-slot" aria-live="polite"><div class="sd-ventana"><div class="sd-tira"></div></div><div class="sd-destino"></div></div>
+        <div class="sd-cuenta"></div>
+      </div>
+      <div class="sd-cols">${op.columnas.map((c, i) => `<div class="sd-col" data-colc="${i}"><div class="sd-ct">${esc(c.titulo)}</div>
+          ${(c.fijos || []).map(f => `<div class="sd-fijo">${esc(f)}</div>`).join("")}<div class="sd-lista" data-col="${i}">${'<div class="sd-hueco"></div>'.repeat(huecos[i])}</div></div>`).join("")}</div>`;
     document.body.appendChild(capa);
     document.documentElement.style.overflow = "hidden";
-    const bola = capa.querySelector(".sd-bola"), nom = capa.querySelector(".sd-nom"), sub = capa.querySelector(".sd-sub");
-    const cuenta = capa.querySelector(".sd-cuenta");
-    const todos = op.bolas.map(b => b.texto);
-    let i = 0, rapido = op.bolas.length > 60, corriendo = false, cancel = false;   // con muchas parejas empieza en rápido
-    const espera = ms => new Promise(r => setTimeout(r, quieto ? 0 : rapido ? ms / 4 : ms));
+    const tira = capa.querySelector(".sd-tira"), slot = capa.querySelector(".sd-slot"), destino = capa.querySelector(".sd-destino");
+    const barra = capa.querySelector(".sd-barra i"), cuenta = capa.querySelector(".sd-cuenta");
+    const nombres = op.bolas.map(b => b.texto);
+    let i = 0, rapido = total > 40, pausa = false, cancel = false;
+    const espera = ms => new Promise(r => setTimeout(r, quieto ? 0 : rapido ? ms / 3.5 : ms));
+    const esperarPausa = async () => { while (pausa && !cancel) await new Promise(r => setTimeout(r, 120)); };
+    const item = t => `<div class="sd-n">${esc(t)}</div>`;
+    tira.innerHTML = item("¡Vamos!");
+    function progreso() {
+      barra.style.width = (100 * i / Math.max(1, total)) + "%";
+      cuenta.textContent = `${i} de ${total}`;
+    }
     function colocar(b, animar) {
+      const lista = capa.querySelector(`.sd-lista[data-col="${b.col}"]`);
+      const hueco = lista.querySelector(".sd-hueco");
       const el = document.createElement("div");
       el.className = "sd-item" + (animar ? " sd-entra" : "");
       el.innerHTML = `<b>${esc(b.texto)}</b>${b.sub ? `<span>${esc(b.sub)}</span>` : ""}`;
-      capa.querySelector(`.sd-lista[data-col="${b.col}"]`).appendChild(el);
-      if (animar) el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      if (hueco) hueco.replaceWith(el); else lista.appendChild(el);
+      return el;
+    }
+    // la tarjeta sale de la tragaperras y vuela hasta su hueco
+    async function volar(b) {
+      const col = capa.querySelector(`[data-colc="${b.col}"]`);
+      const hueco = col.querySelector(".sd-hueco");
+      if (cancel) return;
+      if (quieto || !hueco || !hueco.animate) return colocar(b, !quieto);
+      hueco.scrollIntoView({ block: "nearest", behavior: rapido ? "auto" : "smooth" });
+      await espera(rapido ? 60 : 220);
+      const de = slot.querySelector(".sd-ventana").getBoundingClientRect(), a = hueco.getBoundingClientRect();
+      const fl = document.createElement("div");
+      fl.className = "sd-vuela";
+      fl.innerHTML = `<b>${esc(b.texto)}</b>`;
+      Object.assign(fl.style, { left: de.left + "px", top: de.top + "px", width: de.width + "px", height: de.height + "px" });
+      capa.appendChild(fl);
+      const dx = a.left - de.left, dy = a.top - de.top, sx = a.width / de.width, sy = a.height / de.height;
+      await fl.animate([
+        { transform: "translate(0,0) scale(1)", opacity: 1 },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 60}px) scale(${(1 + sx) / 2}, ${(1 + sy) / 2}) rotate(-3deg)`, opacity: 1, offset: 0.55 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0.4 }
+      ], { duration: rapido ? 260 : 650, easing: "cubic-bezier(.45,.05,.2,1)", transformOrigin: "0 0" }).finished.catch(() => {});
+      fl.remove();
+      if (cancel) return;                              // «Ver todo» ya lo ha colocado
+      colocar(b, true);
+      col.classList.remove("sd-col-on"); void col.offsetWidth; col.classList.add("sd-col-on");
+    }
+    async function girar(b) {
+      // tira: nombres al azar y, al final, el elegido. Frena poco a poco.
+      const n = quieto ? 1 : rapido ? 10 : 22;
+      const lista = [];
+      for (let k = 0; k < n; k++) lista.push(nombres[Math.floor(Math.random() * nombres.length)]);
+      lista.push(b.texto);
+      tira.innerHTML = lista.map(item).join("");
+      destino.textContent = "→ " + op.columnas[b.col].titulo;
+      destino.classList.remove("on");
+      capa.querySelectorAll(".sd-col-obj").forEach(x => x.classList.remove("sd-col-obj"));
+      capa.querySelector(`[data-colc="${b.col}"]`).classList.add("sd-col-obj");
+      const alto = tira.firstElementChild.getBoundingClientRect().height || 90;
+      slot.classList.add("gira");
+      if (!quieto && tira.animate) {
+        await tira.animate([
+          { transform: "translateY(0)", filter: "blur(0)" },
+          { transform: `translateY(${-alto * n * 0.55}px)`, filter: "blur(2.5px)", offset: 0.45 },
+          { transform: `translateY(${-alto * n}px)`, filter: "blur(0)" }
+        ], { duration: rapido ? 700 : 1900, easing: "cubic-bezier(.15,.65,.25,1)", fill: "forwards" }).finished.catch(() => {});
+      } else tira.style.transform = `translateY(${-alto * n}px)`;
+      slot.classList.remove("gira");
+      slot.classList.add("pum"); destino.classList.add("on");
+      await espera(650);
+      slot.classList.remove("pum");
     }
     async function sacar() {
-      if (corriendo) return;
-      corriendo = true;
-      capa.querySelector('[data-sd="ir"]').hidden = true;
-      while (i < op.bolas.length && !cancel) {
+      await espera(500);
+      while (i < total && !cancel) {
+        await esperarPausa(); if (cancel) break;
         const b = op.bolas[i];
-        bola.classList.add("sd-gira");
-        const vueltas = quieto ? 0 : rapido ? 6 : 12;
-        for (let k = 0; k < vueltas && !cancel; k++) {           // los nombres pasan cada vez más despacio
-          nom.textContent = todos[Math.floor(Math.random() * todos.length)];
-          sub.textContent = "";
-          await espera(40 + k * k * 1.6);
-        }
-        bola.classList.remove("sd-gira");
-        nom.textContent = b.texto; sub.textContent = b.sub || "";
-        bola.classList.add("sd-sale");
-        await espera(900);
-        bola.classList.remove("sd-sale");
-        colocar(b, true);
-        i++;
-        cuenta.textContent = `${i} de ${op.bolas.length}`;
-        await espera(350);
+        await girar(b); if (cancel) break;
+        await volar(b);
+        i++; progreso();
+        await espera(250);
       }
-      if (i >= op.bolas.length) { nom.textContent = "¡Sorteo terminado!"; sub.textContent = ""; }
-      corriendo = false;
+      if (i >= total && !cancel) terminar();
     }
-    function verTodo() { cancel = true; while (i < op.bolas.length) colocar(op.bolas[i++], false); cuenta.textContent = `${i} de ${op.bolas.length}`; nom.textContent = "¡Sorteo terminado!"; sub.textContent = ""; capa.querySelector('[data-sd="ir"]').hidden = true; }
+    function terminar() {
+      tira.style.transform = ""; tira.getAnimations && tira.getAnimations().forEach(a => a.cancel());
+      tira.innerHTML = item("¡Sorteo terminado!");
+      destino.textContent = ""; slot.classList.add("hecho");
+      capa.querySelectorAll(".sd-col-obj").forEach(x => x.classList.remove("sd-col-obj"));
+      ["pausa", "vel", "fin"].forEach(k => (capa.querySelector(`[data-sd="${k}"]`).style.display = "none"));
+      if (!quieto) confeti(capa);
+    }
+    function verTodo() {
+      cancel = true;
+      while (i < total) colocar(op.bolas[i++], false);
+      progreso(); terminar();
+    }
     capa.addEventListener("click", e => {
       const a = e.target.closest("[data-sd]"); if (!a) return;
       const acc = a.dataset.sd;
-      if (acc === "ir") sacar();
-      if (acc === "vel") { rapido = !rapido; a.textContent = rapido ? "Normal" : "Rápido"; }
+      if (acc === "pausa") { pausa = !pausa; a.textContent = pausa ? "▶ Seguir" : "⏸ Pausa"; }
+      if (acc === "vel") { rapido = !rapido; a.textContent = rapido ? "Normal" : "⚡ Rápido"; }
       if (acc === "fin") verTodo();
       if (acc === "full") { try { (document.fullscreenElement ? document.exitFullscreen() : capa.requestFullscreen()).catch(() => {}); } catch (_) {} }
       if (acc === "cerrar") { cancel = true; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (_) {} capa.remove(); document.documentElement.style.overflow = ""; }
     });
-    cuenta.textContent = `0 de ${op.bolas.length}`;
+    progreso();
+    sacar();
     return capa;
+  }
+
+  // confeti dorado al terminar
+  function confeti(donde) {
+    const colores = ["#e9cd94", "#b08d4f", "#ffffff", "#00c853", "#f50057", "#1e88e5"];
+    for (let k = 0; k < 90; k++) {
+      const c = document.createElement("i");
+      c.className = "sd-confeti";
+      c.style.left = (Math.random() * 100) + "vw";
+      c.style.background = colores[k % colores.length];
+      c.style.setProperty("--x", ((Math.random() - 0.5) * 220) + "px");
+      c.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
+      c.style.animationDuration = (1.8 + Math.random() * 1.8) + "s";
+      c.style.animationDelay = (Math.random() * 0.4) + "s";
+      donde.appendChild(c);
+      setTimeout(() => c.remove(), 4200);
+    }
   }
 
   function tema() {

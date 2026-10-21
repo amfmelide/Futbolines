@@ -4,8 +4,9 @@
      ciegos  → cada jugador se apunta solo, se sortean las parejas y eliminatoria directa
      monster → Monster DYP: cada ronda un compañero distinto, clasificación individual
      suizo   → sistema suizo por parejas (a sorteo o fijas), N rondas
-     vidas   → individual: cada jugador tiene 3 vidas, pareja a sorteo en cada ronda; cada derrota quita
-               una vida a los dos; con 8 o menos en pie: parejas a sorteo, semifinales y final
+     vidas   → individual y sin rondas fijas: cada jugador tiene 3 vidas; en cuanto hay 4 libres se sortean
+               parejas y rivales entre ellos y juegan ya; cada derrota quita una vida a los dos;
+               con 8 o menos en pie: parejas a sorteo, semifinales y final
    Funciona en el navegador (window.CiegosEngine) y en Node (tests).
    ============================================================== */
 (function (raiz, fabrica) {
@@ -162,6 +163,7 @@
     }
     st.fase = "juego";
     if (st.modo === "ciegos") generarCuadroKO(st, st.parejas.map(p => p.id), "ko");
+    else if (st.modo === "vidas") sortearVidas(st);
     else siguienteRonda(st);
     return st.parejas;
   }
@@ -228,18 +230,19 @@
 
   function puedeSiguienteRonda(st) {
     if (st.fase !== "juego" || st.modo === "ciegos") return false;
+    if (st.modo === "vidas") { const e = estadoVidas(st); return e.libres.length >= 4 || e.listaFinal; }
     if (st.ronda > 0 && !rondaTerminada(st)) return false;
     return true;
   }
 
   function siguienteRonda(st) {
     if (st.fase !== "juego") throw new Error("No se puede generar otra ronda ahora");
+    if (st.modo === "vidas") return sortearVidas(st);
     if (st.ronda > 0 && !rondaTerminada(st)) throw new Error("Aún quedan partidos de esta ronda");
-    if (st.modo === "vidas" && vivos(st).length <= 8) return empezarFinalVidas(st);
     const tot = rondasTotales(st);
     if (tot && st.ronda >= tot) { st.fase = "terminado"; return []; }
     st.ronda++;
-    const ps = st.modo === "monster" ? rondaMonster(st) : st.modo === "suizo" ? rondaSuiza(st) : rondaVidas(st);
+    const ps = st.modo === "monster" ? rondaMonster(st) : rondaSuiza(st);
     ps.forEach((p, i) => { p.n = i + 1; st.partidos.push(p); });
     return ps;
   }
@@ -333,7 +336,75 @@
   }
   function vivos(st) { const v = vidasDe(st); return activos(st).filter(j => v[j.id] > 0).map(j => j.id); }
 
-  function rondaVidas(st) { return rondaMonster(st, vivos(st)); }
+  // Quién está libre, jugando o fuera. listaFinal: quedan 8 o menos y no hay nadie jugando → toca la fase final.
+  function estadoVidas(st) {
+    const v = vidasDe(st), vivosIds = activos(st).filter(j => v[j.id] > 0).map(j => j.id);
+    const ocupados = new Set();
+    st.partidos.forEach(p => { if (p.fase === "ronda" && p.estado !== "fin") jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => ocupados.add(id)); });
+    const ultimo = {};
+    st.partidos.forEach(p => { if (p.fase === "ronda" && p.estado === "fin" && p.fin) jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => (ultimo[id] = Math.max(ultimo[id] || 0, p.fin))); });
+    // libres: vivos que no están en ningún partido, primero los que llevan más rato esperando
+    const libres = vivosIds.filter(id => !ocupados.has(id)).sort((x, y) => (ultimo[x] || 0) - (ultimo[y] || 0));
+    const fin = vivosIds.length <= 8;
+    return { vidas: v, vivos: vivosIds, libres, ocupados, ultimo, fin, listaFinal: fin && ocupados.size === 0 };
+  }
+
+  // Sortea partidos con los que están libres (de 4 en 4). Si quedan 8 o menos y nadie juega, fase final.
+  function sortearVidas(st) {
+    const e = estadoVidas(st);
+    if (e.listaFinal) return empezarFinalVidas(st);
+    if (e.fin) return [];                                 // quedan 8 o menos: se espera a que acaben los que juegan
+    if (e.libres.length < 4) return [];
+    const rand = azar(st);
+    const h = historialMonster(st);
+    // tienen prioridad los que llevan más rato esperando; a igualdad, al azar
+    const grupos = {};
+    e.libres.forEach(id => { const k = e.ultimo[id] || 0; (grupos[k] = grupos[k] || []).push(id); });
+    const orden = Object.keys(grupos).map(Number).sort((a, b) => a - b).flatMap(k => barajar(grupos[k], rand));
+    const juegan = orden.slice(0, Math.floor(orden.length / 4) * 4);
+    // reparto con menos compañeros (y rivales) repetidos
+    let mejor = null, mejorCoste = Infinity;
+    for (let intento = 0; intento < 300 && mejorCoste > 0; intento++) {
+      const o = barajar(juegan, rand);
+      let coste = 0;
+      for (let i = 0; i < o.length; i += 4) {
+        coste += 100 * ((h.comp[h.k(o[i], o[i + 1])] || 0) + (h.comp[h.k(o[i + 2], o[i + 3])] || 0));
+        for (const x of [o[i], o[i + 1]]) for (const y of [o[i + 2], o[i + 3]]) coste += h.riv[h.k(x, y)] || 0;
+      }
+      if (coste < mejorCoste) { mejorCoste = coste; mejor = o; }
+    }
+    st.ronda++;                                            // nº de sorteo (tanda)
+    const total = st.partidos.filter(p => p.fase === "ronda").length;
+    const ps = [];
+    for (let i = 0; i < mejor.length; i += 4) {
+      const p = nuevoPartido({ ronda: st.ronda, n: total + ps.length + 1, a: [mejor[i], mejor[i + 1]], b: [mejor[i + 2], mejor[i + 3]] });
+      ps.push(p); st.partidos.push(p);
+    }
+    return ps;
+  }
+
+  // Tablero de vidas: cada jugador con sus vidas y qué está haciendo
+  function tableroVidas(st) {
+    const e = estadoVidas(st), t = {};
+    clasificacion(st).forEach(f => (t[f.id] = f));
+    const mesaDe = {}, enFinal = new Set();
+    st.partidos.forEach(p => {
+      if (p.estado === "fin") return;
+      jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => { if (p.estado === "mesa") mesaDe[id] = p.mesa; });
+    });
+    if (st.ko) st.parejas.forEach(p => { enFinal.add(p.j1); enFinal.add(p.j2); });
+    const posLibre = {}; e.libres.forEach((id, i) => (posLibre[id] = i));
+    return activos(st).map(j => {
+      const f = t[j.id] || {};
+      let estado;
+      if (st.fase === "final" || st.fase === "terminado") estado = enFinal.has(j.id) ? "final" : e.vidas[j.id] > 0 ? "fuera" : "eliminado";
+      else if (e.vidas[j.id] <= 0) estado = "eliminado";
+      else if (mesaDe[j.id]) estado = "mesa";
+      else if (e.ocupados.has(j.id)) estado = "espera-mesa";
+      else estado = "libre";
+      return { id: j.id, nombre: j.nombre, vidas: e.vidas[j.id], estado, mesa: mesaDe[j.id] || null, pj: f.pj || 0, pg: f.pg || 0, pp: f.pp || 0, orden: posLibre[j.id] };
+    }).sort((x, y) => (y.vidas > 0) - (x.vidas > 0) || y.vidas - x.vidas || y.pg - x.pg || x.nombre.localeCompare(y.nombre));
+  }
 
   // Quedan 8 o menos en pie: se sortean parejas entre ellos → semifinales y final. Sin repesca.
   // Si son impares, se queda fuera quien tenga menos vidas (a igualdad, por sorteo).
@@ -388,7 +459,7 @@
   function puedeEditar(st, id) {
     const p = partido(st, id);
     if (!p || p.bye) return false;
-    if (p.fase === "ronda") return p.ronda === st.ronda && st.fase === "juego";
+    if (p.fase === "ronda") return st.modo === "vidas" ? st.fase === "juego" : p.ronda === st.ronda && st.fase === "juego";
     return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
   }
 
@@ -500,7 +571,7 @@
     return faltan === 0 ? "Final" : faltan === 1 ? "Semifinal" : faltan === 2 ? "Cuartos" : faltan === 3 ? "Octavos" : `Ronda ${p.ronda}`;
   }
   function nombrePartido(st, p) {
-    if (p.fase === "ronda") return `Ronda ${p.ronda}`;
+    if (p.fase === "ronda") return st.modo === "vidas" ? `Partido ${p.n}` : `Ronda ${p.ronda}`;
     return nombreRondaKO(st, p);
   }
 
@@ -509,7 +580,7 @@
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
     nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
-    vidasDe, vivos, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
+    vidasDe, vivos, estadoVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
   };
 });

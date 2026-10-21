@@ -77,9 +77,9 @@
     const nombreFila = f => E.individual(st) ? esc(E.nombreJugador(st, f.id)) : lado(st, f.id);
     const enFinal = st.ko ? new Set(st.partidos.filter(p => p.fase === "final").flatMap(p => [p.a, p.b]).filter(Boolean).flatMap(l => E.individual(st) ? E.jugadoresDe(st, l) : [l])) : null;
     return `<div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>${E.individual(st) ? "Jugador" : "Pareja"}</th>
-      ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${E.individual(st) ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +
+      ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${st.modo === "monster" ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +
       t.map(f => `<tr class="${st.modo === "vidas" && f.vidas === 0 && !(enFinal && enFinal.has(f.id)) ? "fuera" : ""}"><td class="n dim">${f.pos}</td><td><b>${nombreFila(f)}</b>${enFinal && enFinal.has(f.id) ? ' <span class="pill ok">fase final</span>' : ""}${st.fueraFinal === f.id ? ' <span class="pill warn">fuera por impar</span>' : ""}</td>
-        ${st.modo === "vidas" ? `<td class="n">${corazones(f.vidas, st.config.vidas)}</td>` : `<td class="n"><b>${f.puntos}</b></td>`}<td class="n">${f.pj}</td><td class="n">${f.pg}</td><td class="n">${f.pp}</td><td class="n">${f.pf - f.pc > 0 ? "+" : ""}${f.pf - f.pc}</td>${st.modo === "suizo" ? `<td class="n dim">${f.buchholz}</td>` : ""}${E.individual(st) ? `<td class="n dim">${f.descansos}</td>` : ""}</tr>`).join("") +
+        ${st.modo === "vidas" ? `<td class="n">${corazones(f.vidas, st.config.vidas)}</td>` : `<td class="n"><b>${f.puntos}</b></td>`}<td class="n">${f.pj}</td><td class="n">${f.pg}</td><td class="n">${f.pp}</td><td class="n">${f.pf - f.pc > 0 ? "+" : ""}${f.pf - f.pc}</td>${st.modo === "suizo" ? `<td class="n dim">${f.buchholz}</td>` : ""}${st.modo === "monster" ? `<td class="n dim">${f.descansos}</td>` : ""}</tr>`).join("") +
       `</tbody></table></div>`;
   }
 
@@ -101,6 +101,7 @@
     if (st.fase === "terminado") return `${m} · terminado`;
     if (st.fase === "final") return `${m} · fase final`;
     if (st.modo === "ciegos") return `${m} · eliminatoria`;
+    if (st.modo === "vidas") return `${m} · ${E.vivos(st).length} en pie`;
     const tot = E.rondasTotales(st);
     return `${m} · ronda ${st.ronda}${tot ? " de " + tot : ""}`;
   }
@@ -111,7 +112,7 @@
       ciegos: `Cada jugador se apunta solo y <b>las parejas se sortean</b>. Después, <b>eliminatoria directa</b>: quien pierde, fuera. ${f}.`,
       monster: `En cada ronda <b>te toca un compañero distinto</b> (y rivales distintos). Cada victoria suma 1 punto a cada jugador. ${E.rondasTotales(st)} rondas. Si sobran jugadores, descansan por turnos. ${f}.`,
       suizo: `Por parejas${st.config.parejas === "fijas" ? "" : " sorteadas"}. En cada ronda juegas contra alguien que va igual que tú en la clasificación, sin repetir rival. Victoria = 1 punto; desempata la suma de puntos de tus rivales (Bh). ${E.rondasTotales(st) || "?"} rondas. ${f}.`,
-      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. En cada ronda <b>se sortea tu pareja</b> (y tus rivales) entre los que siguen vivos; si sobran jugadores, descansan por turnos. Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan 8 o menos en pie: <b>parejas a sorteo, semifinales y final</b> (con 6 una pareja pasa directa a la final; con 4 o 5, final directa; si son impares, se queda fuera quien tenga menos vidas). ${f}.`
+      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. No hay rondas: <b>en cuanto hay 4 jugadores libres se sortean</b> parejas y rivales entre ellos y se juega ya (primero los que más llevan esperando, sin repetir compañero si se puede). Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan 8 o menos en pie: <b>parejas a sorteo, semifinales y final</b> (con 6 una pareja pasa directa a la final; con 4 o 5, final directa; si son impares, se queda fuera quien tenga menos vidas). ${f}.`
     };
     return r[st.modo];
   }
@@ -132,5 +133,23 @@
     window.TImagen.mostrar(d, (st.codigo || "ciegos") + "-resultados.png");
   }
 
-  window.CV = { htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
+  // Tablero de Vidas: una tarjeta por jugador con sus corazones y qué está haciendo
+  function htmlTableroVidas(st) {
+    const t = E.tableroVidas(st), max = st.config.vidas;
+    const chip = j => ({
+      mesa: `<span class="vt-est jugando">● Mesa ${j.mesa}</span>`,
+      "espera-mesa": `<span class="vt-est">⏳ Esperando mesa</span>`,
+      libre: `<span class="vt-est libre">Libre${j.orden != null ? " · " + (j.orden + 1) + "º en espera" : ""}</span>`,
+      eliminado: `<span class="vt-est fuera">Eliminado</span>`,
+      final: `<span class="vt-est final">🏆 Fase final</span>`,
+      fuera: `<span class="vt-est fuera">Fuera</span>`
+    })[j.estado];
+    const vivos = t.filter(j => j.vidas > 0).length;
+    return `<div class="vt-resumen"><b>${vivos}</b> en pie de ${t.length}</div><div class="vt">` + t.map(j => `<div class="vt-j ${j.vidas > 0 ? "" : "muerto"} ${j.estado === "mesa" ? "en-mesa" : ""}">
+        <div class="vt-nom">${esc(j.nombre)}</div>
+        <div class="vt-vidas" aria-label="${j.vidas} vidas">${[...Array(max).keys()].map(i => `<i class="${i < j.vidas ? "on" : ""}">♥</i>`).join("")}</div>
+        <div class="vt-pie">${chip(j)}<span class="dim">${j.pg}G · ${j.pp}P</span></div></div>`).join("") + `</div>`;
+  }
+
+  window.CV = { htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
 })();
