@@ -112,7 +112,7 @@
       ciegos: `Cada jugador se apunta solo y <b>las parejas se sortean</b>. Después, <b>eliminatoria directa</b>: quien pierde, fuera. ${f}.`,
       monster: `En cada ronda <b>te toca un compañero distinto</b> (y rivales distintos). Cada victoria suma 1 punto a cada jugador. ${E.rondasTotales(st)} rondas. Si sobran jugadores, descansan por turnos. ${f}.`,
       suizo: `Por parejas${st.config.parejas === "fijas" ? "" : " sorteadas"}. En cada ronda juegas contra alguien que va igual que tú en la clasificación, sin repetir rival. Victoria = 1 punto; desempata la suma de puntos de tus rivales (Bh). ${E.rondasTotales(st) || "?"} rondas. ${f}.`,
-      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. No hay rondas: <b>en cuanto hay 4 jugadores libres se sortean</b> parejas y rivales entre ellos y se juega ya (primero los que más llevan esperando, sin repetir compañero si se puede). Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan <b>8 en pie</b> (da igual las vidas que tengan) se sortean <b>4 parejas → semifinales y final</b>. ${f}.`
+      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. Las rondas se sortean por adelantado (siempre hay una por delante): en cuanto los 4 jugadores de un partido han acabado la ronda anterior, ese partido se pone <b>en verde</b> y se puede jugar. Las parejas cambian cada ronda (sin repetir compañero si se puede). Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan <b>8 en pie</b> (da igual las vidas) se sortean <b>4 parejas → semifinales y final</b>. ${f}.`
     };
     return r[st.modo];
   }
@@ -138,12 +138,12 @@
     const t = E.tableroVidas(st), max = st.config.vidas;
     const chip = j => ({
       mesa: `<span class="vt-est jugando">● Mesa ${j.mesa}</span>`,
-      "espera-mesa": `<span class="vt-est">⏳ Esperando mesa</span>`,
-      libre: `<span class="vt-est libre">Libre${j.orden != null ? " · " + (j.orden + 1) + "º en espera" : ""}</span>`,
+      lista: `<span class="vt-est libre">✅ Listo · R${j.ronda}</span>`,
+      espera: `<span class="vt-est">⏳ Ronda ${j.ronda}</span>`,
+      descansa: `<span class="vt-est">Descansa</span>`,
       eliminado: `<span class="vt-est fuera">Eliminado</span>`,
-      final: `<span class="vt-est final">🏆 Fase final</span>`,
-      fuera: `<span class="vt-est fuera">Fuera</span>`
-    })[j.estado];
+      final: `<span class="vt-est final">🏆 Fase final</span>`
+    })[j.estado] || "";
     const vivos = t.filter(j => j.vidas > 0).length;
     return `<div class="vt-resumen"><b>${vivos}</b> en pie de ${t.length}</div><div class="vt">` + t.map(j => `<div class="vt-j ${j.vidas > 0 ? "" : "muerto"} ${j.estado === "mesa" ? "en-mesa" : ""}">
         <div class="vt-nom">${esc(j.nombre)}</div>
@@ -160,34 +160,71 @@
     if (st.modo === "vidas") tiles.push([E.vivos(st).length + "/" + E.activos(st).length, "en pie"]);
     else if (st.modo === "monster") tiles.push([E.activos(st).length, "jugadores"]);
     else tiles.push([st.parejas.length || Math.floor(E.activos(st).length / 2), "parejas"]);
-    if (st.modo !== "ciegos" && st.fase !== "final" && st.fase !== "terminado") tiles.push([E.rondasVista(st).length || "–", "ronda"]);
-    tiles.push([jugados, "jugados"], [mesa, "en mesa"], [espera, "esperando mesa"]);
+    if (st.modo === "vidas" && st.fase === "juego") {
+      const abiertas = st.partidos.filter(p => p.fase === "ronda" && p.estado !== "fin").map(p => p.ronda);
+      const est = E.estadosVidas(st);
+      tiles.push([abiertas.length ? Math.min(...abiertas) : "–", "ronda en juego"], [jugados, "jugados"], [mesa, "en mesa"], [Object.values(est).filter(e => e.estado === "lista").length, "listos"]);
+    } else {
+      if (st.modo !== "ciegos" && st.fase !== "final" && st.fase !== "terminado") tiles.push([E.rondasVista(st).length || "–", "ronda"]);
+      tiles.push([jugados, "jugados"], [mesa, "en mesa"], [espera, "esperando mesa"]);
+    }
     return `<div class="cd">${tiles.map(([n, t]) => `<div class="cd-t"><b>${esc(String(n))}</b><span>${esc(t)}</span></div>`).join("")}</div>`;
   }
 
-  /* ---------- rondas con pestañas ---------- */
+  /* ---------- rondas con pestañas (como las de un navegador) ---------- */
   function htmlRondas(st, sel, op) {
     op = op || {};
     const rs = E.rondasVista(st);
     if (!rs.length) return `<div class="vacio">Aún no hay rondas.</div>`;
-    const actual = rs.some(r => r.n === sel) ? sel : rs[rs.length - 1].n;
+    const vidas = st.modo === "vidas" && st.fase === "juego";
+    const est = vidas ? E.estadosVidas(st) : {};
+    // por defecto, la ronda más baja que aún tiene algo por jugar
+    const abierta = (rs.find(r => r.partidos.some(p => p.estado !== "fin")) || rs[rs.length - 1]).n;
+    const actual = rs.some(r => r.n === sel) ? sel : abierta;
     const r = rs.find(x => x.n === actual);
     const hechos = r.partidos.filter(p => p.estado === "fin" && !p.bye).length, total = r.partidos.filter(p => !p.bye).length;
-    const chips = `<div class="cr-chips" role="tablist">${rs.map(x => {
+    const pestañas = `<div class="nav-tabs" role="tablist">${rs.map(x => {
       const fin = x.partidos.every(p => p.estado === "fin");
-      return `<button class="cr-chip ${x.n === actual ? "on" : ""} ${fin ? "hecha" : ""}" data-ronda="${x.n}" role="tab" aria-selected="${x.n === actual}">R${x.n}${fin ? " ✓" : ""}</button>`;
-    }).join("")}${st.ko ? `<button class="cr-chip cr-final" data-tab="cuadro">🏆 Cuadro final</button>` : ""}</div>`;
+      const listos = x.partidos.filter(p => (est[p.id] || {}).estado === "lista").length;
+      const enMesa = x.partidos.filter(p => p.estado === "mesa").length;
+      const marca = fin ? `<i class="nt-ok">✓</i>` : listos ? `<i class="nt-dot verde" title="${listos} listo(s)"></i>` : enMesa ? `<i class="nt-dot jugando"></i>` : `<i class="nt-dot"></i>`;
+      return `<button class="nav-tab ${x.n === actual ? "on" : ""}" data-ronda="${x.n}" role="tab" aria-selected="${x.n === actual}">${marca}<span>Ronda ${x.n}</span>${listos ? `<b class="nt-n">${listos}</b>` : ""}</button>`;
+    }).join("")}${st.ko ? `<button class="nav-tab nt-final" data-tab="cuadro">🏆 Cuadro final</button>` : ""}</div>`;
+    const lista = (p, e) => {
+      if (!op.admin) return `<div class="cr-aviso verde">✅ Listos para jugar</div>`;
+      return `<div class="cr-aviso verde">✅ Listos para jugar</div><button class="btn sm ok cr-llamar" data-llamar="${esc(p.id)}">▶ Llamar a mesa</button>`;
+    };
     const tarjeta = p => {
       if (p.bye) return `<div class="cr-m bye"><div class="cr-l gana"><span>${lado(st, p.a)}</span><b>—</b></div><div class="small dim">Descansa (cuenta como victoria)</div></div>`;
       const fin = p.estado === "fin";
-      const est = fin ? "" : p.estado === "mesa" ? `<span class="cr-est mesa">● Mesa ${p.mesa}</span>` : `<span class="cr-est">⏳ Por jugar</span>`;
+      const e = est[p.id] || {};
+      let cls = p.estado, aviso = "";
+      if (p.estado === "mesa") aviso = `<div class="cr-aviso mesa">● Jugando en mesa ${p.mesa}${op.admin ? " · toca para anotar" : ""}</div>`;
+      else if (!fin && vidas && e.estado === "lista") { cls += " lista"; aviso = lista(p, e); }
+      else if (!fin && vidas && e.estado === "espera") { cls += " espera"; aviso = `<div class="cr-aviso">⏳ Esperando a ${e.esperan.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>`; }
+      else if (!fin && vidas && e.estado === "riesgo") { cls += " riesgo"; aviso = `<div class="cr-aviso ambar">⏸ Espera: ahora podría dejar a menos de 8 en pie</div>`; }
+      else if (!fin) aviso = `<div class="cr-aviso">Por jugar</div>`;
       const fila = l => `<div class="cr-l ${fin ? (p.ganador === l ? "gana" : "pierde") : ""}"><span>${lado(st, p[l])}</span><b>${fin ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
-      return `<div class="cr-m ${op.admin ? "click" : ""} ${p.estado}" data-partido="${esc(p.id)}">${est}${fila("a")}${fila("b")}${op.admin && !fin ? `<div class="cr-anotar">Toca para anotar el resultado</div>` : ""}</div>`;
+      const clic = op.admin && (fin || p.estado === "mesa" || e.estado === "lista" || !vidas);
+      return `<div class="cr-m ${clic ? "click" : ""} ${cls}" data-partido="${esc(p.id)}">${fila("a")}${fila("b")}${aviso}${p.rehecho && !fin ? `<div class="small dim">Partido rehecho (alguien quedó eliminado o para no bajar de 8)</div>` : ""}</div>`;
     };
-    const desc = st.modo === "monster" && (st.descansos || []).filter(d => d.ronda === actual).flatMap(d => d.ids);
-    return chips + `<div class="cr-cab"><h3>Ronda ${actual}</h3><span class="dim small">${hechos} de ${total} jugados</span></div>
+    const desc = (st.descansos || []).filter(d => d.ronda === actual).flatMap(d => d.ids);
+    const futura = r.partidos.every(p => p.estado === "pendiente") && vidas && r.partidos.every(p => (est[p.id] || {}).estado === "espera");
+    return pestañas + `<div class="nav-panel"><div class="cr-cab"><h3>Ronda ${actual}</h3><span class="dim small">${futura ? "ya sorteada · empieza cuando sus jugadores acaben la anterior" : `${hechos} de ${total} jugados`}</span></div>
       <div class="cr-grid">${r.partidos.map(tarjeta).join("")}</div>` +
-      (desc && desc.length ? `<div class="small dim" style="margin-top:8px">Descansan: ${desc.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "");
+      (desc.length ? `<div class="small dim" style="margin-top:10px">Descansan: ${desc.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "") + `</div>`;
+  }
+
+  // Partidos listos para llamar a mesa (Vidas)
+  function htmlListos(st) {
+    if (st.modo !== "vidas" || st.fase !== "juego") return "";
+    const est = E.estadosVidas(st);
+    const ls = st.partidos.filter(p => (est[p.id] || {}).estado === "lista").sort((x, y) => x.ronda - y.ronda || x.n - y.n);
+    if (!ls.length) return "";
+    const libre = E.mesasLibres(st)[0];
+    return `<div class="cr-grid">` + ls.map(p => `<div class="cr-m lista click" data-partido="${esc(p.id)}"><div class="cr-est">Ronda ${p.ronda}</div>
+      <div class="cr-l"><span>${lado(st, p.a)}</span><b></b></div><div class="cr-l"><span>${lado(st, p.b)}</span><b></b></div>
+      <button class="btn sm ok cr-llamar" data-llamar="${esc(p.id)}" ${libre ? "" : "disabled"}>${libre ? `▶ Llamar a mesa ${libre}` : "Todas las mesas ocupadas"}</button></div>`).join("") + `</div>`;
   }
 
   /* ---------- cuadro final estilo Champions / Roland Garros: dos mitades y la final en el centro ---------- */
@@ -264,5 +301,5 @@
   let tLineas;
   window.addEventListener("resize", () => { clearTimeout(tLineas); tLineas = setTimeout(() => lineas(), 120); });
 
-  window.CV = { htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
+  window.CV = { htmlListos, htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
 })();

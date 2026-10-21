@@ -353,3 +353,29 @@ body.tv .vt-nom { font-size: 1.3rem; } body.tv .vt-vidas { font-size: 2.2rem; }
 .cf-campeon span { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--gold2); }
 .cf-campeon b { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--gold); letter-spacing: .03em; }
 body.tv .cf-col { min-width: 220px; max-width: 280px; } body.tv .cf-l { font-size: 1.05rem; padding: 10px 12px; }
+
+/* Ciegos · rondas como pestañas de navegador */
+.nav-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: thin; padding: 0 4px; border-bottom: 1px solid var(--border); margin-top: 6px; }
+.nav-tab { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px 8px; border: 1px solid transparent; border-bottom: 0; border-radius: 12px 12px 0 0;
+  background: transparent; color: var(--dim); font: inherit; font-weight: 700; cursor: pointer; position: relative; top: 1px; transition: background .2s, color .2s; }
+.nav-tab:hover { background: var(--surface2); color: var(--text); }
+.nav-tab.on { background: var(--surface); color: var(--text); border-color: var(--border); }
+.nav-tab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--surface); }
+.nav-tab.nt-final { color: var(--gold); }
+.nt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); display: inline-block; }
+.nt-dot.verde { background: var(--ok); box-shadow: 0 0 0 0 rgba(0,200,83,.6); animation: nt-pulso 1.6s infinite; }
+.nt-dot.jugando { background: var(--warn); }
+.nt-ok { font-style: normal; color: var(--ok); font-size: .85rem; }
+.nt-n { background: var(--ok); color: #04210f; border-radius: 999px; font-size: .7rem; padding: 1px 7px; }
+@keyframes nt-pulso { 70% { box-shadow: 0 0 0 7px rgba(0,200,83,0); } 100% { box-shadow: 0 0 0 0 rgba(0,200,83,0); } }
+.nav-panel { background: var(--surface); border: 1px solid var(--border); border-top: 0; border-radius: 0 0 14px 14px; padding: 14px; }
+.nav-panel .cr-m { background: var(--surface2); }
+.cr-m.lista { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok) inset, 0 10px 30px -14px rgba(0,200,83,.6); background: linear-gradient(180deg, rgba(0,200,83,.10), transparent) !important; }
+.cr-m.espera { opacity: .72; }
+.cr-m.riesgo { border-color: rgba(255,179,0,.5); }
+.cr-aviso { font-size: .76rem; color: var(--dim); margin-top: 6px; }
+.cr-aviso.verde { color: var(--ok); font-weight: 700; }
+.cr-aviso.mesa { color: var(--ok); }
+.cr-aviso.ambar { color: var(--warn); }
+.cr-llamar { margin-top: 8px; width: 100%; }
+@media (prefers-reduced-motion: reduce) { .nt-dot.verde { animation: none; } }

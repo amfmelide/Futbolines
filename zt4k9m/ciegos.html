@@ -98,8 +98,8 @@ function vJuego() {
   if (ST.fase !== "inscripcion") h += CV.htmlResumen(ST);
   if (ST.fase === "juego" || ST.fase === "final") {
     h += `<h2>En juego</h2>` + CV.htmlMesas(ST);
-    const cola = CV.htmlCola(ST);
-    if (cola) h += `<h2 style="margin-top:18px">Próximos</h2>` + cola;
+    if (ST.modo === "vidas" && ST.fase === "juego") h += `<h2 style="margin-top:18px">Rondas</h2>` + CV.htmlRondas(ST, rondaSel);
+    else { const cola = CV.htmlCola(ST); if (cola) h += `<h2 style="margin-top:18px">Próximos</h2>` + cola; }
     if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   }
   if (ST.fase !== "inscripcion") h += `<details style="margin-top:16px"><summary class="small">Cómo se juega</summary><p class="small" style="margin-top:6px">${CV.reglas(ST)}</p></details>`;
