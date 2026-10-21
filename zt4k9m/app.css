@@ -296,3 +296,60 @@ h3.seccion { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-
 body.tv .vt { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 body.tv .vt-nom { font-size: 1.3rem; } body.tv .vt-vidas { font-size: 2.2rem; }
 @media (prefers-reduced-motion: reduce) { .vt-vidas i.on { animation: none; } }
+
+/* Ciegos · resumen */
+.cd { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.cd-t { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; }
+.cd-t b { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; color: var(--gold); }
+.cd-t span { color: var(--dim); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+
+/* Ciegos · rondas */
+.cr-chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: thin; }
+.cr-chip { flex: none; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 999px; padding: 7px 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.cr-chip.hecha { color: var(--dim); }
+.cr-chip.on { background: var(--gold); color: #1a1406; border-color: var(--gold); }
+.cr-chip.cr-final { border-color: var(--gold2); color: var(--gold); }
+.cr-cab { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.cr-cab h3 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: .04em; }
+.cr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.cr-m { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; position: relative; transition: border-color .2s, transform .2s; }
+.cr-m.click { cursor: pointer; } .cr-m.click:hover { border-color: var(--gold2); transform: translateY(-2px); }
+.cr-m.mesa { border-color: rgba(0,200,83,.6); }
+.cr-m.bye { opacity: .7; }
+.cr-l { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-weight: 600; }
+.cr-l + .cr-l { border-top: 1px solid var(--border); }
+.cr-l b { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; line-height: 1; min-width: 1ch; text-align: right; }
+.cr-l.gana { color: var(--gold); } .cr-l.pierde { color: var(--dim); }
+.cr-est { display: inline-block; font-size: .72rem; color: var(--dim); margin-bottom: 4px; }
+.cr-est.mesa { color: var(--ok); }
+.cr-anotar { font-size: .72rem; color: var(--gold2); margin-top: 4px; }
+
+/* Ciegos · cuadro final (dos mitades, la final en el centro) */
+.cf-scroll { overflow-x: auto; padding: 4px 2px 16px; }
+.cf { position: relative; display: flex; gap: 34px; align-items: stretch; justify-content: center; min-width: max-content; margin: 0 auto; }
+.cf-svg { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.cf-p { fill: none; stroke: var(--border); stroke-width: 2; }
+.cf-p.oro { stroke: var(--gold2); }
+.cf-col { display: flex; flex-direction: column; min-width: 170px; max-width: 220px; position: relative; z-index: 1; }
+.cf-t { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); font-weight: 700; text-align: center; margin-bottom: 8px; }
+.cf-lista { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
+.cf-m { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: 0 6px 18px -10px rgba(0,0,0,.6); }
+.cf-m.click { cursor: pointer; } .cf-m.click:hover { border-color: var(--gold2); }
+.cf-m.mesa { border-color: rgba(0,200,83,.7); }
+.cf-m.bye { opacity: .55; }
+.cf-m.final { border-color: var(--gold2); box-shadow: 0 0 0 1px var(--gold2) inset, 0 12px 40px -12px rgba(233,205,148,.45); }
+.cf-l { display: flex; justify-content: space-between; gap: 8px; padding: 7px 10px; font-size: .88rem; font-weight: 600; }
+.cf-l + .cf-l { border-top: 1px solid var(--border); }
+.cf-l span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-l b { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; line-height: 1; }
+.cf-l.gana { background: rgba(233,205,148,.12); color: var(--gold); }
+.cf-l.pierde { color: var(--dim); }
+.cf-mesa { font-size: .7rem; color: var(--ok); padding: 3px 10px; background: rgba(0,200,83,.08); }
+.cf-centro { justify-content: center; min-width: 200px; }
+.cf-centro .cf-lista { flex: none; }
+.cf-copa { font-size: 3rem; text-align: center; filter: grayscale(.6) opacity(.6); margin-bottom: 6px; transition: filter .5s, transform .5s; }
+.cf-copa.gana { filter: none; transform: scale(1.15); text-shadow: 0 0 30px rgba(233,205,148,.8); }
+.cf-campeon { margin-top: 12px; text-align: center; padding: 10px; border-radius: 12px; background: linear-gradient(135deg, rgba(233,205,148,.22), rgba(176,141,79,.12)); border: 1px solid var(--gold2); }
+.cf-campeon span { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--gold2); }
+.cf-campeon b { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--gold); letter-spacing: .03em; }
+body.tv .cf-col { min-width: 220px; max-width: 280px; } body.tv .cf-l { font-size: 1.05rem; padding: 10px 12px; }

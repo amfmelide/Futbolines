@@ -95,7 +95,7 @@ function jugarVidas(st, alSortear) {
   while (st.fase === "juego") {
     const p = C.pendientes(st)[0];
     if (!p) { const nuevos = C.sortearVidas(st); if (alSortear) alSortear(nuevos); if (!nuevos.length && st.fase === "juego") throw new Error("atascado"); continue; }
-    C.registrarResultado(st, p.id, (k++ % 3) !== 2 ? 1 : 0, (k % 3) !== 0 ? 0 : 1);
+    { const ganaA = (k++ % 3) !== 2; C.registrarResultado(st, p.id, ganaA ? 2 : 1, ganaA ? 1 : 2); }
     if (alSortear) alSortear(C.sortearVidas(st)); else C.sortearVidas(st);
     assert.ok(guard++ < 500, "no termina");
   }
@@ -132,7 +132,7 @@ test("vidas: al acabar un partido, si hay 4 libres se sortea ya otro (sin espera
   assert.equal(C.estadoVidas(st).libres.length, 0);
   assert.equal(C.sortearVidas(st).length, 0);
   const [p1] = C.pendientes(st);
-  C.registrarResultado(st, p1.id, 1, 0);
+  C.registrarResultado(st, p1.id, 2, 0);
   const libres = C.estadoVidas(st).libres;
   assert.equal(libres.length, 4);                  // los 4 del partido que acabó
   const nuevos = C.sortearVidas(st);
@@ -147,11 +147,11 @@ test("vidas: con 8 o menos en pie se espera a que acaben los partidos en juego a
   const st = conJugadores("vidas", 10, { vidas: 1 });
   C.empezar(st);                                   // 2 partidos, 2 esperando
   const [p1, p2] = C.pendientes(st);
-  C.registrarResultado(st, p1.id, 1, 0);          // quedan 8 vivos, pero p2 sigue en juego
+  C.registrarResultado(st, p1.id, 2, 0);          // quedan 8 vivos, pero p2 sigue en juego
   assert.equal(C.vivos(st).length, 8);
   assert.equal(C.sortearVidas(st).length, 0);
   assert.equal(st.fase, "juego");
-  C.registrarResultado(st, p2.id, 1, 0);
+  C.registrarResultado(st, p2.id, 2, 0);
   C.sortearVidas(st);
   assert.equal(st.fase, "final");
   assert.equal(st.parejas.length, 3);              // 6 vivos → 3 parejas
@@ -172,7 +172,7 @@ test("vidas: perder quita una vida a los dos jugadores de la pareja", () => {
   const st = conJugadores("vidas", 12);
   C.empezar(st);
   const p = C.pendientes(st)[0];
-  C.registrarResultado(st, p.id, 1, 0);
+  C.registrarResultado(st, p.id, 2, 0);
   const v = C.vidasDe(st);
   p.b.forEach(id => assert.equal(v[id], 2));
   p.a.forEach(id => assert.equal(v[id], 3));
@@ -209,4 +209,19 @@ test("mesas: no llama a dos partidos con el mismo jugador a la vez", () => {
   assert.equal(ll.length, 2);
   const ids = ll.flatMap(p => p.a.concat(p.b));
   assert.equal(new Set(ids).size, ids.length);
+});
+
+test("por defecto se juega a ganar 2 partidas de 7 goles", () => {
+  for (const m of ["ciegos", "monster", "suizo", "vidas"]) assert.deepEqual(C.nuevoTorneo({ modo: m }).config.partidas, { tipo: "al", partidas: 2, goles: 7 });
+});
+
+test("vidas: cada partido va en la ronda del nº de partido de sus jugadores", () => {
+  const st = conJugadores("vidas", 12);
+  C.empezar(st);
+  assert.deepEqual(C.rondasVista(st).map(r => [r.n, r.partidos.length]), [[1, 3]]);
+  const [p1] = C.pendientes(st);
+  C.registrarResultado(st, p1.id, 2, 0);
+  const [nuevo] = C.sortearVidas(st);
+  assert.equal(C.rondaDe(st, nuevo), 2);
+  assert.deepEqual(C.rondasVista(st).map(r => [r.n, r.partidos.length]), [[1, 3], [2, 1]]);
 });

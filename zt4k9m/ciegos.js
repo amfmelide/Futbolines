@@ -44,9 +44,9 @@
 
   const MODOS = {
     ciegos: { nombre: "Ciegos", texto: "Parejas a sorteo y eliminatoria directa", partidas: { tipo: "al", partidas: 2, goles: 7 } },
-    monster: { nombre: "Monster DYP", texto: "Cada ronda un compañero distinto · clasificación individual", partidas: { tipo: "al", partidas: 1, goles: 7 } },
-    suizo: { nombre: "Suizo", texto: "Rondas emparejando a quien va igual en la clasificación", partidas: { tipo: "al", partidas: 1, goles: 7 } },
-    vidas: { nombre: "Vidas", texto: "Cada jugador 3 vidas · pareja a sorteo en cada ronda · al final, semifinales y final", partidas: { tipo: "al", partidas: 1, goles: 7 } }
+    monster: { nombre: "Monster DYP", texto: "Cada ronda un compañero distinto · clasificación individual", partidas: { tipo: "al", partidas: 2, goles: 7 } },
+    suizo: { nombre: "Suizo", texto: "Rondas emparejando a quien va igual en la clasificación", partidas: { tipo: "al", partidas: 2, goles: 7 } },
+    vidas: { nombre: "Vidas", texto: "Cada jugador 3 vidas · pareja a sorteo en cada ronda · al final, semifinales y final", partidas: { tipo: "al", partidas: 2, goles: 7 } }
   };
 
   /* ---------- estado ---------- */
@@ -375,9 +375,13 @@
     }
     st.ronda++;                                            // nº de sorteo (tanda)
     const total = st.partidos.filter(p => p.fase === "ronda").length;
+    const jugadas = {};
+    st.partidos.forEach(p => { if (p.fase === "ronda" && !p.bye) jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => (jugadas[id] = (jugadas[id] || 0) + 1)); });
     const ps = [];
     for (let i = 0; i < mejor.length; i += 4) {
-      const p = nuevoPartido({ ronda: st.ronda, n: total + ps.length + 1, a: [mejor[i], mejor[i + 1]], b: [mejor[i + 2], mejor[i + 3]] });
+      const cuatro = mejor.slice(i, i + 4);
+      const rondaJ = 1 + Math.max(...cuatro.map(id => jugadas[id] || 0));   // «ronda» = nº de partido de sus jugadores
+      const p = nuevoPartido({ ronda: st.ronda, rondaJ, n: total + ps.length + 1, a: [mejor[i], mejor[i + 1]], b: [mejor[i + 2], mejor[i + 3]] });
       ps.push(p); st.partidos.push(p);
     }
     return ps;
@@ -564,6 +568,15 @@
   }
   function soltar(st, id) { const p = partido(st, id); if (p && p.estado === "mesa") { p.estado = "pendiente"; p.mesa = null; } }
 
+  /* ---------- rondas para enseñar ---------- */
+  // En Vidas no hay rondas de verdad: la ronda de un partido es el nº de partido de sus jugadores.
+  function rondaDe(st, p) { return st.modo === "vidas" ? (p.rondaJ || p.ronda) : p.ronda; }
+  function rondasVista(st) {
+    const m = {};
+    st.partidos.forEach(p => { if (p.fase === "ronda") (m[rondaDe(st, p)] = m[rondaDe(st, p)] || []).push(p); });
+    return Object.keys(m).map(Number).sort((a, b) => a - b).map(n => ({ n, partidos: m[n].sort((x, y) => (x.bye ? 1 : 0) - (y.bye ? 1 : 0) || x.n - y.n) }));
+  }
+
   /* ---------- nombres ---------- */
   function nombreRondaKO(st, p) {
     if (p.tercer) return "3er puesto";
@@ -571,7 +584,7 @@
     return faltan === 0 ? "Final" : faltan === 1 ? "Semifinal" : faltan === 2 ? "Cuartos" : faltan === 3 ? "Octavos" : `Ronda ${p.ronda}`;
   }
   function nombrePartido(st, p) {
-    if (p.fase === "ronda") return st.modo === "vidas" ? `Partido ${p.n}` : `Ronda ${p.ronda}`;
+    if (p.fase === "ronda") return st.modo === "vidas" ? `Ronda ${rondaDe(st, p)} · partido ${p.n}` : `Ronda ${p.ronda}`;
     return nombreRondaKO(st, p);
   }
 
@@ -581,6 +594,6 @@
     nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, estadoVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
-    pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
+    rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
   };
 });

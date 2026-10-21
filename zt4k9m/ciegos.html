@@ -45,7 +45,7 @@ const params = new URLSearchParams(location.search);
 const CODIGO = params.get("t") || "";
 const TV = params.has("tv");
 if (TV) document.body.classList.add("tv");
-let ST = null, VERSION = 0, tab = "juego", tvIdx = 0, tvPintada = -1;
+let ST = null, VERSION = 0, tab = "juego", tvIdx = 0, tvPintada = -1, rondaSel = null;
 
 (async function inicio() {
   if (!CODIGO.startsWith("ciegos-")) { $("#main").innerHTML = `<div class="vacio">Enlace no válido.<br>Pide a la organización el enlace del torneo.</div>`; return; }
@@ -75,17 +75,27 @@ async function comprobar() {
 
 function pintar() {
   if (!ST) return;
-  if (TV) { $("#tabs").innerHTML = ""; $("#main").innerHTML = vTV(); return; }
-  const tabs = [["juego", "En juego"], ["tabla", ST.modo === "ciegos" ? "Cuadro" : "Clasificación"], ["gente", ST.parejas.length ? "Parejas" : "Jugadores", E.activos(ST).length]];
+  if (TV) { $("#tabs").innerHTML = ""; $("#main").innerHTML = vTV(); CV.lineas($("#main")); return; }
+  const tabs = [["juego", "En juego"]];
+  if (ST.modo !== "ciegos") tabs.push(["rondas", "Rondas"]);
+  if (ST.modo === "ciegos" || ST.modo === "vidas") tabs.push(["cuadro", "🏆 Cuadro"]);
+  if (ST.modo !== "ciegos") tabs.push(["tabla", "Clasificación"]);
+  tabs.push(["gente", ST.parejas.length ? "Parejas" : "Jugadores", E.activos(ST).length]);
+  if (!tabs.some(x => x[0] === tab)) tab = "juego";
   $("#tabs").innerHTML = tabs.map(([id, t, n]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${t}${n != null ? `<span class="n">${n}</span>` : ""}</button>`).join("");
-  $("#main").innerHTML = ({ juego: vJuego, tabla: vTabla, gente: vGente })[tab]();
+  $("#main").innerHTML = ({ juego: vJuego, rondas: vRondas, cuadro: vCuadro, tabla: vTabla, gente: vGente })[tab]();
+  CV.lineas($("#main"));
 }
-document.addEventListener("click", e => { const t = e.target.closest("[data-tab]"); if (t) { tab = t.dataset.tab; pintar(); window.scrollTo(0, 0); } });
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]"); if (t) { tab = t.dataset.tab; pintar(); window.scrollTo(0, 0); return; }
+  const r = e.target.closest("[data-ronda]"); if (r) { rondaSel = Number(r.dataset.ronda); pintar(); }
+});
 
 function vJuego() {
   let h = "";
   if (ST.fase === "terminado") h += `<div class="card" style="text-align:center;margin-bottom:14px"><h2>🏁 Resultado final</h2>${CV.htmlPodio(ST)}<button class="btn" onclick="CV.imagenRedes(ST)">📸 Imagen para compartir</button></div>`;
   if (ST.fase === "inscripcion") h += `<div class="card" style="margin-bottom:14px"><h3>${esc(E.MODOS[ST.modo].nombre)}</h3><p class="small">${CV.reglas(ST)}</p><p class="dim" style="margin-top:8px">${E.activos(ST).length} apuntados. Aún no ha empezado.</p></div>`;
+  if (ST.fase !== "inscripcion") h += CV.htmlResumen(ST);
   if (ST.fase === "juego" || ST.fase === "final") {
     h += `<h2>En juego</h2>` + CV.htmlMesas(ST);
     const cola = CV.htmlCola(ST);
@@ -95,15 +105,17 @@ function vJuego() {
   if (ST.fase !== "inscripcion") h += `<details style="margin-top:16px"><summary class="small">Cómo se juega</summary><p class="small" style="margin-top:6px">${CV.reglas(ST)}</p></details>`;
   return h;
 }
+function vRondas() {
+  if (ST.fase === "inscripcion") return `<div class="vacio">Aún no ha empezado.</div>`;
+  return CV.htmlRondas(ST, rondaSel);
+}
+function vCuadro() {
+  if (ST.fase === "inscripcion") return `<div class="vacio">Aún no ha empezado.</div>`;
+  return CV.htmlPodio(ST) + CV.htmlCuadroFinal(ST);
+}
 function vTabla() {
   if (ST.fase === "inscripcion") return `<div class="vacio">Aún no ha empezado.</div>`;
-  let h = CV.htmlPodio(ST);
-  if (ST.ko) h += `<h2>${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST);
-  if (ST.modo !== "ciegos") {
-    h += `<h2 style="margin-top:16px">Clasificación</h2>` + CV.htmlTabla(ST);
-    if (ST.modo !== "vidas") for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r)}</details>`;
-  }
-  return h;
+  return CV.htmlPodio(ST) + CV.htmlTabla(ST);
 }
 function vGente() {
   if (ST.parejas.length && ST.fase !== "inscripcion") return `<h2>Parejas</h2>` + CV.htmlParejas(ST);
@@ -115,7 +127,7 @@ function diapositivas() {
   const d = [];
   if (ST.fase === "terminado") d.push({ t: "Resultado final", h: () => CV.htmlPodio(ST) });
   if (ST.fase === "juego" || ST.fase === "final") d.push({ t: "En juego", h: () => `<div class="grid" style="grid-template-columns:2fr 1fr"><div>${CV.htmlMesas(ST)}</div><div><h2>Próximos</h2>${CV.htmlCola(ST, 10) || '<div class="dim">—</div>'}</div></div>` });
-  if (ST.ko) d.push({ t: ST.ko.fase === "final" ? "Fase final" : "Cuadro", h: () => CV.htmlCuadro(ST) });
+  if (ST.ko) d.push({ t: ST.ko.fase === "final" ? "Cuadro final" : "Cuadro", h: () => CV.htmlCuadroFinal(ST) });
   if (ST.modo !== "ciegos" && ST.fase !== "inscripcion") d.push({ t: "Clasificación", h: () => CV.htmlTabla(ST) });
   if (ST.modo === "vidas" && ST.fase !== "inscripcion") d.unshift({ t: "Vidas", h: () => CV.htmlTableroVidas(ST) });
   if (ST.fase === "inscripcion") d.push({ t: "Apuntados", h: vGente });

@@ -99,6 +99,8 @@ intercalados) sin llamar nunca a una pareja que ya está jugando. En modo autom�
 
 Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torneos; misma contraseña). Web pública: `ciegos.html?t=CODIGO` (y `&tv`). Usa la misma función de Supabase: no hay que desplegar nada nuevo. Sus torneos empiezan por `ciegos-` y no se mezclan con los grandes.
 
+Pestañas: **Panel** (resumen: en pie, ronda, jugados, en mesa, esperando + vidas), **Rondas** (un botón por ronda; tocando un partido se anota el resultado), **🏆 Cuadro** (eliminatoria final con dos mitades y la final en el centro, como en la Champions o Roland Garros) y **Clasificación**. Por defecto se juega a ganar 2 partidas de 7 goles.
+
 - **Ciegos**: cada jugador se apunta solo, se sortean las parejas (sorteo en directo) y eliminatoria directa (con pases si no cuadran; 3er puesto opcional).
 - **Monster DYP**: cada ronda un compañero distinto (y rivales distintos si se puede), clasificación individual; si sobran jugadores descansan por turnos. 5 rondas por defecto.
 - **Suizo**: por parejas (a sorteo o fijas); en cada ronda se enfrentan quienes van igual, sin repetir rival; el impar descansa y suma victoria. Desempata la suma de puntos de los rivales (Buchholz).
