@@ -665,6 +665,23 @@ tr.top2 td:first-child{box-shadow:inset 3px 0 0 rgba(255,240,225,.35)}
 /* botón flotante */
 .fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px) + 12px);bottom:calc(var(--nav-h) + var(--safe-b) + 14px);z-index:65;display:inline-flex;align-items:center;gap:8px;min-height:48px;padding:0 20px 0 16px;border-radius:999px;background:var(--acc);color:var(--acc-ink);font-weight:800;font-size:14px;box-shadow:0 14px 30px -12px rgba(242,146,43,.85);opacity:0;transform:translateY(12px) scale(.96);pointer-events:none;transition:opacity .22s var(--ease),transform .22s var(--ease)}
 .fab.show{opacity:1;transform:none;pointer-events:auto}
+/* En el móvil ya está la barra de abajo: el botón flotante solo tapaba partidos y filas */
+@media (max-width:859px){.fab{display:none!important}}
+/* Mi pareja */
+.clas tr.mine td{background:rgba(242,146,43,.10)}
+.clas tr.mine td.nm button{color:var(--acc)}
+.mipar{padding:14px 16px;margin-bottom:12px;border-color:rgba(242,146,43,.45)}
+.mipar .mp-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mipar .mp-h b{font-size:16px}
+.mipar .mp-h small{color:var(--dim);font-size:13px}
+.mipar ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.mipar li{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--txt)}
+.mipar li span:first-child{color:var(--dim);min-width:34px}
+.mipar .mp-mas{color:var(--dim);font-size:13px;margin-top:6px}
+/* Enviar resultado por WhatsApp */
+.wa-send{display:flex;justify-content:flex-end;margin:-6px 2px 10px}
+.wa-send a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:var(--dim);font-size:13px;font-weight:600;text-decoration:none}
+.wa-send a:hover,.wa-send a:focus-visible{color:var(--txt);border-color:var(--acc)}
 .fab svg{width:20px;height:20px}
 @media (min-width:860px){.fab{bottom:calc(24px + var(--safe-b))}}
 
@@ -896,7 +913,7 @@ const TX = {
   lider:"Líder",segundo:"2.º puesto",victoria:"Victoria",derrota:"Derrota",sinJugar:"Sin jugar",
   jornada:"Jornada",ida:"IDA",vuelta:"VUELTA",porJugar:"Por jugar",descansa:"Descansa",
   anterior:"Jornada anterior",siguiente:"Jornada siguiente",jorActual:"Jornada actual",
-  fechaPend:"Fecha por confirmar",addCal:"Añadir al calendario",lugarPend:"Lugar por confirmar",
+  fechaPend:"Fecha por confirmar",enviarRes:"Enviar resultado",miPareja:"Mi pareja",esMiPareja:"Es mi pareja",dejarSeguir:"Ya no es mi pareja",cambiar:"Cambiar",quedan:"Os quedan {n} partidos",todoJugado:"¡Ya habéis jugado todos los partidos!",elegirPareja:"¿Juegas en la liga? Toca tu pareja en la tabla y pulsa «Es mi pareja»: verás aquí tus partidos pendientes.",yMas:"y {n} más",sinPartidos:"Sin partidos todavía",lugarPend:"Lugar por confirmar",
   plazoAviso:"La <b>IDA</b> (jornadas 1-9) tiene que estar terminada antes del <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"El plazo de la <b>IDA</b> terminó el 31/12/2026.",
   jugadosJ:"{a}/{b} jugados",
@@ -939,7 +956,7 @@ const TX = {
   lider:"Líder",segundo:"2.º posto",victoria:"Vitoria",derrota:"Derrota",sinJugar:"Sen xogar",
   jornada:"Xornada",ida:"IDA",vuelta:"VOLTA",porJugar:"Por xogar",descansa:"Descansa",
   anterior:"Xornada anterior",siguiente:"Xornada seguinte",jorActual:"Xornada actual",
-  fechaPend:"Data por confirmar",addCal:"Engadir ao calendario",lugarPend:"Lugar por confirmar",
+  fechaPend:"Data por confirmar",enviarRes:"Enviar resultado",miPareja:"A miña parella",esMiPareja:"É a miña parella",dejarSeguir:"Xa non é a miña parella",cambiar:"Cambiar",quedan:"Quédanvos {n} partidos",todoJugado:"Xa xogastes todos os partidos!",elegirPareja:"Xogas na liga? Toca a túa parella na táboa e preme «É a miña parella»: verás aquí os teus partidos pendentes.",yMas:"e {n} máis",sinPartidos:"Aínda sen partidos",lugarPend:"Lugar por confirmar",
   plazoAviso:"A <b>IDA</b> (xornadas 1-9) ten que estar rematada antes do <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"O prazo da <b>IDA</b> rematou o 31/12/2026.",
   jugadosJ:"{a}/{b} xogados",
@@ -1045,6 +1062,7 @@ function fechaCorta(iso){
   return d.toLocaleDateString(LANG==="gl"?"gl-ES":"es-ES",{day:"numeric",month:"short"});
 }
 const ICO = {
+  wa:'<svg class="i" viewBox="0 0 24 24"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/><path d="M9 9.5c.3 2 2.5 4.2 4.5 4.5l1.2-1.1 1.8.9-.4 1.6c-3.7.2-7.2-3.3-7-7l1.6-.4.9 1.8z"/></svg>',
   cal:'<svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   pin:'<svg class="i" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>',
   prev:'<svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -1278,7 +1296,7 @@ function tablaHTML(gid,tv){
       const mv=tv?0:movimiento(gid,f.id);
       const mvH=f.pj? (mv>0?`<span class="mv up" aria-label="+${mv}">▲</span>`:mv<0?`<span class="mv dn" aria-label="${mv}">▼</span>`:`<span class="mv eq" aria-hidden="true">•</span>`) : `<span class="mv"></span>`;
       const forma=f.forma.slice(-5); while(forma.length<5) forma.unshift("");
-      return `<tr class="st ${i===0&&f.pj?"top1":i===1&&f.pj?"top2":""}" style="--i:${i}">
+      return `<tr class="st ${i===0&&f.pj?"top1":i===1&&f.pj?"top2":""}${!tv&&f.id===miPareja?" mine":""}" style="--i:${i}">
         <td><div class="pos"><b>${i+1}</b>${mvH}</div></td>
         <td class="nm"><button type="button" data-act="ficha" data-id="${f.id}">${esc(f.nombre)}${star(f)}<span class="form mini" aria-hidden="true">${forma.map(x=>`<i class="${x}"></i>`).join("")}</span></button></td>
         <td class="muted">${f.pj}</td><td>${f.g}</td><td class="muted">${f.p}</td>
@@ -1289,6 +1307,20 @@ function tablaHTML(gid,tv){
       </tr>`;}).join("")}
     </tbody></table>`;
 }
+/* Mi pareja: se guarda solo en este navegador */
+let miPareja=null; try{ miPareja=localStorage.getItem("liga-mi-pareja"); }catch{}
+function miParejaHTML(){
+  const p=miPareja&&pareja(miPareja);
+  if(!p) return `<p class="note" style="margin:0 0 12px">${T("elegirPareja")}</p>`;
+  const g=grupoDe(miPareja), filas=tablaC(g.id), pos=filas.findIndex(f=>f.id===miPareja), f=filas[pos];
+  const pend=partidosDe(miPareja).filter(o=>o.m&&!partidoJugado(o.m));
+  const lista=pend.slice(0,4).map(o=>`<li><span>J${o.jor}</span><span>${T("vs")} ${esc(nombreP(o.m.l===miPareja?o.m.v:o.m.l))}</span></li>`).join("");
+  return `<div class="card mipar">
+    <div class="mp-h"><div><b>${esc(p.nombre)}${star(p)}</b><br><small>${T("miPareja")} · ${esc(g.nombre)} · ${pos+1}º · ${f.pts} ${T("pts").toLowerCase()}</small></div>
+      <button class="btn ghost sm" type="button" data-act="ficha" data-id="${esc(miPareja)}">${T("cambiar")}</button></div>
+    ${pend.length?`<p class="mp-mas" style="margin-top:10px">${T("quedan",{n:pend.length})}</p><ul>${lista}</ul>${pend.length>4?`<p class="mp-mas">${T("yMas",{n:pend.length-4})}</p>`:""}`:`<p class="mp-mas" style="margin-top:10px">${T("todoJugado")}</p>`}
+  </div>`;
+}
 function renderClasificacion(){
   const el=$("#sec-clasificacion"), g=vista.clas;
   const tools=segHTML("clas",g,gruposOpc())+
@@ -1296,7 +1328,7 @@ function renderClasificacion(){
      <button class="ibtn" data-act="share" data-tipo="clas" aria-label="${T("compartir")}" title="${T("compartir")}">${ICO.share}</button>`;
   const head=secHead("h-clas",T("jorActual")+" · "+jorActual(g),T("tabs.clasificacion"),tools);
   if(cargando){ el.innerHTML=head+skeleton(8); return; }
-  el.innerHTML=head+`<div class="card tbl-wrap">${tablaHTML(g)}</div>
+  el.innerHTML=head+miParejaHTML()+`<div class="card tbl-wrap">${tablaHTML(g)}</div>
     <div class="legend">
       <span><i style="background:var(--gold)"></i>${T("lider")}</span>
       <span><i style="background:var(--red2)"></i>${T("segundo")}</span>
@@ -1327,6 +1359,13 @@ function matchHTML(m,gid,i){
     <div class="score">${centro}</div>
     <div class="tm r ${cls(m.v)}"><span>${pv?esc(pv.nombre)+star(pv):"—"}</span>${sub(m.v)}</div>
   </div>`;
+}
+/* Botón para mandar el resultado al grupo de WhatsApp con el formato ya escrito */
+function waHTML(m,gid,jor){
+  if(resultado(m)||!m.l||!m.v) return "";
+  const g=grupo(gid);
+  const txt=`${CONFIG.liga} · ${g?g.nombre+" · ":""}${T("jornada")} ${jor}\n${nombreP(m.l)} _-_ ${nombreP(m.v)}\nSets: _-_ / _-_ / _-_`;
+  return `<div class="wa-send"><a href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">${ICO.wa}<span>${T("enviarRes")}</span></a></div>`;
 }
 function restHTML(gid,i){
   return descansa(gid,i).map(p=>`<div class="card rest st">${ICO.clock}<span>${T("descansa")}: <b>${esc(p.nombre)}</b>${star(p)}</span></div>`).join("");
@@ -1377,14 +1416,13 @@ function renderCalendario(){
           <span>${ICO.cal}${meta.fecha?esc(fechaLarga(meta.fecha)):T("fechaPend")}</span>
           <span>${ICO.pin}${meta.lugar?esc(meta.lugar):T("lugarPend")}</span>
         </div>
-        ${meta.fecha?`<button type="button" class="btn ghost sm" style="margin-top:10px" data-act="calJor" data-g="${esc(gid)}" data-j="${jor}">${ICO.cal}<span>${T("addCal")}</span></button>`:""}
       </div>
       <div style="text-align:right">
         <span class="phase ${esIda(gid,jor)?"ida":"vuelta"}">${esIda(gid,jor)?T("ida"):T("vuelta")}</span>
         <div class="meta" style="justify-content:flex-end">${T("jugadosJ",{a:hechos,b:partidos.length})}</div>
       </div>
     </div>
-    <div class="matches">${partidos.map((m,i)=>matchHTML(m,gid,i)).join("")}${restHTML(gid,jor-1)}</div>`;
+    <div class="matches">${partidos.map((m,i)=>matchHTML(m,gid,i)+waHTML(m,gid,jor)).join("")}${restHTML(gid,jor-1)}</div>`;
   const s=$("#selJor"); if(s) s.onchange=()=>{ vista.jor[gid]=+s.value; renderCalendario(); };
   const cur=el.querySelector('.jchip[aria-current="true"]');
   if(cur){ const st=cur.parentElement; st.scrollLeft=cur.offsetLeft-st.clientWidth/2+cur.clientWidth/2; }
@@ -1468,7 +1506,8 @@ function abrirFicha(id){
     </div>
     <div class="pnext" style="border:0;padding-top:12px"><span>${T("proxPartido")}</span>${nx?`<b>J${nx.jor} · ${T("vs")} ${esc(nombreP(nx.rival))}${metaJor(nx.gid,nx.jor-1).fecha?" · "+esc(fechaCorta(metaJor(nx.gid,nx.jor-1).fecha)):""}</b>`:`<b>${T("ninguno")}</b>`}</div>
     <div class="gtitle" style="margin-top:16px">${T("historial")}</div>
-    <div class="hist">${hist}</div>`;
+    <div class="hist">${hist}</div>
+    <div class="row" style="margin-top:16px"><button class="btn ${miPareja===id?"ghost":""} sm" type="button" data-act="miPareja" data-id="${esc(id)}">${miPareja===id?T("dejarSeguir"):T("esMiPareja")}</button></div>`;
   abrirModal("mFicha");
 }
 
@@ -1513,7 +1552,8 @@ function renderEstadisticas(){
   const todas=ST.grupos.flatMap(g=>tablaC(g.id).map((f,i)=>({...f,gnom:g.nombre,pos:i+1})));
   const top=(fn,filtro)=>todas.filter(filtro||(()=>true)).map(f=>({nombre:f.nombre,elite:f.elite,g:f.gnom,v:fn(f)})).sort((a,b)=>b.v-a.v).slice(0,5);
   const hay=c.jug>0;
-  const lideres=ST.grupos.map(g=>{ const f=tablaC(g.id)[0]; return f?`<div class="card leader st"><span class="lbl">${ICO.trophy.replace('class="i"','class="i" style="width:14px;height:14px;vertical-align:-2px"')} ${esc(g.nombre)}</span><b>${hay?esc(f.nombre)+star(f):"—"}</b><span>${hay?`${f.pts} ${T("pts").toLowerCase()} · ${f.g}-${f.p}`:T("sinJugar")}</span></div>`:""; }).join("");
+  const lideres=ST.grupos.map(g=>{ const f=tablaC(g.id)[0]; const jugado=!!(f&&f.pj>0);   /* cada grupo por separado */
+    return f?`<div class="card leader st"><span class="lbl">${ICO.trophy.replace('class="i"','class="i" style="width:14px;height:14px;vertical-align:-2px"')} ${esc(g.nombre)}</span><b>${jugado?esc(f.nombre)+star(f):"—"}</b><span>${jugado?`${f.pts} ${T("pts").toLowerCase()} · ${f.g}-${f.p}`:T("sinPartidos")}</span></div>`:""; }).join("");
   el.innerHTML=head+`
     <div class="kpis">
       <div class="card kpi st" style="--i:0"><span class="lbl">${T("kJugados")}</span><b class="gold num" data-count="${c.jug}">${c.jug}</b><small>/ ${c.total}</small></div>
@@ -2179,23 +2219,6 @@ function irTab(tab,push){
 }
 /* Todos los clics con data-act pasan por aquí */
 const ACCIONES={
-  /* Añadir la jornada al calendario del móvil (.ics de día completo; Google, Apple y Outlook lo abren) */
-  calJor:(b)=>{
-    const gid=b.dataset.g, jor=+b.dataset.j, meta=metaJor(gid,jor-1);
-    if(!meta.fecha||!/^\d{4}-\d{2}-\d{2}$/.test(meta.fecha)) return;
-    const d=meta.fecha.replace(/-/g,""), sig=new Date(meta.fecha+"T12:00:00"); sig.setDate(sig.getDate()+1);
-    const d2=sig.getFullYear()+String(sig.getMonth()+1).padStart(2,"0")+String(sig.getDate()).padStart(2,"0");
-    const g=grupo(gid), ics_=v=>String(v).replace(/[\\;,]/g,m=>"\\"+m).replace(/\n/g,"\\n");
-    const titulo=`${CONFIG.liga} · ${T("jornada")} ${jor}${g&&ST.grupos.length>1?" · "+g.nombre:""}`;
-    const txt=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//AMF//Liga Melide//ES","CALSCALE:GREGORIAN","BEGIN:VEVENT",
-      `UID:${CONFIG.codigo}-${gid}-${jor}@amfmelide.es`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,"").slice(0,15)}Z`,
-      `DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d2}`,`SUMMARY:${ics_(titulo)}`,
-      meta.lugar?`LOCATION:${ics_(meta.lugar)}`:"",`DESCRIPTION:${ics_("https://"+CONFIG.url+"#calendario")}`,`URL:https://${CONFIG.url}`,
-      "END:VEVENT","END:VCALENDAR"].filter(Boolean).join("\r\n");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([txt],{type:"text/calendar;charset=utf-8"}));
-    a.download=`liga-melide-jornada-${jor}.ics`; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  },
   seg:(b)=>{ const k=b.dataset.k, v=b.dataset.v; vista[k]=v;
     if(k==="clas") renderClasificacion(); else if(k==="cal") renderCalendario(); else if(k==="res"){ vista.resN=12; renderResultados(); }
     else if(k==="par") renderParejas(); else if(k==="est"){ vista.evoSel=null; renderEstadisticas(); }
@@ -2203,6 +2226,9 @@ const ACCIONES={
   jor:(b)=>{ vista.jor[vista.cal]=+b.dataset.v; renderCalendario(); },
   jorMov:(b)=>{ vista.jor[vista.cal]=(vista.jor[vista.cal]||1)+ +b.dataset.v; renderCalendario(); },
   ficha:(b)=>abrirFicha(b.dataset.id),
+  miPareja:(b)=>{ const id=b.dataset.id; miPareja=(miPareja===id)?null:id;
+    try{ miPareja?localStorage.setItem("liga-mi-pareja",miPareja):localStorage.removeItem("liga-mi-pareja"); }catch{}
+    cerrarModal("mFicha"); if(miPareja){ const g=grupoDe(miPareja); if(g) vista.clas=g.id; } render(); irTab("clasificacion"); },
   masRes:()=>{ vista.resN+=12; renderResultados(); },
   evoSel:(b)=>{ vista.evoSel=b.dataset.id; renderEstadisticas(); },
   print:()=>imprimir(),
