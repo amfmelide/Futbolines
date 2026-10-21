@@ -90,7 +90,7 @@ function vJuego() {
     h += `<h2>En juego</h2>` + CV.htmlMesas(ST);
     const cola = CV.htmlCola(ST);
     if (cola) h += `<h2 style="margin-top:18px">Próximos</h2>` + cola;
-    if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:10px">Quedan <b>${E.vivos(ST).length}</b> parejas en pie. Con 4, semifinales a sorteo.</div>`;
+    if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:10px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
   }
   if (ST.fase !== "inscripcion") h += `<details style="margin-top:16px"><summary class="small">Cómo se juega</summary><p class="small" style="margin-top:6px">${CV.reglas(ST)}</p></details>`;
   return h;

@@ -4,7 +4,8 @@
      ciegos  → cada jugador se apunta solo, se sortean las parejas y eliminatoria directa
      monster → Monster DYP: cada ronda un compañero distinto, clasificación individual
      suizo   → sistema suizo por parejas (a sorteo o fijas), N rondas
-     vidas   → cada derrota quita una vida; cuando quedan 4 en pie: semifinales a sorteo y final
+     vidas   → individual: cada jugador tiene 3 vidas, pareja a sorteo en cada ronda; cada derrota quita
+               una vida a los dos; con 8 o menos en pie: parejas a sorteo, semifinales y final
    Funciona en el navegador (window.CiegosEngine) y en Node (tests).
    ============================================================== */
 (function (raiz, fabrica) {
@@ -44,7 +45,7 @@
     ciegos: { nombre: "Ciegos", texto: "Parejas a sorteo y eliminatoria directa", partidas: { tipo: "al", partidas: 2, goles: 7 } },
     monster: { nombre: "Monster DYP", texto: "Cada ronda un compañero distinto · clasificación individual", partidas: { tipo: "al", partidas: 1, goles: 7 } },
     suizo: { nombre: "Suizo", texto: "Rondas emparejando a quien va igual en la clasificación", partidas: { tipo: "al", partidas: 1, goles: 7 } },
-    vidas: { nombre: "Vidas", texto: "Cada derrota quita una vida · con 4 en pie, semifinales a sorteo y final", partidas: { tipo: "al", partidas: 1, goles: 7 } }
+    vidas: { nombre: "Vidas", texto: "Cada jugador 3 vidas · pareja a sorteo en cada ronda · al final, semifinales y final", partidas: { tipo: "al", partidas: 1, goles: 7 } }
   };
 
   /* ---------- estado ---------- */
@@ -60,7 +61,7 @@
         mesas: 4,
         rondas: 0,                            // monster / suizo: 0 = automático
         vidas: 3,
-        parejas: "sorteo",                    // suizo / vidas: "sorteo" (se apuntan solos) o "fijas" (se apuntan por parejas)
+        parejas: "sorteo",                    // suizo: "sorteo" (se apuntan solos) o "fijas" (se apuntan por parejas)
         tercerPuesto: false
       }, o.config || {}),
       jugadores: [],                          // {id, nombre, baja}
@@ -72,8 +73,9 @@
       log: []
     };
   }
-  function porParejas(st) { return st.modo !== "monster"; }
-  function parejasFijas(st) { return (st.modo === "suizo" || st.modo === "vidas") && st.config.parejas === "fijas"; }
+  function individual(st) { return st.modo === "monster" || st.modo === "vidas"; }
+  function porParejas(st) { return !individual(st); }
+  function parejasFijas(st) { return st.modo === "suizo" && st.config.parejas === "fijas"; }
 
   function añadirJugador(st, nombre, id) {
     nombre = String(nombre || "").trim();
@@ -150,7 +152,7 @@
   // Empieza el torneo. Devuelve las parejas sorteadas (si las hay) para enseñarlas en directo.
   function empezar(st) {
     if (st.fase !== "inscripcion") throw new Error("El torneo ya ha empezado");
-    if (st.modo === "monster") {
+    if (individual(st)) {
       if (activos(st).length < 4) throw new Error("Hacen falta al menos 4 jugadores");
     } else {
       if (parejasFijas(st)) {
@@ -233,7 +235,7 @@
   function siguienteRonda(st) {
     if (st.fase !== "juego") throw new Error("No se puede generar otra ronda ahora");
     if (st.ronda > 0 && !rondaTerminada(st)) throw new Error("Aún quedan partidos de esta ronda");
-    if (st.modo === "vidas" && vivos(st).length <= 4) return empezarFinalVidas(st);
+    if (st.modo === "vidas" && vivos(st).length <= 8) return empezarFinalVidas(st);
     const tot = rondasTotales(st);
     if (tot && st.ronda >= tot) { st.fase = "terminado"; return []; }
     st.ronda++;
@@ -255,14 +257,15 @@
     return { comp, riv, descansos, k };
   }
 
-  function rondaMonster(st) {
+  function rondaMonster(st, ids) {
     const rand = azar(st);
     const h = historialMonster(st);
-    let js = barajar(activos(st).map(j => j.id), rand);
+    let js = barajar(ids || activos(st).map(j => j.id), rand);
     const juegan = Math.floor(js.length / 4) * 4;
     // descansan los que menos han descansado (a igualdad, al azar)
     js.sort((x, y) => (h.descansos[x] || 0) - (h.descansos[y] || 0));
-    const descansan = js.slice(juegan), enJuego = js.slice(0, juegan);
+    const sobran = js.length - juegan;
+    const descansan = js.slice(0, sobran), enJuego = js.slice(sobran);
     st.descansos = (st.descansos || []).concat(descansan.length ? [{ ronda: st.ronda, ids: descansan }] : []);
     // buscar el reparto que menos repite compañeros (y rivales)
     let mejor = null, mejorCoste = Infinity;
@@ -314,50 +317,42 @@
     return pares.map(([a, b]) => nuevoPartido({ ronda: st.ronda, a, b })).concat(ps);
   }
 
-  // ---------- Vidas ----------
+  // ---------- Vidas (individual) ----------
+  // Cada jugador empieza con N vidas. En cada ronda se sortean parejas y rivales entre los que siguen vivos
+  // (como en el Monster DYP: sin repetir compañero si se puede; si sobran, descansan por turnos).
+  // Perder quita una vida a los dos jugadores de la pareja.
   function vidasDe(st) {
     const v = {};
-    st.parejas.forEach(p => (v[p.id] = st.config.vidas));
+    activos(st).forEach(j => (v[j.id] = st.config.vidas));
     st.partidos.forEach(p => {
       if (p.fase !== "ronda" || p.estado !== "fin" || p.bye) return;
       const l = p.ganador === "a" ? p.b : p.a;
-      v[l] = Math.max(0, (v[l] || 0) - 1);
+      (Array.isArray(l) ? l : []).forEach(id => (v[id] = Math.max(0, (v[id] || 0) - 1)));
     });
     return v;
   }
-  function vivos(st) { const v = vidasDe(st); return st.parejas.filter(p => v[p.id] > 0).map(p => p.id); }
+  function vivos(st) { const v = vidasDe(st); return activos(st).filter(j => v[j.id] > 0).map(j => j.id); }
 
-  function rondaVidas(st) {
+  function rondaVidas(st) { return rondaMonster(st, vivos(st)); }
+
+  // Quedan 8 o menos en pie: se sortean parejas entre ellos → semifinales y final. Sin repesca.
+  // Si son impares, se queda fuera quien tenga menos vidas (a igualdad, por sorteo).
+  // Con 6 jugadores (3 parejas) una pareja pasa directa a la final; con 4 o 5, final directa.
+  function empezarFinalVidas(st) {
     const rand = azar(st);
     const v = vidasDe(st);
-    // se emparejan quienes tienen las mismas vidas (al azar dentro de cada grupo)
-    let lista = barajar(vivos(st), rand).sort((x, y) => v[y] - v[x]);
-    const ps = [];
-    if (lista.length % 2) {
-      const descansos = {};
-      st.partidos.forEach(p => { if (p.bye) descansos[p.a] = (descansos[p.a] || 0) + 1; });
-      const menos = Math.min(...lista.map(id => descansos[id] || 0));
-      const cand = lista.filter(id => (descansos[id] || 0) === menos);
-      const id = cand[Math.floor(rand() * cand.length)];
-      lista = lista.filter(x => x !== id);
-      ps.push(nuevoPartido({ ronda: st.ronda, a: id, b: null, bye: true, estado: "fin", ganador: "a", ganadorId: id }));
+    let js = barajar(vivos(st), rand);
+    st.fueraFinal = null;
+    if (js.length % 2) {
+      const menos = Math.min(...js.map(id => v[id]));
+      const id = js.find(x => v[x] === menos);
+      st.fueraFinal = id;
+      js = js.filter(x => x !== id);
     }
-    // evitar repetir el rival de la ronda anterior
-    const anterior = new Set();
-    st.partidos.filter(p => p.ronda === st.ronda - 1 && p.a && p.b).forEach(p => { anterior.add(p.a + "|" + p.b); anterior.add(p.b + "|" + p.a); });
-    for (let i = 0; i < lista.length; i += 2) {
-      if (anterior.has(lista[i] + "|" + lista[i + 1]) && i + 2 < lista.length) [lista[i + 1], lista[i + 2]] = [lista[i + 2], lista[i + 1]];
-    }
-    const pares = [];
-    for (let i = 0; i < lista.length; i += 2) pares.push(nuevoPartido({ ronda: st.ronda, a: lista[i], b: lista[i + 1] }));
-    return pares.concat(ps);
-  }
-
-  // Quedan 4 o menos: semifinales a sorteo y final. Sin repesca: si sólo quedan 3 (cayeron varios a la vez),
-  // el sorteo decide quién pasa directo a la final.
-  function empezarFinalVidas(st) {
+    st.parejas = [];
+    for (let i = 0; i < js.length; i += 2) st.parejas.push({ id: uid("p"), j1: js[i], j2: js[i + 1], final: true });
     st.fase = "final";
-    generarCuadroKO(st, vivos(st), "final");
+    generarCuadroKO(st, st.parejas.map(p => p.id), "final");
     return st.partidos.filter(p => p.fase === "final");
   }
 
@@ -417,11 +412,11 @@
   }
 
   /* ---------- clasificación ---------- */
-  // Monster: por jugador. Suizo y vidas: por pareja. Ciegos: sin tabla (es un cuadro).
+  // Monster y vidas: por jugador. Suizo: por pareja. Ciegos: sin tabla (es un cuadro).
   function clasificacion(st) {
     const filas = {};
     const base = id => (filas[id] = filas[id] || { id, pj: 0, pg: 0, pp: 0, pf: 0, pc: 0, puntos: 0, descansos: 0, buchholz: 0 });
-    if (st.modo === "monster") activos(st).forEach(j => base(j.id));
+    if (individual(st)) activos(st).forEach(j => base(j.id));
     else st.parejas.forEach(p => base(p.id));
     const rivales = {};
     st.partidos.forEach(p => {
@@ -511,7 +506,7 @@
 
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
-    nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas,
+    nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
     nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
