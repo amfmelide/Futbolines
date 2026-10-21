@@ -99,26 +99,37 @@ test("vidas: se pierden vidas hasta que quedan 4; semifinales a sorteo y final",
       assert.ok(guard++ < 50, "no termina");
     }
     assert.equal(st.fase, "final");
-    const semis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1);
-    assert.equal(semis.length, 2);
+    const quedan = C.vivos(st).length;
+    assert.ok(quedan === 3 || quedan === 4, "quedan " + quedan);
+    const semis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1 && !p.bye);
+    assert.equal(semis.length, quedan === 4 ? 2 : 1);
     assert.ok(semis.every(p => p.a && p.b));
     jugarTodo(st);
     assert.equal(st.fase, "terminado");
     const pod = C.podio(st);
-    assert.deepEqual(pod.map(x => x.pos), [1, 2, 3, 3]);
+    assert.deepEqual(pod.map(x => x.pos), quedan === 4 ? [1, 2, 3, 3] : [1, 2, 3]);
   }
 });
 
-test("vidas: si caen varios a la vez y quedan menos de 4, se repesca a los últimos eliminados", () => {
+test("vidas: sin repesca; si quedan 3, uno pasa directo a la final por sorteo", () => {
   const st = conJugadores("vidas", 10, { vidas: 1 });       // 5 parejas, 1 vida: tras la 1ª ronda quedan 3
   C.empezar(st);
   jugarTodo(st);
-  assert.equal(C.vivos(st).length, 3);
+  const vivos = C.vivos(st);
+  assert.equal(vivos.length, 3);
   C.siguienteRonda(st);
   assert.equal(st.fase, "final");
-  assert.equal(st.repescados.length, 1);
-  const enSemis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1).flatMap(p => [p.a, p.b]);
-  assert.equal(new Set(enSemis).size, 4);
+  const fin = st.partidos.filter(p => p.fase === "final");
+  const enJuego = new Set(fin.flatMap(p => [p.a, p.b]).filter(Boolean));
+  assert.deepEqual([...enJuego].sort(), vivos.slice().sort(), "sólo juegan los que siguen vivos");
+  assert.equal(fin.filter(p => p.ronda === 1 && p.bye).length, 1, "uno pasa directo");
+  jugarTodo(st);
+  assert.equal(st.fase, "terminado");
+  assert.deepEqual(C.podio(st).map(x => x.pos), [1, 2, 3]);
+});
+
+test("vidas: por defecto 3 vidas", () => {
+  assert.equal(C.nuevoTorneo({ modo: "vidas" }).config.vidas, 3);
 });
 
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {

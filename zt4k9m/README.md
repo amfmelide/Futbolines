@@ -100,7 +100,7 @@ Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torn
 - **Ciegos**: cada jugador se apunta solo, se sortean las parejas (sorteo en directo) y eliminatoria directa (con pases si no cuadran; 3er puesto opcional).
 - **Monster DYP**: cada ronda un compañero distinto (y rivales distintos si se puede), clasificación individual; si sobran jugadores descansan por turnos. 5 rondas por defecto.
 - **Suizo**: por parejas (a sorteo o fijas); en cada ronda se enfrentan quienes van igual, sin repetir rival; el impar descansa y suma victoria. Desempata la suma de puntos de los rivales (Buchholz).
-- **Vidas**: por parejas (a sorteo o fijas), 3 vidas por defecto; cada derrota quita una. Con 4 en pie: semifinales a sorteo y final. Si en una ronda caen varios y quedan menos de 4, se repesca a los últimos eliminados.
+- **Vidas**: por parejas (a sorteo o fijas), 3 vidas por defecto; cada derrota quita una. Sin repesca. Con 4 en pie: semifinales a sorteo y final; si en una ronda caen varios y quedan 3, el sorteo decide quién pasa directo a la final.
 
 ## Avisos al móvil
 
