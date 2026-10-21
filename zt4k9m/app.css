@@ -137,6 +137,12 @@ textarea { min-height: 120px; font-family: ui-monospace, monospace; font-size: .
 .mesa { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 12px; position: relative; }
 .mesa.ocupada { border-color: rgba(0,200,83,.6); }
 .mesa.off { opacity: .5; }
+.mesa.alerta { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad) inset; }
+.cuenta { font-size: .82rem; background: rgba(255,179,0,.1); color: var(--warn); border-radius: 8px; padding: 6px 8px; margin: 4px 0 8px; gap: 6px; }
+.cuenta b { font-variant-numeric: tabular-nums; }
+.cuenta.wo { background: rgba(245,0,87,.1); color: var(--bad); }
+.cuenta.wo .row { flex-wrap: wrap; gap: 4px; }
+.eta { display: inline-block; margin-top: 6px; font-weight: 700; color: var(--gold); }
 .mesa .num { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--gold); line-height: 1; }
 .mesa .vs { font-weight: 700; margin: 6px 0; }
 .mesa .vs span { display: block; }
@@ -176,6 +182,16 @@ footer { text-align: center; color: var(--dim); font-size: .8rem; padding: 30px 
 /* modo TV (pantalla grande en el local) */
 body.tv { font-size: 18px; }
 body.tv header.top .tabs, body.tv .no-tv { display: none; }
+body.tv .tv-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+body.tv .tv-cab h2 { margin: 0; font-size: 2rem; }
+.tv-puntos { display: flex; gap: 6px; }
+.tv-puntos i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+.tv-puntos i.on { background: var(--gold); }
+.tv-diapo { animation: tvEntra .6s ease both; }
+@keyframes tvEntra { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tv-diapo { animation: none; } }
+body.tv .tv-grupos { grid-template-columns: repeat(3, 1fr); }
+body.tv .tv-cuadro { overflow: hidden; }
 
 h3.seccion { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.25rem; color: var(--gold); margin: 18px 0 6px; }
 .partidas { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px 10px; align-items: center; margin: 8px 0 12px; }
@@ -230,3 +246,12 @@ h3.seccion { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-
 .paso-entra { background: rgba(233,205,148,.12); color: var(--gold); }
 .paso-campeon { background: linear-gradient(180deg, #e9cd94, #b08d4f); color: #1a1406; }
 .paso-sep { color: var(--dim); }
+
+/* Ciegos */
+.opcion { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.opcion:has(input:checked) { border-color: var(--gold2); background: rgba(233,205,148,.06); }
+.opcion input { margin-top: 4px; }
+.big-n { font-size: 1.1rem; }
+.big-n b { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; color: var(--gold); line-height: 1; margin-right: 4px; }
+.vidas { color: var(--bad); letter-spacing: 1px; white-space: nowrap; }
+.tabla tr.fuera td { opacity: .45; }

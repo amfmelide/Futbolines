@@ -40,12 +40,14 @@
 <script src="engine.js"></script>
 <script src="store.js"></script>
 <script src="comun.js"></script>
+<script src="imagen.js"></script>
 <script>
 "use strict";
 const C = window.TORNEO_CONFIG, T = window.TorneoEngine, S = window.TorneoStore;
 const { esc, $, $$, nombre, jugadores } = TC;
 const params = new URLSearchParams(location.search);
 const CODIGO = params.get("t") || "";
+if (CODIGO.startsWith("ciegos-")) location.replace("ciegos.html" + location.search);   // los torneos Ciegos tienen su propia web
 const TV = params.has("tv");
 if (TV) document.body.classList.add("tv");
 
@@ -210,6 +212,7 @@ function vInicio() {
   const camps = ST.config.categorias.map(c => [c, T.campeon(ST, c.id)]).filter(x => x[1]);
   if (camps.length) h += `<h2 style="margin-top:20px">Campeones</h2><div class="grid">` + camps.map(([c, id]) =>
     `<div class="card campeon"><span class="dim">🏆 ${esc(c.nombre)}</span><b>${esc(nombre(ST, id))}</b><span class="small dim">${esc(jugadores(ST, id))}</span></div>`).join("") + `</div>`;
+  if (camps.length) h += `<div class="row" style="margin-top:10px"><button class="btn" onclick="TC.imagenRedes(ST)">📸 Imagen para compartir</button></div>`;
   return h;
 }
 
@@ -375,12 +378,19 @@ function tarjetaMiPartido() {
       <div>contra <strong>${esc(nombre(ST, rival))}</strong></div><div class="small" style="opacity:.85">${esc(T.nombrePartido(ST, enMesa))} · ${esc(T.textoFormato(T.formatoDe(ST, enMesa)))}</div>
       ${enMesa.ventaja ? `<div class="small" style="margin-top:4px">${enMesa[enMesa.ventaja] === id ? "Empezáis" : "Vuestro rival empieza"} ${ST.config.ventajaCruce}-0 por venir de ganadores</div>` : ""}</div>`;
   }
-  const cola = T.cola(ST);
-  const i = cola.findIndex(p => p.a === id || p.b === id);
-  if (i >= 0) {
-    const p = cola[i], rival = p.a === id ? p.b : p.a;
+  const info = T.proximoDe(ST, id);
+  if (info.estado === "cola") {
+    const p = info.partido, rival = p.a === id ? p.b : p.a, d = info.delante;
+    const cuando = d === 0 ? "¡Sois los siguientes!" : d === 1 ? "Os toca en 1 partido" : `Os toca en ${d} partidos`;
+    const tiempo = info.minutos == null ? "" : info.minutos === 0 ? " · en cuanto quede una mesa libre" : ` · ≈ ${info.minutos} min`;
     return `<div class="card" style="margin-bottom:16px;border-color:var(--gold2)"><span class="dim small">Vuestro próximo partido</span>
-      <h3 style="margin:4px 0">contra ${esc(nombre(ST, rival))}</h3><span class="dim">${esc(T.nombrePartido(ST, p))} · ${esc(T.textoFormato(T.formatoDe(ST, p)))} · ${i < 3 ? "¡Estad atentos, vais muy pronto!" : `hay ${i} partido(s) antes`}</span></div>`;
+      <h3 style="margin:4px 0">contra ${esc(nombre(ST, rival))}</h3><span class="dim">${esc(T.nombrePartido(ST, p))} · ${esc(T.textoFormato(T.formatoDe(ST, p)))}</span>
+      <div class="eta">⏱ ${cuando}${tiempo}</div>${info.minutos ? `<div class="small dim">Tiempo aproximado: ${ST.config.minutosPartida || 35} min por partida. Os avisaremos al llamaros.</div>` : ""}</div>`;
+  }
+  if (info.estado === "espera") {
+    const de = info.de.map(x => `${nombre(ST, x.a)} – ${nombre(ST, x.b)}`).filter(t => !t.includes("undefined"));
+    return `<div class="card" style="margin-bottom:16px"><span class="dim small">Vuestro próximo partido</span>
+      <h3 style="margin:4px 0">${esc(T.nombrePartido(ST, info.partido))}</h3><span class="dim">Esperando rival${de.length ? `: saldrá de ${de.map(esc).join(" / ")}` : ""}</span></div>`;
   }
   return "";
 }
@@ -476,12 +486,46 @@ function vParejas() {
     `</tbody></table></div>`;
 }
 
-/* ---------- modo TV: pantalla grande en el local ---------- */
-function vTV() {
+/* ---------- modo TV: pantalla grande en el local, va cambiando sola ----------
+   ?tv            → rota cada 15 s entre: en juego · grupos (por páginas) · cuadros · campeones
+   ?tv&seg=20     → cada 20 s        ?tv&fijo → sólo «en juego» (como antes) */
+const TV_SEG = Math.max(5, Number(params.get("seg")) || 15);
+const TV_FIJO = params.has("fijo");
+let tvIdx = 0, tvPintada = -1;
+function diapositivasTV() {
+  const d = [{ titulo: "En juego", html: tvEnJuego }];
+  if (TV_FIJO) return d;
+  const porPag = 6;
+  const gs = ST.grupos.filter(g => !T.grupoTerminado(ST, g.id) || ST.fase === "grupos");
+  for (let i = 0; i < gs.length; i += porPag) {
+    const trozo = gs.slice(i, i + porPag);
+    d.push({ titulo: gs.length > porPag ? `Grupos ${trozo[0].id}–${trozo[trozo.length - 1].id}` : "Grupos", html: () => `<div class="grid tv-grupos">${trozo.map(g => TC.htmlGrupo(ST, g, {})).join("")}</div>` });
+  }
+  ST.config.categorias.forEach(c => {
+    if ((ST.cuadros[c.id] || {}).generado) d.push({ titulo: "Cuadro " + c.nombre, html: () => `<div class="tv-cuadro">${TC.htmlCuadro(ST, c.id, {})}</div>` });
+  });
+  const camps = ST.config.categorias.map(c => [c, T.campeon(ST, c.id)]).filter(x => x[1]);
+  if (camps.length) d.push({ titulo: "Campeones", html: () => `<div class="grid">${camps.map(([c, id]) => `<div class="card campeon"><span class="dim">🏆 ${esc(c.nombre)}</span><b>${esc(nombre(ST, id))}</b><span class="small dim">${esc(jugadores(ST, id))}</span></div>`).join("")}</div>` });
+  return d;
+}
+function tvEnJuego() {
   const cola = T.cola(ST).slice(0, 10);
-  return `<div class="grid" style="grid-template-columns: 2fr 1fr"><div><h2>En juego</h2>${TC.htmlMesasPublicas(ST)}</div>
+  return `<div class="grid" style="grid-template-columns: 2fr 1fr"><div>${TC.htmlMesasPublicas(ST)}</div>
     <div><h2>Próximos</h2><div class="card">${cola.map((p, i) => `<div class="pg"><span class="a">${esc(nombre(ST, p.a))}</span><span class="res">${i + 1}</span><span class="b">${esc(nombre(ST, p.b))}</span><span></span></div>`).join("") || '<div class="dim">—</div>'}</div></div></div>`;
 }
+function vTV() {
+  const d = diapositivasTV();
+  if (tvIdx >= d.length) tvIdx = 0;
+  const s = d[tvIdx];
+  setTimeout(() => (tvPintada = tvIdx), 0);        // la animación sólo al cambiar de diapositiva
+  return `<div class="tv-cab"><h2>${esc(s.titulo)}</h2><span class="spacer"></span>${d.length > 1 ? `<span class="tv-puntos">${d.map((_, i) => `<i class="${i === tvIdx ? "on" : ""}"></i>`).join("")}</span>` : ""}</div>
+    <div class="${tvPintada !== tvIdx ? "tv-diapo" : ""}">${s.html()}</div>`;
+}
+if (TV && !TV_FIJO) setInterval(() => {
+  if (!ST) return;
+  tvIdx = (tvIdx + 1) % diapositivasTV().length;
+  pintar();
+}, TV_SEG * 1000);
 </script>
 </body>
 </html>

@@ -373,3 +373,74 @@ test("niveles: esquema de flujo y camino de cada pareja", () => {
   const campeonOro = T.campeon(st, "oro");
   assert.ok(T.caminoNiveles(st, campeonOro).some(p => p.tipo === "campeon"));
 });
+
+test("mesas: no enlaza dos partidos seguidos si hay otros esperando", () => {
+  const st = torneoCon(16, { mesas: 1, descansoMin: 5 });
+  T.sortearGrupos(st);
+  const t0 = 1_000_000;
+  const [p1] = T.asignarMesas(st, t0);
+  T.registrarResultado(st, p1.id, 2, 0, { ahora: t0 + 60000 });
+  const [p2] = T.asignarMesas(st, t0 + 61000);
+  assert.ok(p2);
+  for (const id of [p1.a, p1.b]) assert.ok(p2.a !== id && p2.b !== id, "una pareja recién acabada vuelve a jugar");
+  // sin nadie más disponible, sí puede repetir
+  const st2 = torneoCon(4, { mesas: 1, descansoMin: 5, tamGrupo: 4 });
+  T.sortearGrupos(st2);
+  let ahora = t0;
+  for (let k = 0; k < 6; k++) {
+    const [p] = T.asignarMesas(st2, ahora);
+    assert.ok(p, "debe seguir llamando partidos aunque repitan parejas");
+    T.registrarResultado(st2, p.id, 1, 1, { ahora: ahora += 60000 });
+  }
+});
+
+test("cuenta atrás al llamar: espera, reaviso a la mitad y propuesta de W.O. (sin darlo solo)", () => {
+  const st = torneoCon(8, { minutosPresentarse: 4 });
+  T.sortearGrupos(st);
+  const t0 = 5_000_000;
+  const [p] = T.asignarMesas(st, t0);
+  assert.equal(T.cuentaAtras(st, p, t0 + 60000).fase, "espera");
+  assert.equal(T.cuentaAtras(st, p, t0 + 130000).fase, "reaviso");
+  assert.equal(T.cuentaAtras(st, p, t0 + 241000).fase, "wo");
+  assert.equal(p.estado, "mesa");                      // nadie ha perdido
+  p.prorroga = 5 * 60000;
+  assert.equal(T.cuentaAtras(st, p, t0 + 241000).fase, "espera");
+  p.presentes = true;
+  assert.equal(T.cuentaAtras(st, p, t0 + 999999), null);
+});
+
+test("¿cuándo juego?: posición en grupos sin minutos y tiempo aproximado en eliminatorias", () => {
+  const st = torneoCon(16, { mesas: 2, descansoMin: 0, minutosPartida: 35 });
+  T.sortearGrupos(st);
+  T.asignarMesas(st);
+  const enCola = T.cola(st).filter(p => !T.ocupados(st).has(p.a) && !T.ocupados(st).has(p.b));
+  const ult = enCola[enCola.length - 1];
+  const info = T.proximoDe(st, ult.a);
+  assert.equal(info.estado === "cola" || info.estado === "mesa", true);
+  if (info.estado === "cola") assert.equal(info.minutos, null);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  const c = T.cola(st).filter(p => p.cat === "elite");
+  const lejos = c[c.length - 1];
+  const i2 = T.proximoDe(st, lejos.a);
+  assert.equal(i2.estado, "cola");
+  assert.ok(i2.minutos >= 35, "con " + i2.delante + " delante y 2 mesas debería tardar: " + i2.minutos);
+  const cerca = T.proximoDe(st, c[0].a);
+  assert.equal(cerca.minutos, 0);
+});
+
+test("podio de cada categoría: 1º, 2º y terceros", () => {
+  const st = torneoCon(32);
+  T.sortearGrupos(st);
+  jugar(st, p => p.tipo === "G");
+  T.generarCuadro(st, "elite");
+  jugar(st);
+  for (const cat of ["elite"]) {
+    const pod = T.podio(st, cat);
+    assert.equal(pod[0].pos, 1);
+    assert.equal(pod[0].id, T.campeon(st, cat));
+    assert.equal(pod[1].pos, 2);
+    assert.ok(pod.filter(x => x.pos === 3).length >= 1);
+    assert.equal(new Set(pod.map(x => x.id)).size, pod.length);
+  }
+});

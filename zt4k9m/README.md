@@ -87,6 +87,21 @@ bajan a la siguiente y están eliminadas. Cada pareja ve su camino en *Mi pareja
 *Llamar partidos y avisar* rellena las mesas libres con la cola (grupos por jornadas, luego ganadores y perdedores
 intercalados) sin llamar nunca a una pareja que ya está jugando. En modo automático, al meter un resultado se llama al siguiente.
 
+- **Turnos justos**: si hay otros partidos esperando, no se llama a una pareja que acaba de terminar (descanso mínimo, 5 min por defecto) y tiene prioridad quien lleva más rato sin jugar.
+- **Cuenta atrás para presentarse** (5 min por defecto): a la mitad se les vuelve a avisar solo; al acabar, la mesa se pone en rojo y **propone** el W.O. (botones «No vino…», «+5 min», «Han llegado»). Nunca da el W.O. sola.
+- **«Os toca en X partidos»** en la pantalla de cada pareja. En eliminatorias también da el tiempo aproximado (35 min por partida por defecto, ajustable en *Ajustes → Mesas y tiempos*); en grupos sólo el número de partidos.
+- **Pantalla TV** (`index.html?t=CODIGO&tv`): va cambiando sola cada 15 s entre mesas en juego, grupos, cuadros y campeones. `&seg=20` cambia el tiempo; `&fijo` deja sólo las mesas.
+- **Imagen para redes**: en *Cuadros* (panel) y en *Campeones* (web pública), un PNG 1080×1350 con el podio de cada categoría, listo para Instagram o WhatsApp.
+
+## Ciegos (torneos pequeños a sorteo)
+
+Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torneos; misma contraseña). Web pública: `ciegos.html?t=CODIGO` (y `&tv`). Usa la misma función de Supabase: no hay que desplegar nada nuevo. Sus torneos empiezan por `ciegos-` y no se mezclan con los grandes.
+
+- **Ciegos**: cada jugador se apunta solo, se sortean las parejas (sorteo en directo) y eliminatoria directa (con pases si no cuadran; 3er puesto opcional).
+- **Monster DYP**: cada ronda un compañero distinto (y rivales distintos si se puede), clasificación individual; si sobran jugadores descansan por turnos. 5 rondas por defecto.
+- **Suizo**: por parejas (a sorteo o fijas); en cada ronda se enfrentan quienes van igual, sin repetir rival; el impar descansa y suma victoria. Desempata la suma de puntos de los rivales (Buchholz).
+- **Vidas**: por parejas (a sorteo o fijas), 3 vidas por defecto; cada derrota quita una. Con 4 en pie: semifinales a sorteo y final. Si en una ronda caen varios y quedan menos de 4, se repesca a los últimos eliminados.
+
 ## Avisos al móvil
 
 - **Push (recomendado)**: la pareja abre la web, elige su pareja y pulsa *Avisarme*. Al llamar su partido le llega una

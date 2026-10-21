@@ -75,6 +75,9 @@
       ventajaCruce: 1,                        // partidas con las que empieza el de ganadores en los cruces
       mesas: 8,
       mesasOff: [],
+      minutosPartida: 35,                     // media de una eliminatoria (para el «os toca en ~X min»)
+      minutosPresentarse: 5,                  // tras llamar a mesa: a la mitad se reavisa; al final se propone W.O.
+      descansoMin: 5,                         // no enlazar dos partidos seguidos si hay otros esperando
       caida: false,                           // (cuadros simples) quien pierde su 1er partido baja a la categoría siguiente
       tercerPuesto: false,
       inscripcionAbierta: true,
@@ -926,6 +929,27 @@
     return f && f.estado === "fin" ? f.ganador : null;
   }
 
+  // Podio de una categoría: [{pos, id}] (1º, 2º y los 3º; con partido por el 3er puesto, 3º y 4º)
+  function podio(st, catId) {
+    const c = st.cuadros[catId];
+    const g = campeon(st, catId);
+    if (!g) return [];
+    const res = [{ pos: 1, id: g }];
+    const f = c.finalId && partido(st, c.finalId);
+    if (!f) return res;
+    res.push({ pos: 2, id: f.ganador === f.a ? f.b : f.a });
+    const t = st.partidos.find(p => p.tipo === "K" && p.cat === catId && p.llave === "T" && p.estado === "fin");
+    if (t) { res.push({ pos: 3, id: t.ganador }, { pos: 4, id: t.ganador === t.a ? t.b : t.a }); return res; }
+    [f.fa, f.fb].forEach(src => {
+      const s = src && partido(st, src.id);
+      if (s && s.estado === "fin" && !s.bye) {
+        const perdedor = s.ganador === s.a ? s.b : s.a;
+        if (perdedor && !res.some(r => r.id === perdedor)) res.push({ pos: 3, id: perdedor });
+      }
+    });
+    return res;
+  }
+
   // "terminado" cuando todos los cuadros generados tienen campeón y no queda ninguna categoría por generar.
   function actualizarFase(st) {
     if (!st.grupos.length) return;
@@ -989,27 +1013,95 @@
     if (p.estado === "fin") throw new Error("Ese partido ya terminó");
     const occ = ocupados(st);
     if (p.estado !== EN_MESA && (occ.has(p.a) || occ.has(p.b))) throw new Error("Alguna pareja está jugando en otra mesa");
+    if (p.estado !== EN_MESA) { p.presentes = false; p.prorroga = 0; p.reavisado = false; }
     p.estado = EN_MESA; p.mesa = mesa; p.llamado = ahora || Date.now();
     return p;
   }
 
   function soltar(st, id) {
     const p = partido(st, id);
-    if (p && p.estado === EN_MESA) { p.estado = "pendiente"; p.mesa = null; p.llamado = null; }
+    if (p && p.estado === EN_MESA) { p.estado = "pendiente"; p.mesa = null; p.llamado = null; p.presentes = false; p.prorroga = 0; p.reavisado = false; }
     return p;
+  }
+
+  // Parejas que acaban de terminar un partido (descanso mínimo entre partidos)
+  function recienJugados(st, ahora) {
+    const min = st.config.descansoMin == null ? 5 : st.config.descansoMin;
+    const s = new Set();
+    if (!min) return s;
+    const u = ultimoPartido(st), lim = (ahora || Date.now()) - min * 60000;
+    Object.keys(u).forEach(id => { if (u[id] > lim) s.add(id); });
+    return s;
+  }
+
+  // Siguiente partido de la cola para una mesa: primero los que no obligan a nadie a enlazar
+  // dos partidos seguidos; si no hay otro, también esos.
+  function siguienteDeCola(st, ahora, occ) {
+    occ = occ || ocupados(st);
+    const c = cola(st).filter(p => !occ.has(p.a) && !occ.has(p.b));
+    const recien = recienJugados(st, ahora);
+    return c.find(p => !recien.has(p.a) && !recien.has(p.b)) || c[0] || null;
   }
 
   // Rellena las mesas libres con los siguientes partidos de la cola. Devuelve los partidos llamados.
   function asignarMesas(st, ahora) {
     const libres = mesasLibres(st), occ = ocupados(st), llamados = [];
-    for (const p of cola(st)) {
-      if (!libres.length) break;
-      if (occ.has(p.a) || occ.has(p.b)) continue;
+    while (libres.length) {
+      const p = siguienteDeCola(st, ahora, occ);
+      if (!p) break;
       llamar(st, p.id, libres.shift(), ahora);
       occ.add(p.a); occ.add(p.b);
       llamados.push(p);
     }
     return llamados;
+  }
+
+  // Cuenta atrás tras llamar a mesa. Nunca da W.O. sola: sólo dice en qué punto está.
+  //   fase "espera" → aún dentro del tiempo · "reaviso" → pasada la mitad · "wo" → tiempo agotado (proponer W.O.)
+  function cuentaAtras(st, p, ahora) {
+    if (!p || p.estado !== EN_MESA || !p.llamado || p.presentes) return null;
+    const total = (st.config.minutosPresentarse == null ? 5 : st.config.minutosPresentarse) * 60000;
+    if (!total) return null;
+    const pasado = (ahora || Date.now()) - p.llamado - (p.prorroga || 0);
+    const resta = Math.max(0, total - pasado);
+    return { resta, total, fase: resta <= 0 ? "wo" : pasado >= total / 2 ? "reaviso" : "espera" };
+  }
+
+  // ¿Cuándo juega una pareja? Para la pantalla «Mi pareja».
+  //   {estado:"mesa", partido} · {estado:"cola", partido, delante, minutos|null} ·
+  //   {estado:"espera", partido, de:[partidos que deciden su rival]} · {estado:"nada"}
+  // En grupos no se da tiempo aproximado (minutos = null); en eliminatorias, minutosPartida por tanda de mesas.
+  function proximoDe(st, id, ahora) {
+    const enMesa = st.partidos.find(p => p.estado === EN_MESA && (p.a === id || p.b === id));
+    if (enMesa) return { estado: "mesa", partido: enMesa };
+    const c = cola(st);
+    const i = c.findIndex(p => p.a === id || p.b === id);
+    if (i >= 0) {
+      const p = c[i];
+      const occ = ocupados(st);
+      // los que de verdad van antes: los que pueden ir a mesa (sus parejas no están jugando)
+      const delante = c.slice(0, i).filter(x => !occ.has(x.a) && !occ.has(x.b)).length;
+      let minutos = null;
+      if (p.tipo === "K") {
+        const off = new Set(st.config.mesasOff || []);
+        let activas = 0;
+        for (let m = 1; m <= st.config.mesas; m++) if (!off.has(m)) activas++;
+        activas = Math.max(1, activas);
+        const libres = mesasLibres(st).length;
+        const mp = st.config.minutosPartida || 35;
+        if (delante < libres) minutos = 0;
+        else minutos = Math.max(5, Math.round(((Math.floor((delante - libres) / activas) + 0.5) * mp) / 5) * 5);
+      }
+      return { estado: "cola", partido: p, delante, minutos };
+    }
+    // ¿tiene un partido esperando rival?
+    const pend = st.partidos.filter(p => p.estado === "pendiente" && !p.bye && (p.a === id || p.b === id) && (!p.a || !p.b));
+    if (pend.length) {
+      const p = pend.sort((x, y) => nivel(x) - nivel(y))[0];
+      const de = st.partidos.filter(x => x.estado !== "fin" && ((p.fa && p.fa.id === x.id) || (p.fb && p.fb.id === x.id)));
+      return { estado: "espera", partido: p, de };
+    }
+    return { estado: "nada" };
   }
 
   function partidosDeEquipo(st, id) {
@@ -1055,8 +1147,8 @@
     tamañosGrupos, liguilla, sortearGrupos, clasificacionGrupo, grupoTerminado, gruposTerminados,
     rondaNombre, ordenSiembra, directosCategoria, caidosDe, estadoCategoria, generarCuadro, campeon, resolver,
     estadoCruce, sortearCruce, esNiveles, estadoNiveles, flujoNiveles, catsDe, rankingDivision, resumenNiveles, caminoNiveles,
-    registrarResultado, deshacerResultado, puedeDeshacer,
-    cola, mesasLibres, llamar, soltar, asignarMesas, ocupados,
+    registrarResultado, deshacerResultado, puedeDeshacer, podio,
+    cola, mesasLibres, llamar, soltar, asignarMesas, ocupados, siguienteDeCola, cuentaAtras, proximoDe,
     partidosDeEquipo, nombrePartido, nombreRonda, resumen, partidosCuadro
   };
 });

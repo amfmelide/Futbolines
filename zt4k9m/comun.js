@@ -319,9 +319,24 @@
   }
   tema();
 
+  // Datos para la imagen de redes: podio de cada categoría con campeón
+  function datosImagen(st) {
+    const bloques = st.config.categorias.map(c => ({
+      nombre: c.nombre,
+      podio: T.podio(st, c.id).map(x => ({ pos: x.pos, nombre: nombre(st, x.id), detalle: jugadores(st, x.id) }))
+    })).filter(b => b.podio.length);
+    const f = st.fecha ? new Date(st.fecha + "T12:00").toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
+    return { titulo: st.nombre, sub: [f, st.lugar].filter(Boolean).join(" · "), bloques };
+  }
+  function imagenRedes(st) {
+    const d = datosImagen(st);
+    if (!d.bloques.length) return toast("Aún no hay ninguna categoría con campeón");
+    window.TImagen.mostrar(d, (st.codigo || "torneo") + "-resultados.png");
+  }
+
   window.TC = {
     esc, $, $$, nombre, jugadores, colorCat, catDePosicion, hace, FASES,
     htmlGrupo, htmlFilaPartido, htmlCuadro, htmlMesasPublicas,
-    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema, sorteoEnDirecto, htmlFlujoNiveles, htmlCamino
+    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema, sorteoEnDirecto, htmlFlujoNiveles, htmlCamino, datosImagen, imagenRedes
   };
 })();
