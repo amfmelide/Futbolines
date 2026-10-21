@@ -101,29 +101,41 @@ function jugarVidas(st, alSortear) {
   }
 }
 
-test("vidas: cada jugador 3 vidas; en cuanto hay 4 libres se sortea y juegan sin esperar a los demás", () => {
-  for (const n of [9, 10, 12, 16, 20, 23]) {
-    const st = conJugadores("vidas", n);
-    assert.equal(st.config.vidas, 3);
+test("vidas: a la fase final llegan siempre 8 en pie → 4 parejas, 2 semifinales y final (nunca pasa nadie directo)", () => {
+  for (const n of [9, 10, 11, 12, 13, 16, 20, 23, 30]) for (const semilla of [1, 2, 3, 4, 5]) {
+    const st = C.nuevoTorneo({ modo: "vidas", semilla });
+    for (let i = 1; i <= n; i++) C.añadirJugador(st, "J" + i);
     C.empezar(st);
     assert.equal(st.parejas.length, 0, "no hay parejas fijas");
-    assert.equal(C.pendientes(st).length, Math.floor(n / 4));
-    jugarVidas(st, nuevos => {
-      // nunca juega alguien sin vidas ni alguien que ya está en otro partido
+    jugarVidas(st, () => {
+      assert.ok(C.vivos(st).length >= 8, "baja de 8 en pie: " + C.vivos(st).length);
       const v = C.vidasDe(st), vistos = new Set();
       C.pendientes(st).filter(p => p.fase === "ronda").forEach(p => p.a.concat(p.b).forEach(id => { assert.ok(v[id] > 0); assert.ok(!vistos.has(id), "jugador en dos partidos"); vistos.add(id); }));
     });
     assert.equal(st.fase, "final", "n=" + n);
-    const v = C.vidasDe(st), quedan = C.vivos(st).length;
-    assert.ok(quedan <= 8 && quedan >= 4, "quedan " + quedan);
+    assert.equal(C.vivos(st).length, 8, "n=" + n + " semilla " + semilla);
+    assert.equal(st.parejas.length, 4);
+    const semis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1);
+    assert.equal(semis.length, 2);
+    assert.ok(semis.every(p => p.a && p.b && !p.bye), "nadie pasa directo");
     const enFinal = st.parejas.flatMap(p => [p.j1, p.j2]);
-    assert.equal(new Set(enFinal).size, enFinal.length);
-    enFinal.forEach(id => assert.ok(v[id] > 0));
-    assert.equal(enFinal.length, quedan - (quedan % 2));
+    assert.deepEqual(enFinal.slice().sort(), C.vivos(st).slice().sort());
     jugarTodo(st);
     assert.equal(st.fase, "terminado");
-    assert.equal(C.podio(st)[0].ids.length, 2);
+    assert.deepEqual(C.podio(st).map(x => x.pos), [1, 2, 3, 3]);
   }
+});
+
+test("vidas: atasco con 9 en pie y 1 vida cada uno → si caen dos, uno se salva por sorteo y quedan 8", () => {
+  const st = conJugadores("vidas", 9, { vidas: 1 });
+  C.empezar(st);
+  const [p] = C.pendientes(st);
+  assert.ok(p, "debe jugarse un partido aunque no sea seguro");
+  C.registrarResultado(st, p.id, 2, 0);
+  assert.equal(C.vivos(st).length, 8);
+  assert.equal(p.salvados.length, 1);
+  C.sortearVidas(st);
+  assert.equal(st.fase, "final");
 });
 
 test("vidas: al acabar un partido, si hay 4 libres se sortea ya otro (sin esperar a que acabe la tanda)", () => {
@@ -143,18 +155,15 @@ test("vidas: al acabar un partido, si hay 4 libres se sortea ya otro (sin espera
   assert.ok(!parejas.has(nuevos[0].a.slice().sort().join("|")) && !parejas.has(nuevos[0].b.slice().sort().join("|")));
 });
 
-test("vidas: con 8 o menos en pie se espera a que acaben los partidos en juego antes de la fase final", () => {
-  const st = conJugadores("vidas", 10, { vidas: 1 });
-  C.empezar(st);                                   // 2 partidos, 2 esperando
-  const [p1, p2] = C.pendientes(st);
-  C.registrarResultado(st, p1.id, 2, 0);          // quedan 8 vivos, pero p2 sigue en juego
+test("vidas: con 8 en pie se anulan los partidos sin empezar y, al acabar los de las mesas, semifinales", () => {
+  const st = conJugadores("vidas", 12, { vidas: 1 });
+  C.empezar(st);                                   // 12 con 1 vida: presupuesto 4 → sólo partidos que no dejen menos de 8
+  for (const p of C.pendientes(st)) assert.ok(p.a.concat(p.b).length === 4);
+  C.asignarMesas(st);
+  jugarVidas(st);
   assert.equal(C.vivos(st).length, 8);
-  assert.equal(C.sortearVidas(st).length, 0);
-  assert.equal(st.fase, "juego");
-  C.registrarResultado(st, p2.id, 2, 0);
-  C.sortearVidas(st);
   assert.equal(st.fase, "final");
-  assert.equal(st.parejas.length, 3);              // 6 vivos → 3 parejas
+  assert.equal(st.partidos.filter(p => p.fase === "ronda" && p.estado !== "fin").length, 0);
 });
 
 test("vidas: tablero con las vidas y el estado de cada jugador", () => {
@@ -178,12 +187,12 @@ test("vidas: perder quita una vida a los dos jugadores de la pareja", () => {
   p.a.forEach(id => assert.equal(v[id], 3));
 });
 
-test("vidas: con 8 jugadores o menos se va directo a la fase final", () => {
-  const st = conJugadores("vidas", 7);
+test("vidas: hacen falta 8 jugadores; con 8 justos se va directo a semifinales", () => {
+  assert.throws(() => C.empezar(conJugadores("vidas", 7)), /al menos 8/);
+  const st = conJugadores("vidas", 8);
   C.empezar(st);
   assert.equal(st.fase, "final");
-  assert.equal(st.parejas.length, 3);
-  assert.ok(st.fueraFinal);
+  assert.equal(st.parejas.length, 4);
 });
 
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {

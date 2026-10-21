@@ -317,7 +317,7 @@ function vJuego() {
   if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadroFinal(ST, { admin: true });
   if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   if (ST.modo !== "ciegos" && ST.modo !== "vidas" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
-  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
+  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 en pie, 4 parejas a sorteo: semifinales y final.</div>`;
   return h;
 }
 function htmlMesasPanel() {
@@ -333,11 +333,12 @@ function htmlMesasPanel() {
 function vJuegoVidas() {
   const e = E.estadoVidas(ST);
   let h = "";
-  if (e.listaFinal) h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>Quedan ${e.vivos.length} jugadores en pie.</b>
-      <div class="small dim" style="margin:4px 0 8px">Se sortean ${Math.floor(e.vivos.length / 2)} parejas${e.vivos.length % 2 ? " (impar: se queda fuera quien tenga menos vidas)" : ""} → ${e.vivos.length >= 8 ? "semifinales y final" : e.vivos.length >= 6 ? "una semifinal (una pareja pasa directa) y final" : "final directa"}.</div>
-      <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de la fase final</button></div>`;
-  else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>Quedan ${e.vivos.length} en pie.</b> <span class="dim">Cuando acaben los partidos en juego se sortean las parejas de la fase final.</span></div>`;
-  else h += `<div class="card row" style="margin-bottom:14px"><div><b>${e.libres.length}</b> libre(s) esperando${e.libres.length >= 4 ? "" : ` <span class="dim small">· hacen falta 4 para un partido</span>`}</div><span class="spacer"></span>
+  if (e.listaFinal) h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>¡Quedan 8 en pie!</b>
+      <div class="small dim" style="margin:4px 0 8px">Se sortean 4 parejas entre ellos (da igual las vidas) → semifinales y final.</div>
+      <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de semifinales</button></div>`;
+  else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>¡Quedan 8 en pie!</b> <span class="dim">Cuando acabe lo que se está jugando en las mesas (ya no elimina a nadie) se sortean las semifinales.</span></div>`;
+  else if (e.presupuesto < 4 && e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se lanzan partidos que no puedan dejar a menos de 8.</div>`;
+  if (!e.fin) h += `<div class="card row" style="margin-bottom:14px"><div><b>${e.libres.length}</b> libre(s) esperando${e.libres.length >= 4 ? "" : ` <span class="dim small">· hacen falta 4 para un partido</span>`}</div><span class="spacer"></span>
       <button class="btn pri" onclick="sortearLibres()" ${e.libres.length >= 4 ? "" : "disabled"}>🎲 Sortear con los libres</button></div>`;
   const mesas = htmlMesasPanel();
   if (mesas) h += `<h2>En mesa</h2>` + mesas;

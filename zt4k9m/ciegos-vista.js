@@ -78,7 +78,7 @@
     const enFinal = st.ko ? new Set(st.partidos.filter(p => p.fase === "final").flatMap(p => [p.a, p.b]).filter(Boolean).flatMap(l => E.individual(st) ? E.jugadoresDe(st, l) : [l])) : null;
     return `<div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>${E.individual(st) ? "Jugador" : "Pareja"}</th>
       ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${st.modo === "monster" ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +
-      t.map(f => `<tr class="${st.modo === "vidas" && f.vidas === 0 && !(enFinal && enFinal.has(f.id)) ? "fuera" : ""}"><td class="n dim">${f.pos}</td><td><b>${nombreFila(f)}</b>${enFinal && enFinal.has(f.id) ? ' <span class="pill ok">fase final</span>' : ""}${st.fueraFinal === f.id ? ' <span class="pill warn">fuera por impar</span>' : ""}</td>
+      t.map(f => `<tr class="${st.modo === "vidas" && f.vidas === 0 && !(enFinal && enFinal.has(f.id)) ? "fuera" : ""}"><td class="n dim">${f.pos}</td><td><b>${nombreFila(f)}</b>${enFinal && enFinal.has(f.id) ? ' <span class="pill ok">fase final</span>' : ""}</td>
         ${st.modo === "vidas" ? `<td class="n">${corazones(f.vidas, st.config.vidas)}</td>` : `<td class="n"><b>${f.puntos}</b></td>`}<td class="n">${f.pj}</td><td class="n">${f.pg}</td><td class="n">${f.pp}</td><td class="n">${f.pf - f.pc > 0 ? "+" : ""}${f.pf - f.pc}</td>${st.modo === "suizo" ? `<td class="n dim">${f.buchholz}</td>` : ""}${st.modo === "monster" ? `<td class="n dim">${f.descansos}</td>` : ""}</tr>`).join("") +
       `</tbody></table></div>`;
   }
@@ -112,7 +112,7 @@
       ciegos: `Cada jugador se apunta solo y <b>las parejas se sortean</b>. Después, <b>eliminatoria directa</b>: quien pierde, fuera. ${f}.`,
       monster: `En cada ronda <b>te toca un compañero distinto</b> (y rivales distintos). Cada victoria suma 1 punto a cada jugador. ${E.rondasTotales(st)} rondas. Si sobran jugadores, descansan por turnos. ${f}.`,
       suizo: `Por parejas${st.config.parejas === "fijas" ? "" : " sorteadas"}. En cada ronda juegas contra alguien que va igual que tú en la clasificación, sin repetir rival. Victoria = 1 punto; desempata la suma de puntos de tus rivales (Bh). ${E.rondasTotales(st) || "?"} rondas. ${f}.`,
-      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. No hay rondas: <b>en cuanto hay 4 jugadores libres se sortean</b> parejas y rivales entre ellos y se juega ya (primero los que más llevan esperando, sin repetir compañero si se puede). Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan 8 o menos en pie: <b>parejas a sorteo, semifinales y final</b> (con 6 una pareja pasa directa a la final; con 4 o 5, final directa; si son impares, se queda fuera quien tenga menos vidas). ${f}.`
+      vidas: `Cada jugador empieza con <b>${st.config.vidas} vidas</b>. No hay rondas: <b>en cuanto hay 4 jugadores libres se sortean</b> parejas y rivales entre ellos y se juega ya (primero los que más llevan esperando, sin repetir compañero si se puede). Si tu pareja pierde, <b>los dos perdéis una vida</b>. Sin repesca. Cuando quedan <b>8 en pie</b> (da igual las vidas que tengan) se sortean <b>4 parejas → semifinales y final</b>. ${f}.`
     };
     return r[st.modo];
   }
