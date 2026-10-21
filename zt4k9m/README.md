@@ -66,6 +66,8 @@ Los resultados ya apuntados salen rellenos.
 
 ## Sorteo en directo
 
+Estilo tragaperras: los nombres giran, frenan en el elegido y la tarjeta vuela a su hueco (con pausa, rápido, ver todo y pantalla completa; confeti al terminar).
+
 *Grupos → 🎬 Sorteo en directo* y, en doble K, *🎬 Sortear cruces en directo*: pantalla completa para proyectar con el
 bombo sacando parejas una a una. Botones *Rápido*, *Ver todo* y *Pantalla completa*. El sorteo se hace al pulsar y la
 animación lo va mostrando; se puede volver a ver cuando se quiera.
@@ -100,7 +102,7 @@ Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torn
 - **Ciegos**: cada jugador se apunta solo, se sortean las parejas (sorteo en directo) y eliminatoria directa (con pases si no cuadran; 3er puesto opcional).
 - **Monster DYP**: cada ronda un compañero distinto (y rivales distintos si se puede), clasificación individual; si sobran jugadores descansan por turnos. 5 rondas por defecto.
 - **Suizo**: por parejas (a sorteo o fijas); en cada ronda se enfrentan quienes van igual, sin repetir rival; el impar descansa y suma victoria. Desempata la suma de puntos de los rivales (Buchholz).
-- **Vidas** (individual): cada jugador empieza con 3 vidas; en cada ronda se sortea la pareja (y los rivales) entre los que siguen vivos, sin repetir compañero si se puede; si sobran, descansan por turnos. Perder quita una vida a los dos. Sin repesca. Con 8 o menos en pie: parejas a sorteo, semifinales y final (con 6, una pareja pasa directa a la final; con 4 o 5, final directa; si son impares, se queda fuera quien tenga menos vidas).
+- **Vidas** (individual, sin rondas): cada jugador empieza con 3 vidas. En cuanto hay 4 jugadores libres se sortean parejas y rivales entre ellos y juegan ya (primero los que más llevan esperando; sin repetir compañero si se puede). Perder quita una vida a los dos. Sin repesca. Tablero con las vidas y el estado de cada jugador (panel, web pública y TV). Con 8 o menos en pie, cuando acaban los partidos en juego: parejas a sorteo, semifinales y final.
 
 ## Avisos al móvil
 

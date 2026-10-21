@@ -90,7 +90,7 @@ function vJuego() {
     h += `<h2>En juego</h2>` + CV.htmlMesas(ST);
     const cola = CV.htmlCola(ST);
     if (cola) h += `<h2 style="margin-top:18px">Próximos</h2>` + cola;
-    if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:10px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
+    if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   }
   if (ST.fase !== "inscripcion") h += `<details style="margin-top:16px"><summary class="small">Cómo se juega</summary><p class="small" style="margin-top:6px">${CV.reglas(ST)}</p></details>`;
   return h;
@@ -101,7 +101,7 @@ function vTabla() {
   if (ST.ko) h += `<h2>${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST);
   if (ST.modo !== "ciegos") {
     h += `<h2 style="margin-top:16px">Clasificación</h2>` + CV.htmlTabla(ST);
-    for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r)}</details>`;
+    if (ST.modo !== "vidas") for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r)}</details>`;
   }
   return h;
 }
@@ -117,6 +117,7 @@ function diapositivas() {
   if (ST.fase === "juego" || ST.fase === "final") d.push({ t: "En juego", h: () => `<div class="grid" style="grid-template-columns:2fr 1fr"><div>${CV.htmlMesas(ST)}</div><div><h2>Próximos</h2>${CV.htmlCola(ST, 10) || '<div class="dim">—</div>'}</div></div>` });
   if (ST.ko) d.push({ t: ST.ko.fase === "final" ? "Fase final" : "Cuadro", h: () => CV.htmlCuadro(ST) });
   if (ST.modo !== "ciegos" && ST.fase !== "inscripcion") d.push({ t: "Clasificación", h: () => CV.htmlTabla(ST) });
+  if (ST.modo === "vidas" && ST.fase !== "inscripcion") d.unshift({ t: "Vidas", h: () => CV.htmlTableroVidas(ST) });
   if (ST.fase === "inscripcion") d.push({ t: "Apuntados", h: vGente });
   return d;
 }
