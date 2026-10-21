@@ -163,7 +163,7 @@
     }
     st.fase = "juego";
     if (st.modo === "ciegos") generarCuadroKO(st, st.parejas.map(p => p.id), "ko");
-    else if (st.modo === "vidas") sortearVidas(st);
+    else if (st.modo === "vidas") sortearVidas(st);       // rondas 1 y 2 (o, con 8 justos, directo a semifinales)
     else siguienteRonda(st);
     return st.parejas;
   }
@@ -230,7 +230,7 @@
 
   function puedeSiguienteRonda(st) {
     if (st.fase !== "juego" || st.modo === "ciegos") return false;
-    if (st.modo === "vidas") { const e = estadoVidas(st); return e.libres.length >= 4 || e.listaFinal; }
+    if (st.modo === "vidas") return estadoVidas(st).listaFinal;
     if (st.ronda > 0 && !rondaTerminada(st)) return false;
     return true;
   }
@@ -320,10 +320,13 @@
     return pares.map(([a, b]) => nuevoPartido({ ronda: st.ronda, a, b })).concat(ps);
   }
 
-  // ---------- Vidas (individual) ----------
-  // Cada jugador empieza con N vidas. En cada ronda se sortean parejas y rivales entre los que siguen vivos
-  // (como en el Monster DYP: sin repetir compañero si se puede; si sobran, descansan por turnos).
-  // Perder quita una vida a los dos jugadores de la pareja.
+  // ---------- Vidas (individual, por rondas sorteadas por adelantado) ----------
+  // Cada jugador empieza con N vidas. Hay rondas de verdad: al empezar se sortean la 1 y la 2, y cada vez que
+  // acaba una ronda se sortea la siguiente (siempre hay una por delante). Un partido de la ronda k se puede
+  // jugar en cuanto sus 4 jugadores han terminado lo suyo de las rondas anteriores («listo», en verde).
+  // Perder quita una vida a los dos jugadores de la pareja. Nunca se baja de 8 en pie: con 8, semifinales.
+  const FINALISTAS = 8;
+
   function vidasDe(st) {
     const v = {};
     activos(st).forEach(j => (v[j.id] = st.config.vidas));
@@ -341,114 +344,258 @@
     const unos = l => l.filter(id => v[id] === 1).length;
     return Math.max(unos(a), unos(b));
   }
+  const cuatroDe = p => p.a.concat(p.b);
 
-  // Quién está libre, jugando o fuera.
-  //   presupuesto: cuántos se pueden eliminar todavía sin bajar de 8 en pie (contando lo que pueden eliminar los partidos en juego)
-  //   listaFinal: quedan 8 en pie y nadie está jugando → se sortea la fase final
-  function estadoVidas(st) {
-    const v = vidasDe(st), vivosIds = activos(st).filter(j => v[j.id] > 0).map(j => j.id);
-    const ocupados = new Set();
-    let enJuego = 0;
-    st.partidos.forEach(p => {
-      if (p.fase !== "ronda" || p.estado === "fin" || p.bye) return;
-      jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => ocupados.add(id));
-      enJuego += riesgo(v, p.a, p.b);
+  // Mejor forma de repartir 4 jugadores en 2 parejas: sin repetir compañero (ni rival) y con el menor riesgo
+  function repartir(cuatro, v, h, maxRiesgo) {
+    const c = cuatro;
+    let mejor = null, coste = Infinity;
+    [[[c[0], c[1]], [c[2], c[3]]], [[c[0], c[2]], [c[1], c[3]]], [[c[0], c[3]], [c[1], c[2]]]].forEach(([a, b]) => {
+      const w = riesgo(v, a, b);
+      if (maxRiesgo != null && w > maxRiesgo) return;
+      let x = 100 * ((h.comp[h.k(a[0], a[1])] || 0) + (h.comp[h.k(b[0], b[1])] || 0)) + 10 * w;
+      a.forEach(p => b.forEach(q => (x += h.riv[h.k(p, q)] || 0)));
+      if (x < coste) { coste = x; mejor = { a, b, w }; }
     });
-    const ultimo = {};
-    st.partidos.forEach(p => { if (p.fase === "ronda" && p.estado === "fin" && p.fin) jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => (ultimo[id] = Math.max(ultimo[id] || 0, p.fin))); });
-    // libres: vivos que no están en ningún partido, primero los que llevan más rato esperando
-    const libres = vivosIds.filter(id => !ocupados.has(id)).sort((x, y) => (ultimo[x] || 0) - (ultimo[y] || 0));
-    const fin = vivosIds.length <= FINALISTAS;
-    return { vidas: v, vivos: vivosIds, libres, ocupados, ultimo, fin, listaFinal: fin && ocupados.size === 0, presupuesto: vivosIds.length - FINALISTAS - enJuego };
-  }
-  const FINALISTAS = 8;                                    // a la fase final llegan siempre 8: 4 parejas → semifinales y final
-
-  // Elige 4 de los libres (por orden de espera) y cómo emparejarlos, sin pasarse del presupuesto de eliminados.
-  function elegirCuatro(st, libres, v, h, presupuesto, rand) {
-    const n = Math.min(libres.length, 12);
-    let mejor = null;
-    for (let i = 0; i < n && !mejor; i++) for (let j = i + 1; j < n && !mejor; j++) for (let k = j + 1; k < n && !mejor; k++) for (let l = k + 1; l < n && !mejor; l++) {
-      const c = barajar([libres[i], libres[j], libres[k], libres[l]], rand);
-      const repartos = [[[c[0], c[1]], [c[2], c[3]]], [[c[0], c[2]], [c[1], c[3]]], [[c[0], c[3]], [c[1], c[2]]]];
-      let elegido = null, coste = Infinity;
-      repartos.forEach(([a, b]) => {
-        const w = riesgo(v, a, b);
-        if (w > presupuesto) return;
-        let x = 100 * ((h.comp[h.k(a[0], a[1])] || 0) + (h.comp[h.k(b[0], b[1])] || 0)) + 10 * w;
-        a.forEach(p => b.forEach(q => (x += h.riv[h.k(p, q)] || 0)));
-        if (x < coste) { coste = x; elegido = { a, b, w }; }
-      });
-      if (elegido) mejor = elegido;
-    }
     return mejor;
   }
 
-  // Sortea partidos con los que están libres (de 4 en 4), sin dejar nunca menos de 8 en pie.
-  // Con 8 en pie: los partidos sin empezar se anulan y, cuando acaban los de las mesas, se sortea la fase final.
-  function sortearVidas(st) {
-    let e = estadoVidas(st);
-    if (e.fin) {
-      st.partidos = st.partidos.filter(p => !(p.fase === "ronda" && p.estado === "pendiente" && !p.bye));
-      e = estadoVidas(st);
-      return e.listaFinal ? empezarFinalVidas(st) : [];
-    }
-    if (e.libres.length < 4) return [];
-    const rand = azar(st);
+  // Agrupa jugadores de 4 en 4 (los que sobran descansan): sin repetir compañeros si se puede
+  function agrupar(st, ids, v, rand) {
     const h = historialMonster(st);
-    const jugadas = {};
-    st.partidos.forEach(p => { if (p.fase === "ronda" && !p.bye) jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => (jugadas[id] = (jugadas[id] || 0) + 1)); });
-    // prioridad: quien lleva menos partidos; a igualdad, quien lleva más rato esperando; y si no, al azar
-    const azarDe = {};
-    barajar(e.libres, rand).forEach((id, i) => (azarDe[id] = i));
-    let libres = e.libres.slice().sort((x, y) => (jugadas[x] || 0) - (jugadas[y] || 0) || (e.ultimo[x] || 0) - (e.ultimo[y] || 0) || azarDe[x] - azarDe[y]);
-    let presupuesto = e.presupuesto;
+    const juegan = Math.floor(ids.length / 4) * 4;
+    let mejor = null, mejorCoste = Infinity;
+    for (let intento = 0; intento < 300 && mejorCoste > 0; intento++) {
+      const o = barajar(ids.slice(0, juegan), rand);
+      let coste = 0;
+      const grupos = [];
+      for (let i = 0; i < o.length; i += 4) {
+        const r = repartir(o.slice(i, i + 4), v, h);
+        coste += 100 * ((h.comp[h.k(r.a[0], r.a[1])] || 0) + (h.comp[h.k(r.b[0], r.b[1])] || 0));
+        r.a.forEach(x => r.b.forEach(y => (coste += h.riv[h.k(x, y)] || 0)));
+        grupos.push(r);
+      }
+      if (coste < mejorCoste) { mejorCoste = coste; mejor = grupos; }
+    }
+    return { grupos: mejor || [], descansan: ids.slice(juegan) };
+  }
+
+  // Sortea la ronda siguiente con los que siguen vivos. Descansan (si no son múltiplo de 4) los que menos han descansado.
+  function generarRondaVidas(st) {
+    const rand = azar(st);
+    const v = vidasDe(st);
+    const desc = {};
+    (st.descansos || []).forEach(d => d.ids.forEach(id => (desc[id] = (desc[id] || 0) + 1)));
+    const ids = barajar(vivos(st), rand).sort((x, y) => (desc[y] || 0) - (desc[x] || 0));   // los que más han descansado, delante (juegan)
+    const r = ++st.ronda;
+    const { grupos, descansan } = agrupar(st, ids, v, rand);
+    if (descansan.length) st.descansos = (st.descansos || []).concat([{ ronda: r, ids: descansan }]);
     const total = st.partidos.filter(p => p.fase === "ronda").length;
-    const ps = [];
-    const crear = o => {
-      const cuatro = o.a.concat(o.b);
-      const rondaJ = 1 + Math.max(...cuatro.map(id => jugadas[id] || 0));   // «ronda» = nº de partido de sus jugadores
-      const p = nuevoPartido({ ronda: st.ronda, rondaJ, n: total + ps.length + 1, a: o.a, b: o.b });
-      ps.push(p); st.partidos.push(p);
-      libres = libres.filter(id => !cuatro.includes(id));
-      presupuesto -= o.w;
-    };
-    st.ronda++;                                            // nº de sorteo (tanda)
-    while (libres.length >= 4) {
-      const o = elegirCuatro(st, libres, e.vidas, h, presupuesto, rand);
-      if (!o) break;
-      crear(o);
+    return grupos.map((g, i) => { const p = nuevoPartido({ ronda: r, n: total + i + 1, a: g.a, b: g.b }); st.partidos.push(p); return p; });
+  }
+
+  // Si alguien cae eliminado y ya estaba sorteado en una ronda siguiente, se rehacen sólo esos partidos
+  // (con los demás de esos partidos y los que descansaban en esa ronda).
+  function repararVidas(st) {
+    const v = vidasDe(st);
+    const rand = azar(st);
+    let cambio = false;
+    for (let k = 1; k <= st.ronda; k++) {
+      const rotos = st.partidos.filter(p => p.fase === "ronda" && p.ronda === k && p.estado === "pendiente" && cuatroDe(p).some(id => !(v[id] > 0)));
+      if (!rotos.length) continue;
+      cambio = true;
+      const d = (st.descansos || []).find(x => x.ronda === k);
+      const bolsa = rotos.flatMap(cuatroDe).concat(d ? d.ids : []).filter(id => v[id] > 0);
+      st.partidos = st.partidos.filter(p => !rotos.includes(p));
+      st.descansos = (st.descansos || []).filter(x => x.ronda !== k);
+      const { grupos, descansan } = agrupar(st, barajar(bolsa, rand), v, rand);
+      if (descansan.length) st.descansos.push({ ronda: k, ids: descansan });
+      grupos.forEach(g => st.partidos.push(nuevoPartido({ ronda: k, n: 0, a: g.a, b: g.b, rehecho: true })));
     }
-    // Atasco (nadie juega y ningún partido es seguro, p. ej. 9 en pie con 1 vida cada uno):
-    // se juega el de menos riesgo y, si se pasa de 8, se salva por sorteo a los justos para quedar 8.
-    if (!ps.length && e.ocupados.size === 0 && libres.length >= 4) {
-      let o = null;
-      for (let lim = 0; !o && lim <= 2; lim++) o = elegirCuatro(st, libres, e.vidas, h, lim, rand);
-      if (o) crear(o);
+    if (cambio) st.partidos.filter(p => p.fase === "ronda").forEach((p, i) => (p.n = i + 1));
+    return cambio;
+  }
+
+  // ¿Qué jugadores tienen todavía algo sin terminar de antes de la ronda k?
+  function ocupadosAntes(st, k, excepto) {
+    const s = new Set();
+    st.partidos.forEach(p => { if (p.fase === "ronda" && p !== excepto && p.estado !== "fin" && (p.ronda < k || p.estado === "mesa")) cuatroDe(p).forEach(id => s.add(id)); });
+    return s;
+  }
+
+  // Estado de cada partido sin jugar de Vidas:
+  //   "lista"   → sus 4 jugadores están libres y no puede dejar a menos de 8 en pie (verde: se puede llamar)
+  //   "espera"  → alguno aún juega una ronda anterior (esperan: [ids])
+  //   "riesgo"  → están libres, pero si se jugara ahora podría dejar a menos de 8: espera a que acaben otros partidos
+  function estadosVidas(st) {
+    const v = vidasDe(st);
+    const vivosN = activos(st).filter(j => v[j.id] > 0).length;
+    let presupuesto = vivosN - FINALISTAS;
+    st.partidos.forEach(p => { if (p.fase === "ronda" && p.estado === "mesa") presupuesto -= riesgo(v, p.a, p.b); });
+    const h = historialMonster(st);
+    const res = {};
+    const sin = st.partidos.filter(p => p.fase === "ronda" && p.estado === "pendiente").sort((x, y) => x.ronda - y.ronda || x.n - y.n);
+    const libres = [];
+    sin.forEach(p => {
+      const ocup = ocupadosAntes(st, p.ronda, p);
+      const esperan = cuatroDe(p).filter(id => ocup.has(id));
+      if (esperan.length) { res[p.id] = { estado: "espera", esperan }; return; }
+      libres.push(p);
+    });
+    let algunaLista = false;
+    libres.forEach(p => {
+      const w = riesgo(v, p.a, p.b);
+      const otro = w > presupuesto ? repartir(cuatroDe(p), v, h, Math.max(0, presupuesto)) : null;
+      if (w <= presupuesto) { res[p.id] = { estado: "lista", riesgo: w }; presupuesto -= w; algunaLista = true; }
+      else if (otro) { res[p.id] = { estado: "lista", riesgo: otro.w, reparto: otro }; presupuesto -= otro.w; algunaLista = true; }
+      else res[p.id] = { estado: "riesgo", riesgo: w };
+    });
+    // Atasco: nadie juega y nada es seguro (p. ej. 9 en pie con 1 vida): se deja jugar el de menos riesgo
+    // (si caen dos, uno se salva por sorteo para quedar 8).
+    const enMesa = st.partidos.some(p => p.fase === "ronda" && p.estado === "mesa");
+    if (!algunaLista && !enMesa && vivosN > FINALISTAS) {
+      const cand = libres.filter(p => res[p.id].estado === "riesgo");
+      if (cand.length) {
+        const p = cand.map(x => ({ x, r: repartir(cuatroDe(x), v, h) })).sort((m, n) => m.r.w - n.r.w)[0];
+        res[p.x.id] = { estado: "lista", riesgo: p.r.w, reparto: p.r, forzado: true };
+      }
     }
-    if (!ps.length) st.ronda--;
-    return ps;
+    return res;
+  }
+
+  // Llama a mesa un partido «listo» (si hace falta, reajusta las parejas de esos 4 para no bajar de 8)
+  function llamarVidas(st, id, mesa) {
+    const p = partido(st, id);
+    const e = estadosVidas(st)[id];
+    if (!e || e.estado !== "lista") throw new Error(e && e.estado === "espera" ? "Aún hay jugadores de este partido jugando la ronda anterior" : "Este partido aún no se puede jugar");
+    if (e.reparto) { p.a = e.reparto.a; p.b = e.reparto.b; p.reajustado = true; }
+    p.estado = "mesa"; p.mesa = mesa; p.llamado = Date.now();
+    return p;
+  }
+
+  // Cerca del final: si hay partidos libres que podrían dejar a menos de 8, se recolocan los jugadores libres
+  // de esa ronda para formar partidos seguros (sólo partidos sin empezar).
+  function reajustarVidas(st) {
+    const est = estadosVidas(st);
+    const enRiesgo = st.partidos.filter(p => (est[p.id] || {}).estado === "riesgo");
+    if (!enRiesgo.length) return false;
+    const v = vidasDe(st), h = historialMonster(st), rand = azar(st);
+    let presupuesto = activos(st).filter(j => v[j.id] > 0).length - FINALISTAS;
+    st.partidos.forEach(p => { if (p.fase === "ronda" && (p.estado === "mesa" || (est[p.id] || {}).estado === "lista")) presupuesto -= (est[p.id] || {}).riesgo != null && p.estado !== "mesa" ? est[p.id].riesgo : riesgo(v, p.a, p.b); });
+    let cambio = false;
+    const rondas = [...new Set(enRiesgo.map(p => p.ronda))].sort((x, y) => x - y);
+    for (const k of rondas) {
+      const libresK = st.partidos.filter(p => p.ronda === k && (est[p.id] || {}).estado === "riesgo");
+      const pool = libresK.flatMap(cuatroDe);
+      if (pool.length < 4) continue;
+      let mejor = null, mejorN = 0, mejorCoste = Infinity;
+      for (let intento = 0; intento < 400; intento++) {
+        const o = barajar(pool, rand);
+        let pres = presupuesto, n = 0, coste = 0;
+        const grupos = [];
+        for (let i = 0; i + 4 <= o.length; i += 4) {
+          const r = repartir(o.slice(i, i + 4), v, h);
+          if (r.w <= pres) { pres -= r.w; n++; }
+          coste += 100 * ((h.comp[h.k(r.a[0], r.a[1])] || 0) + (h.comp[h.k(r.b[0], r.b[1])] || 0)) + r.w;
+          grupos.push(r);
+        }
+        if (n > mejorN || (n === mejorN && coste < mejorCoste)) { mejorN = n; mejorCoste = coste; mejor = grupos; }
+      }
+      if (!mejorN) continue;                       // no se puede formar ninguno seguro: se espera
+      st.partidos = st.partidos.filter(p => !libresK.includes(p));
+      mejor.forEach(g => st.partidos.push(nuevoPartido({ ronda: k, n: 0, a: g.a, b: g.b, rehecho: true })));
+      cambio = true;
+      break;                                       // con el nuevo reparto se recalcula todo
+    }
+    if (cambio) st.partidos.filter(p => p.fase === "ronda").forEach((p, i) => (p.n = i + 1));
+    return cambio;
+  }
+
+  // Si nadie está jugando y no hay ningún partido listo (todo lo sorteado podría dejar a menos de 8),
+  // se vuelve a sortear todo lo pendiente con los vivos buscando partidos seguros.
+  function desatascarVidas(st) {
+    const est = estadosVidas(st);
+    const enMesa = st.partidos.some(p => p.fase === "ronda" && p.estado === "mesa");
+    const hayLista = Object.values(est).some(e => e.estado === "lista" && !e.forzado);
+    if (enMesa || hayLista) return false;
+    const pend = st.partidos.filter(p => p.fase === "ronda" && p.estado === "pendiente");
+    if (!pend.length) return false;
+    const v = vidasDe(st), h = historialMonster(st), rand = azar(st);
+    const ids = vivos(st);
+    const presupuesto = ids.length - FINALISTAS;
+    let mejor = null, mejorN = 0, mejorCoste = Infinity;
+    for (let intento = 0; intento < 600; intento++) {
+      const o = barajar(ids, rand);
+      let pres = presupuesto, n = 0, coste = 0;
+      const grupos = [];
+      for (let i = 0; i + 4 <= o.length; i += 4) {
+        const r = repartir(o.slice(i, i + 4), v, h);
+        if (r.w <= pres) { pres -= r.w; n++; } else coste += 1000;
+        coste += 100 * ((h.comp[h.k(r.a[0], r.a[1])] || 0) + (h.comp[h.k(r.b[0], r.b[1])] || 0)) + r.w;
+        grupos.push(r);
+      }
+      if (n > mejorN || (n === mejorN && coste < mejorCoste)) { mejorN = n; mejorCoste = coste; mejor = { grupos, descansan: o.slice(grupos.length * 4) }; }
+    }
+    if (!mejorN) return false;                    // ni así: se jugará el de menos riesgo (salvado por sorteo)
+    const k = Math.min(...pend.map(p => p.ronda));
+    st.partidos = st.partidos.filter(p => !pend.includes(p));
+    st.descansos = (st.descansos || []).filter(d => d.ronda < k);
+    st.ronda = k;
+    if (mejor.descansan.length) st.descansos.push({ ronda: k, ids: mejor.descansan });
+    mejor.grupos.forEach(g => st.partidos.push(nuevoPartido({ ronda: k, n: 0, a: g.a, b: g.b, rehecho: true })));
+    st.partidos.filter(p => p.fase === "ronda").forEach((p, i) => (p.n = i + 1));
+    return true;
+  }
+
+  // Después de cada resultado: rehace lo que haga falta, sortea la ronda siguiente si toca y, con 8 en pie, la fase final.
+  // Devuelve los partidos nuevos.
+  function sortearVidas(st) {
+    if (st.fase !== "juego") return [];
+    repararVidas(st);
+    if (vivos(st).length <= FINALISTAS) {
+      st.partidos = st.partidos.filter(p => !(p.fase === "ronda" && p.estado === "pendiente"));   // ya no hacen falta
+      return st.partidos.some(p => p.fase === "ronda" && p.estado === "mesa") ? [] : empezarFinalVidas(st);
+    }
+    reajustarVidas(st);
+    desatascarVidas(st);
+    // siempre una ronda por delante de la más baja que aún tiene partidos sin terminar
+    const abiertas = st.partidos.filter(p => p.fase === "ronda" && p.estado !== "fin").map(p => p.ronda);
+    const rMin = abiertas.length ? Math.min(...abiertas) : st.ronda + 1;
+    const nuevos = [];
+    let guard = 0;
+    while (st.ronda < rMin + 1 && guard++ < 3) nuevos.push(...generarRondaVidas(st));
+    return nuevos;
+  }
+
+  // Compatibilidad con el panel: estado general
+  function estadoVidas(st) {
+    const v = vidasDe(st), vivosIds = activos(st).filter(j => v[j.id] > 0).map(j => j.id);
+    const est = estadosVidas(st);
+    const listas = Object.keys(est).filter(id => est[id].estado === "lista");
+    const enMesa = st.partidos.filter(p => p.fase === "ronda" && p.estado === "mesa");
+    const fin = vivosIds.length <= FINALISTAS;
+    return { vidas: v, vivos: vivosIds, estados: est, listas, enMesa, fin, listaFinal: fin && !enMesa.length, libres: [] };
   }
 
   // Tablero de vidas: cada jugador con sus vidas y qué está haciendo
   function tableroVidas(st) {
-    const e = estadoVidas(st), t = {};
+    const v = vidasDe(st), t = {};
     clasificacion(st).forEach(f => (t[f.id] = f));
-    const mesaDe = {}, enFinal = new Set();
-    st.partidos.forEach(p => {
-      if (p.estado === "fin") return;
-      jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).forEach(id => { if (p.estado === "mesa") mesaDe[id] = p.mesa; });
-    });
+    const est = st.fase === "juego" ? estadosVidas(st) : {};
+    const info = {};
+    st.partidos.filter(p => p.fase === "ronda" && p.estado !== "fin").sort((x, y) => x.ronda - y.ronda).forEach(p => cuatroDe(p).forEach(id => {
+      if (info[id]) return;
+      info[id] = p.estado === "mesa" ? { estado: "mesa", mesa: p.mesa, ronda: p.ronda } : { estado: (est[p.id] || {}).estado === "lista" ? "lista" : "espera", ronda: p.ronda };
+    }));
+    const enFinal = new Set();
     if (st.ko) st.parejas.forEach(p => { enFinal.add(p.j1); enFinal.add(p.j2); });
-    const posLibre = {}; e.libres.forEach((id, i) => (posLibre[id] = i));
     return activos(st).map(j => {
       const f = t[j.id] || {};
-      let estado;
-      if (st.fase === "final" || st.fase === "terminado") estado = enFinal.has(j.id) ? "final" : e.vidas[j.id] > 0 ? "fuera" : "eliminado";
-      else if (e.vidas[j.id] <= 0) estado = "eliminado";
-      else if (mesaDe[j.id]) estado = "mesa";
-      else if (e.ocupados.has(j.id)) estado = "espera-mesa";
-      else estado = "libre";
-      return { id: j.id, nombre: j.nombre, vidas: e.vidas[j.id], estado, mesa: mesaDe[j.id] || null, pj: f.pj || 0, pg: f.pg || 0, pp: f.pp || 0, orden: posLibre[j.id] };
+      let i = info[j.id] || {};
+      let estado = i.estado || "descansa";
+      if (st.fase === "final" || st.fase === "terminado") estado = enFinal.has(j.id) ? "final" : "eliminado";
+      else if (!(v[j.id] > 0)) estado = "eliminado";
+      return { id: j.id, nombre: j.nombre, vidas: v[j.id], estado, mesa: i.mesa || null, ronda: i.ronda || null, pj: f.pj || 0, pg: f.pg || 0, pp: f.pp || 0 };
     }).sort((x, y) => (y.vidas > 0) - (x.vidas > 0) || y.vidas - x.vidas || y.pg - x.pg || x.nombre.localeCompare(y.nombre));
   }
 
@@ -480,6 +627,12 @@
     ra = Number(ra); rb = Number(rb);
     comprobarMarcador(st, ra, rb);
     if (p.estado === "fin" && !puedeEditar(st, id)) throw new Error("Ya se han jugado partidos que dependen de este resultado");
+    if (st.modo === "vidas" && p.fase === "ronda" && p.estado === "pendiente") {
+      const e = estadosVidas(st)[p.id];
+      if (e && e.estado === "espera") throw new Error("Aún hay jugadores de este partido jugando la ronda anterior");
+      if (e && e.estado === "riesgo") throw new Error("Este partido podría dejar a menos de 8 en pie: espera a que acaben los de las mesas");
+      if (e && e.reparto) { p.a = e.reparto.a; p.b = e.reparto.b; }
+    }
     p.ra = ra; p.rb = rb; p.ganador = ra > rb ? "a" : "b"; p.ganadorId = Array.isArray(p.a) ? null : p[p.ganador];
     p.estado = "fin"; p.fin = Date.now(); p.mesa = null;
     if (st.modo === "vidas" && p.fase === "ronda") salvarHastaOcho(st, p);
@@ -507,7 +660,13 @@
   function puedeEditar(st, id) {
     const p = partido(st, id);
     if (!p || p.bye) return false;
-    if (p.fase === "ronda") return st.modo === "vidas" ? st.fase === "juego" : p.ronda === st.ronda && st.fase === "juego";
+    if (p.fase === "ronda" && st.modo === "vidas") {
+      // se puede corregir mientras ninguno de los 4 haya empezado un partido de una ronda posterior
+      if (st.fase !== "juego") return false;
+      const ids = cuatroDe(p);
+      return !st.partidos.some(x => x.fase === "ronda" && x.ronda > p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
+    }
+    if (p.fase === "ronda") return p.ronda === st.ronda && st.fase === "juego";
     return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
   }
 
@@ -600,6 +759,15 @@
   }
   function asignarMesas(st) {
     const libres = mesasLibres(st), llamados = [];
+    if (st.modo === "vidas" && st.fase === "juego") {
+      for (let k = 0; k < 50 && libres.length; k++) {
+        const est = estadosVidas(st);
+        const p = st.partidos.filter(x => (est[x.id] || {}).estado === "lista").sort((x, y) => x.ronda - y.ronda || x.n - y.n)[0];
+        if (!p) break;
+        llamados.push(llamarVidas(st, p.id, libres.shift()));
+      }
+      return llamados;
+    }
     for (const p of pendientes(st)) {
       if (!libres.length) break;
       if (p.estado !== "pendiente") continue;
@@ -614,7 +782,7 @@
 
   /* ---------- rondas para enseñar ---------- */
   // En Vidas no hay rondas de verdad: la ronda de un partido es el nº de partido de sus jugadores.
-  function rondaDe(st, p) { return st.modo === "vidas" ? (p.rondaJ || p.ronda) : p.ronda; }
+  function rondaDe(st, p) { return p.ronda; }
   function rondasVista(st) {
     const m = {};
     st.partidos.forEach(p => { if (p.fase === "ronda") (m[rondaDe(st, p)] = m[rondaDe(st, p)] || []).push(p); });
@@ -628,7 +796,7 @@
     return faltan === 0 ? "Final" : faltan === 1 ? "Semifinal" : faltan === 2 ? "Cuartos" : faltan === 3 ? "Octavos" : `Ronda ${p.ronda}`;
   }
   function nombrePartido(st, p) {
-    if (p.fase === "ronda") return st.modo === "vidas" ? `Ronda ${rondaDe(st, p)} · partido ${p.n}` : `Ronda ${p.ronda}`;
+    if (p.fase === "ronda") return st.modo === "vidas" ? `Ronda ${p.ronda} · partido ${p.n}` : `Ronda ${p.ronda}`;
     return nombreRondaKO(st, p);
   }
 
@@ -637,7 +805,7 @@
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
     nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
-    vidasDe, vivos, estadoVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
+    vidasDe, vivos, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
   };
 });
