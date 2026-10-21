@@ -294,7 +294,7 @@ function vJuego() {
     const ultima = tot && ST.ronda >= tot;
     h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>Ronda ${ST.ronda} terminada.</b>
       <div class="row" style="margin-top:8px"><button class="btn pri big" onclick="siguiente()">${fin ? "🎲 Sortear semifinales" : ultima ? "🏁 Cerrar y ver la clasificación final" : `▶ Ronda ${ST.ronda + 1}`}</button></div>
-      ${fin ? `<div class="small dim" style="margin-top:6px">Quedan ${E.vivos(ST).length} en pie${E.vivos(ST).length < 4 ? `: se repesca a los últimos eliminados hasta completar 4` : ""}.</div>` : ""}</div>`;
+      ${fin ? `<div class="small dim" style="margin-top:6px">Quedan ${E.vivos(ST).length} en pie${E.vivos(ST).length < 4 ? `: el sorteo decide quién pasa directo a la final` : ""}.</div>` : ""}</div>`;
   }
   // mesas
   const enMesa = ST.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);

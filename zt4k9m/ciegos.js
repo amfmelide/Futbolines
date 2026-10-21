@@ -204,9 +204,9 @@
           const a = val(pa), b = val(pb);
           if (a && p.a !== a) { p.a = a; cambio = true; }
           if (b && p.b !== b) { p.b = b; cambio = true; }
-        } else if (p.ronda === 1 && (p.fase === "ko") && (!p.a || !p.b) && (p.a || p.b)) {
+        } else if (p.ronda === 1 && (!p.a || !p.b) && (p.a || p.b)) {
           p.estado = "fin"; p.bye = true; p.ganador = p.a ? "a" : "b"; p.ganadorId = p.a || p.b; cambio = true;
-        } else if (p.ronda === 1 && !p.a && !p.b && p.fase === "ko") {
+        } else if (p.ronda === 1 && !p.a && !p.b) {
           p.estado = "fin"; p.bye = true; p.ganadorId = null; cambio = true;
         }
       }
@@ -353,25 +353,11 @@
     return pares.concat(ps);
   }
 
-  // Quedan 4 o menos: semifinales a sorteo y final. Si quedan menos de 4, se repesca a los últimos eliminados.
+  // Quedan 4 o menos: semifinales a sorteo y final. Sin repesca: si sólo quedan 3 (cayeron varios a la vez),
+  // el sorteo decide quién pasa directo a la final.
   function empezarFinalVidas(st) {
-    const vs = vivos(st);
-    const elegidos = vs.slice();
-    if (elegidos.length < 4) {
-      const cuando = {}, dif = difPartidas(st);
-      st.partidos.forEach(p => {
-        if (p.fase !== "ronda" || p.estado !== "fin" || p.bye) return;
-        const l = p.ganador === "a" ? p.b : p.a;
-        cuando[l] = Math.max(cuando[l] || 0, p.ronda);
-      });
-      const fuera = st.parejas.map(p => p.id).filter(id => !elegidos.includes(id))
-        .sort((x, y) => (cuando[y] || 0) - (cuando[x] || 0) || (dif[y] || 0) - (dif[x] || 0));
-      const rep = fuera.slice(0, 4 - elegidos.length);
-      st.repescados = rep;
-      elegidos.push(...rep);
-    }
     st.fase = "final";
-    generarCuadroKO(st, elegidos, "final");
+    generarCuadroKO(st, vivos(st), "final");
     return st.partidos.filter(p => p.fase === "final");
   }
 
