@@ -151,5 +151,118 @@
         <div class="vt-pie">${chip(j)}<span class="dim">${j.pg}G · ${j.pp}P</span></div></div>`).join("") + `</div>`;
   }
 
-  window.CV = { htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
+  /* ---------- resumen (dashboard) ---------- */
+  function htmlResumen(st) {
+    const ps = st.partidos.filter(p => !p.bye && p.a && p.b);
+    const jugados = ps.filter(p => p.estado === "fin").length, mesa = ps.filter(p => p.estado === "mesa").length;
+    const espera = ps.filter(p => p.estado === "pendiente").length;
+    const tiles = [];
+    if (st.modo === "vidas") tiles.push([E.vivos(st).length + "/" + E.activos(st).length, "en pie"]);
+    else if (st.modo === "monster") tiles.push([E.activos(st).length, "jugadores"]);
+    else tiles.push([st.parejas.length || Math.floor(E.activos(st).length / 2), "parejas"]);
+    if (st.modo !== "ciegos" && st.fase !== "final" && st.fase !== "terminado") tiles.push([E.rondasVista(st).length || "–", "ronda"]);
+    tiles.push([jugados, "jugados"], [mesa, "en mesa"], [espera, "esperando mesa"]);
+    return `<div class="cd">${tiles.map(([n, t]) => `<div class="cd-t"><b>${esc(String(n))}</b><span>${esc(t)}</span></div>`).join("")}</div>`;
+  }
+
+  /* ---------- rondas con pestañas ---------- */
+  function htmlRondas(st, sel, op) {
+    op = op || {};
+    const rs = E.rondasVista(st);
+    if (!rs.length) return `<div class="vacio">Aún no hay rondas.</div>`;
+    const actual = rs.some(r => r.n === sel) ? sel : rs[rs.length - 1].n;
+    const r = rs.find(x => x.n === actual);
+    const hechos = r.partidos.filter(p => p.estado === "fin" && !p.bye).length, total = r.partidos.filter(p => !p.bye).length;
+    const chips = `<div class="cr-chips" role="tablist">${rs.map(x => {
+      const fin = x.partidos.every(p => p.estado === "fin");
+      return `<button class="cr-chip ${x.n === actual ? "on" : ""} ${fin ? "hecha" : ""}" data-ronda="${x.n}" role="tab" aria-selected="${x.n === actual}">R${x.n}${fin ? " ✓" : ""}</button>`;
+    }).join("")}${st.ko ? `<button class="cr-chip cr-final" data-tab="cuadro">🏆 Cuadro final</button>` : ""}</div>`;
+    const tarjeta = p => {
+      if (p.bye) return `<div class="cr-m bye"><div class="cr-l gana"><span>${lado(st, p.a)}</span><b>—</b></div><div class="small dim">Descansa (cuenta como victoria)</div></div>`;
+      const fin = p.estado === "fin";
+      const est = fin ? "" : p.estado === "mesa" ? `<span class="cr-est mesa">● Mesa ${p.mesa}</span>` : `<span class="cr-est">⏳ Por jugar</span>`;
+      const fila = l => `<div class="cr-l ${fin ? (p.ganador === l ? "gana" : "pierde") : ""}"><span>${lado(st, p[l])}</span><b>${fin ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
+      return `<div class="cr-m ${op.admin ? "click" : ""} ${p.estado}" data-partido="${esc(p.id)}">${est}${fila("a")}${fila("b")}${op.admin && !fin ? `<div class="cr-anotar">Toca para anotar el resultado</div>` : ""}</div>`;
+    };
+    const desc = st.modo === "monster" && (st.descansos || []).filter(d => d.ronda === actual).flatMap(d => d.ids);
+    return chips + `<div class="cr-cab"><h3>Ronda ${actual}</h3><span class="dim small">${hechos} de ${total} jugados</span></div>
+      <div class="cr-grid">${r.partidos.map(tarjeta).join("")}</div>` +
+      (desc && desc.length ? `<div class="small dim" style="margin-top:8px">Descansan: ${desc.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "");
+  }
+
+  /* ---------- cuadro final estilo Champions / Roland Garros: dos mitades y la final en el centro ---------- */
+  function htmlCuadroFinal(st, op) {
+    op = op || {};
+    if (!st.ko) {
+      if (st.modo === "vidas") return `<div class="vacio">🏆 El cuadro final se sortea cuando queden 8 jugadores o menos en pie<br><span class="small">(ahora quedan ${E.vivos(st).length})</span>.</div>`;
+      return `<div class="vacio">Este formato no tiene cuadro final.</div>`;
+    }
+    const fase = st.ko.fase, R = st.ko.rondas;
+    const ps = st.partidos.filter(p => p.fase === fase);
+    const de = r => ps.filter(p => p.ronda === r && !p.tercer).sort((a, b) => a.n - b.n);
+    const fin = E.partido(st, st.ko.finalId);
+    const campeon = fin && fin.estado === "fin" ? fin.ganadorId : null;
+    const mk = p => {
+      const terminado = p.estado === "fin";
+      const fila = l => {
+        const id = p[l];
+        const cls = terminado && !p.bye ? (p.ganador === l ? "gana" : "pierde") : "";
+        const txt = id ? lado(st, id) : p.bye ? '<span class="dim">pasa directo</span>' : '<span class="dim">Por decidir</span>';
+        return `<div class="cf-l ${cls}"><span>${txt}</span><b>${terminado && !p.bye ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
+      };
+      const cls = ["cf-m"];
+      if (p.bye) cls.push("bye");
+      if (p.estado === "mesa") cls.push("mesa");
+      if (op.admin && p.a && p.b && !p.bye) cls.push("click");
+      if (p.id === st.ko.finalId) cls.push("final");
+      return `<div class="${cls.join(" ")}" data-partido="${esc(p.id)}" data-cf-id="${esc(p.id)}" data-fa="${esc(p.fa || "")}" data-fb="${esc(p.fb || "")}">${fila("a")}${fila("b")}${p.estado === "mesa" ? `<div class="cf-mesa">● Mesa ${p.mesa}</div>` : ""}</div>`;
+    };
+    const nombreR = r => E.nombreRondaKO(st, de(r)[0] || { ronda: r });
+    let izq = "", der = "";
+    for (let r = 1; r < R; r++) {
+      const rs = de(r), mitad = rs.length / 2;
+      izq += `<div class="cf-col"><div class="cf-t">${esc(nombreR(r))}</div><div class="cf-lista">${rs.slice(0, mitad).map(mk).join("")}</div></div>`;
+      der = `<div class="cf-col"><div class="cf-t">${esc(nombreR(r))}</div><div class="cf-lista">${rs.slice(mitad).map(mk).join("")}</div></div>` + der;
+    }
+    const tercero = ps.find(p => p.tercer);
+    const centro = `<div class="cf-col cf-centro"><div class="cf-copa ${campeon ? "gana" : ""}">🏆</div><div class="cf-t">Final</div>
+      <div class="cf-lista">${fin ? mk(fin) : ""}</div>
+      ${campeon ? `<div class="cf-campeon"><span>Campeones</span><b>${lado(st, campeon)}</b></div>` : ""}
+      ${tercero ? `<div class="cf-t" style="margin-top:14px">3er puesto</div>${mk(tercero)}` : ""}</div>`;
+    return `<div class="cf-scroll"><div class="cf" data-cf>${izq}${centro}${der}<svg class="cf-svg" aria-hidden="true"></svg></div></div>`;
+  }
+
+  // Líneas que unen cada partido con el siguiente (se dibujan tras pintar)
+  function lineas(raiz) {
+    (raiz || document).querySelectorAll("[data-cf]").forEach(cf => {
+      const svg = cf.querySelector(".cf-svg");
+      if (!svg) return;
+      const base = cf.getBoundingClientRect();
+      svg.setAttribute("width", cf.scrollWidth); svg.setAttribute("height", cf.scrollHeight);
+      let d = "", dOro = "";
+      cf.querySelectorAll(".cf-m[data-fa]").forEach(m => {
+        const a = m.getBoundingClientRect();
+        [m.dataset.fa, m.dataset.fb].forEach(src => {
+          if (!src) return;
+          const s = cf.querySelector(`[data-cf-id="${src}"]`);
+          if (!s) return;
+          const b = s.getBoundingClientRect();
+          const izq = b.left < a.left;
+          const x1 = (izq ? b.right : b.left) - base.left, y1 = b.top + b.height / 2 - base.top;
+          const x2 = (izq ? a.left : a.right) - base.left, y2 = a.top + a.height / 2 - base.top;
+          const xm = (x1 + x2) / 2;
+          const tramo = `M${x1},${y1} H${xm} V${y2} H${x2} `;
+          if (s.querySelector(".cf-l.gana")) dOro += tramo; else d += tramo;
+        });
+      });
+      svg.innerHTML = `<path d="${d}" class="cf-p"/><path d="${dOro}" class="cf-p oro"/>`;
+      // en pantallas estrechas, que se vea la final (en el centro) al abrir
+      const sc = cf.parentElement;
+      if (sc && !sc.dataset.centrado && sc.scrollWidth > sc.clientWidth) { sc.scrollLeft = (sc.scrollWidth - sc.clientWidth) / 2; sc.dataset.centrado = "1"; }
+    });
+  }
+  let tLineas;
+  window.addEventListener("resize", () => { clearTimeout(tLineas); tLineas = setTimeout(() => lineas(), 120); });
+
+  window.CV = { htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
 })();

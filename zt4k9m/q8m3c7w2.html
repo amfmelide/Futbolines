@@ -45,6 +45,7 @@ const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
 const { esc, $, $$ } = TC;
 const PREFIJO = "ciegos-";
 
+let rondaSel = null;
 let ST = null, VERSION = 0, CODIGO = "", PASS = "", tab = "juego", guardando = null, pendiente = false, auto = true;
 const HIST = [];
 try { auto = localStorage.getItem("ciegos-auto") !== "0"; } catch (_) {}
@@ -182,16 +183,22 @@ async function sondear() {
 }
 
 /* ================= PINTADO ================= */
-const VISTAS = { jugadores: vJugadores, juego: vJuego, tabla: vTabla, ajustes: vAjustes };
+const VISTAS = { jugadores: vJugadores, juego: vJuego, rondas: vRondas, cuadro: vCuadro, tabla: vTabla, ajustes: vAjustes };
 function pintar() {
   if (!ST) return;
   $("#tTitulo").textContent = ST.nombre;
   $("#tSub").textContent = [ST.fecha, ST.lugar, CV.estadoTexto(ST), S.modo === "local" ? "modo local" : ""].filter(Boolean).join(" · ");
   const n = E.activos(ST).length;
-  const tabs = [["jugadores", ST.fase === "inscripcion" || !ST.parejas.length ? "Jugadores" : "Parejas", n], ["juego", "Juego"], ["tabla", ST.modo === "ciegos" ? "Cuadro" : "Clasificación"], ["ajustes", "Ajustes"]];
+  const tabs = [["jugadores", ST.fase === "inscripcion" || !ST.parejas.length ? "Jugadores" : "Parejas", n], ["juego", "Panel"]];
+  if (ST.modo !== "ciegos") tabs.push(["rondas", "Rondas", E.rondasVista(ST).length || null]);
+  if (ST.modo === "ciegos" || ST.modo === "vidas") tabs.push(["cuadro", "🏆 Cuadro"]);
+  if (ST.modo !== "ciegos") tabs.push(["tabla", "Clasificación"]);
+  tabs.push(["ajustes", "Ajustes"]);
+  if (!tabs.some(x => x[0] === tab)) tab = "juego";
   $("#tabs").innerHTML = tabs.map(([id, t, k]) => `<button class="tab ${tab === id ? "on" : ""}" data-tab="${id}">${t}${k != null ? `<span class="n">${k}</span>` : ""}</button>`).join("");
   const foco = document.activeElement && document.activeElement.id, y = window.scrollY;
   $("#main").innerHTML = VISTAS[tab]();
+  CV.lineas($("#main"));
   if (foco && $("#" + foco)) $("#" + foco).focus();
   window.scrollTo(0, y);
   estadoSync($("#sync").textContent);
@@ -199,6 +206,8 @@ function pintar() {
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-tab]");
   if (t) { tab = t.dataset.tab; pintar(); window.scrollTo(0, 0); return; }
+  const r = e.target.closest("[data-ronda]");
+  if (r) { rondaSel = Number(r.dataset.ronda); pintar(); return; }
   const p = e.target.closest("[data-partido]");
   if (p && (p.classList.contains("click"))) modalResultado(p.dataset.partido);
 });
@@ -282,6 +291,7 @@ function vJuego() {
   if (ST.fase === "inscripcion") return `<div class="vacio">Primero <button class="btn sm" data-tab="jugadores">apunta a los jugadores</button> y empieza el torneo.</div>`;
   let h = "";
   if (ST.fase === "terminado") h += `<div class="card" style="margin-bottom:14px;text-align:center"><h2>🏁 Torneo terminado</h2>${CV.htmlPodio(ST)}<button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen de resultados para redes</button></div>`;
+  h += CV.htmlResumen(ST);
   const libres = E.mesasLibres(ST).length, pend = E.pendientes(ST).filter(p => p.estado === "pendiente");
   if (ST.fase !== "terminado") h += `<div class="row" style="margin-bottom:14px">
     <button class="btn pri" onclick="rellenar()" ${!libres || !pend.length ? "disabled" : ""}>▶ Llamar a mesa</button>
@@ -304,7 +314,7 @@ function vJuego() {
       <div class="vs"><span>${esc(E.nombreLado(ST, p.a))}</span><i>contra</i><span>${esc(E.nombreLado(ST, p.b))}</span></div>
       <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
   // ronda actual / cuadro
-  if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST, { admin: true });
+  if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadroFinal(ST, { admin: true });
   if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   if (ST.modo !== "ciegos" && ST.modo !== "vidas" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
   if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 o menos, parejas a sorteo, semifinales y final.</div>`;
@@ -394,14 +404,21 @@ function modalResultado(id) {
 }
 
 /* ---------- clasificación / cuadro ---------- */
+function vRondas() {
+  if (ST.fase === "inscripcion") return `<div class="vacio">El torneo aún no ha empezado.</div>`;
+  return CV.htmlRondas(ST, rondaSel, { admin: true });
+}
+function vCuadro() {
+  if (ST.fase === "inscripcion") return `<div class="vacio">El torneo aún no ha empezado.</div>`;
+  let h = CV.htmlPodio(ST);
+  if (ST.fase === "terminado") h += `<div class="row" style="margin-bottom:14px"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen para redes</button></div>`;
+  return h + CV.htmlCuadroFinal(ST, { admin: true });
+}
 function vTabla() {
   if (ST.fase === "inscripcion") return `<div class="vacio">El torneo aún no ha empezado.</div>`;
   let h = CV.htmlPodio(ST);
   if (ST.fase === "terminado") h += `<div class="row" style="margin-bottom:14px"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen para redes</button></div>`;
-  if (ST.ko) h += `<h2>${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadro(ST, { admin: true });
-  if (ST.modo !== "ciegos") h += `<h2 style="margin-top:16px">Clasificación</h2>` + CV.htmlTabla(ST);
-  if (ST.modo !== "ciegos" && ST.modo !== "vidas") for (let r = ST.ronda; r >= 1; r--) h += `<details ${r === ST.ronda ? "open" : ""} style="margin-top:12px"><summary><b>Ronda ${r}</b></summary>${CV.htmlRonda(ST, r, { admin: r === ST.ronda && ST.fase === "juego" })}</details>`;
-  return h;
+  return h + CV.htmlTabla(ST);
 }
 
 /* ---------- ajustes ---------- */
