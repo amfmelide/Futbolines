@@ -36,6 +36,7 @@
 <script src="engine.js"></script>
 <script src="store.js"></script>
 <script src="comun.js"></script>
+<script src="imagen.js"></script>
 <script>
 "use strict";
 const C = window.TORNEO_CONFIG, T = window.TorneoEngine, S = window.TorneoStore;
@@ -65,7 +66,7 @@ async function pantallaAcceso(msg) {
   $("#tTitulo").textContent = "Panel de torneos";
   $("#tSub").textContent = S.modo === "local" ? "Modo local (sólo este navegador)" : "Conectado a Supabase";
   let lista = [], err = "";
-  if (S.modo === "local" || PASS) { try { lista = await S.listar(PASS); } catch (e) { err = e.message; } }
+  if (S.modo === "local" || PASS) { try { lista = (await S.listar(PASS)).filter(t => !String(t.codigo).startsWith("ciegos-")); } catch (e) { err = e.message; } }
   $("#main").innerHTML = `
   <div class="grid" style="align-items:start">
     <div class="card stack">
@@ -83,6 +84,7 @@ async function pantallaAcceso(msg) {
       </div>
     </div>
     <form class="card stack" onsubmit="crearTorneo(event)">
+      <a class="btn" href="q8m3c7w2.html" style="justify-content:space-between"><span>🎲 <b>Ciegos</b> · torneos pequeños a sorteo</span><span class="dim small">Ciegos · Monster DYP · Suizo · Vidas →</span></a>
       <h2>Nuevo torneo</h2>
       <div><label class="f" for="nNombre">Nombre</label><input type="text" id="nNombre" required placeholder="Open de Melide 2026" oninput="$('#nCodigo').value=slug(this.value)"></div>
       <div><label class="f" for="nCodigo">Código (para la dirección web)</label><input type="text" id="nCodigo" required placeholder="open-melide-2026"></div>
@@ -322,10 +324,12 @@ function vMesas() {
     if (!p) { h += `<div class="mesa"><div class="row"><span class="num">Mesa ${m}</span><span class="spacer"></span><span class="pill">Libre</span></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" onclick="llamarSiguiente(${m})" ${cola.length ? "" : "disabled"}>Llamar siguiente</button><button class="btn sm" onclick="mesaOnOff(${m})" title="Fuera de servicio">⛔</button></div></div>`; continue; }
     const min = (Date.now() - p.llamado) / 60000;
-    h += `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${m}</span><span class="spacer"></span><span class="t ${min > 20 ? "tarde" : ""}">⏱ ${TC.hace(p.llamado)}</span></div>
+    const ca = T.cuentaAtras(ST, p);
+    h += `<div class="mesa ocupada ${ca && ca.fase === "wo" ? "alerta" : ""}"><div class="row"><span class="num">Mesa ${m}</span><span class="spacer"></span><span class="t ${min > 20 ? "tarde" : ""}">⏱ ${TC.hace(p.llamado)}</span></div>
       <div class="small dim">${esc(T.nombrePartido(ST, p))}${p.avisos ? ` · 🔔×${p.avisos}` : ""}</div>
       <div class="formato">${esc(T.textoFormato(T.formatoDe(ST, p)))}${p.ventaja ? ` · ${esc(nombre(ST, p[p.ventaja]))} empieza ${ST.config.ventajaCruce}-0` : ""}</div>
       <div class="vs"><span>${esc(nombre(ST, p.a))}</span><i>contra</i><span>${esc(nombre(ST, p.b))}</span></div>
+      ${htmlCuentaAtras(p, ca)}
       <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="avisarPartido('${p.id}')">🔔 Avisar</button><button class="btn sm" onclick="quitarDeMesa('${p.id}')" title="Devolver a la cola">↩</button></div></div>`;
   }
   h += `</div><h2 style="margin-top:22px">Cola de partidos</h2>`;
@@ -335,6 +339,40 @@ function vMesas() {
     (cola.length > 40 ? `<div class="dim small" style="padding-top:8px">…y ${cola.length - 40} más</div>` : "") + `</div>`;
   return h;
 }
+
+/* ---------- cuenta atrás para presentarse (propone W.O., nunca lo da solo) ---------- */
+function mmss(ms) { const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function htmlCuentaAtras(p, ca) {
+  if (!ca) return "";
+  if (ca.fase !== "wo") return `<div class="cuenta row"><span>⏳ <b data-cd="${p.id}">${mmss(ca.resta)}</b> para presentarse${p.reavisado ? " · reavisados" : ""}</span><span class="spacer"></span><button class="btn sm" onclick="presentes('${p.id}')">✓ Han llegado</button></div>`;
+  return `<div class="cuenta wo"><b>⚠ No se han presentado.</b> ¿Dar W.O.?
+    <div class="row" style="margin-top:6px"><button class="btn sm bad" onclick="woMesa('${p.id}','a')">No vino ${esc(nombre(ST, p.a))}</button><button class="btn sm bad" onclick="woMesa('${p.id}','b')">No vino ${esc(nombre(ST, p.b))}</button>
+    <button class="btn sm" onclick="prorrogar('${p.id}')">+5 min</button><button class="btn sm" onclick="presentes('${p.id}')">✓ Han llegado</button></div></div>`;
+}
+function presentes(id) { cambio(() => { T.partido(ST, id).presentes = true; }); }
+function prorrogar(id) { cambio(() => { const p = T.partido(ST, id); p.prorroga = (p.prorroga || 0) + 5 * 60000; }, "Prórroga de 5 min para presentarse"); }
+function woMesa(id, lado) {
+  const p = T.partido(ST, id);
+  if (!confirm(`¿Dar el partido por perdido (W.O.) a ${nombre(ST, p[lado])} por no presentarse?`)) return;
+  if (cambio(() => T.registrarResultado(ST, id, 0, 0, { wo: lado }), `W.O.: no se presenta ${nombre(ST, p[lado])}`)) {
+    resolverPropuestasDe(id).then(() => pintar());
+    trasResultado(true);
+  }
+}
+// Cada segundo: actualiza los relojes; a la mitad del tiempo se reavisa una vez; al acabar se repinta con la propuesta de W.O.
+setInterval(() => {
+  if (!ST || tab !== "mesas" || $(".modal-bg")) return;
+  let repintar = false;
+  ST.partidos.forEach(p => {
+    const ca = T.cuentaAtras(ST, p);
+    if (!ca) return;
+    const el = document.querySelector(`[data-cd="${p.id}"]`);
+    if (el) el.textContent = mmss(ca.resta);
+    if (ca.fase === "wo" && el) repintar = true;
+    if (ca.fase !== "espera" && !p.reavisado) { p.reavisado = true; avisarPartido(p.id, true); }
+  });
+  if (repintar) pintar();
+}, 1000);
 
 // Avisa en la pantalla de mesas cuando ya se puede generar algún cuadro
 function avisoCategorias() {
@@ -425,8 +463,7 @@ function rellenar() {
   avisarVarios(llamados);
 }
 function llamarSiguiente(mesa) {
-  const occ = T.ocupados(ST);
-  const p = T.cola(ST).find(x => !occ.has(x.a) && !occ.has(x.b));
+  const p = T.siguienteDeCola(ST);
   if (!p) return TC.toast("No hay partidos disponibles (las parejas en cola están jugando)");
   if (cambio(() => T.llamar(ST, p.id, mesa), `Mesa ${mesa}: ${nombre(ST, p.a)} - ${nombre(ST, p.b)}`)) avisarVarios([p]);
 }
@@ -830,6 +867,7 @@ function vCuadros() {
     const f = TC.htmlFlujoNiveles(ST, d.id);
     return f ? `<h2>Así se mueven las parejas${multiDiv() ? " · " + esc(d.nombre) : ""}</h2>${f}` : "";
   }).join("");
+  if (ST.config.categorias.some(c => T.campeon(ST, c.id))) h += `<div class="row" style="margin-bottom:12px"><button class="btn pri" onclick="TC.imagenRedes(ST)">📸 Imagen de resultados para redes</button></div>`;
   h += `<div class="grid" style="margin-bottom:16px">`;
   ST.config.categorias.forEach(c => {
     const e = T.estadoCategoria(ST, c.id);
@@ -978,6 +1016,15 @@ function vAjustes() {
     <label class="check"><input type="checkbox" id="cAbierta" ${c.inscripcionAbierta ? "checked" : ""}> Inscripción por la web abierta</label>
   </div>
   <div class="card stack">
+    <h2>Mesas y tiempos</h2>
+    <div><label class="f">Minutos para presentarse en la mesa (0 = sin cuenta atrás)</label><input type="number" id="cPres" min="0" max="30" value="${c.minutosPresentarse ?? 5}">
+      <div class="small dim" style="margin-top:4px">A la mitad se les vuelve a avisar. Al acabar, el panel te propone dar W.O. (nunca lo da solo).</div></div>
+    <div><label class="f">Descanso mínimo entre partidos (min)</label><input type="number" id="cDesc" min="0" max="30" value="${c.descansoMin ?? 5}">
+      <div class="small dim" style="margin-top:4px">Si hay otros partidos esperando, no se llama a una pareja que acaba de terminar.</div></div>
+    <div><label class="f">Duración media de una eliminatoria (min)</label><input type="number" id="cMinP" min="5" max="120" value="${c.minutosPartida ?? 35}">
+      <div class="small dim" style="margin-top:4px">Para decir a cada pareja «os toca en ~X min». En grupos sólo se dice cuántos partidos van antes.</div></div>
+  </div>
+  <div class="card stack">
     <h2>Fase de grupos</h2>
     ${sorteado ? `<div class="small dim">Los grupos ya están sorteados: los cambios de tamaño se aplican si repites el sorteo.</div>` : ""}
     <div class="row"><div style="flex:1"><label class="f">Tamaño de grupo</label><select id="cTam">
@@ -1083,6 +1130,9 @@ function guardarAjustes(ev) {
     c.maxEquipos = Number($("#cMax").value) || 200;
     c.mesas = Math.max(1, Number($("#cMesas").value) || 1);
     c.inscripcionAbierta = $("#cAbierta").checked;
+    c.minutosPresentarse = Math.max(0, Number($("#cPres").value) || 0);
+    c.descansoMin = Math.max(0, Number($("#cDesc").value) || 0);
+    c.minutosPartida = Math.max(5, Number($("#cMinP").value) || 35);
     c.tamGrupo = Number($("#cTam").value); c.numGrupos = Number($("#cNumG").value) || 0;
     c.puntos = { victoria: Number($("#cPV").value), empate: Number($("#cPE").value), derrota: Number($("#cPD").value) };
     c.formatos = { grupos: leerFormato("fGrupos"), eliminatoria: c.formatos.eliminatoria || { tipo: "al", partidas: 3, goles: 7 } };
