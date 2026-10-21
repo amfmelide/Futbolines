@@ -6,5 +6,6 @@
 - Al tocar varias páginas a la vez (pies legales, favicons, analítica, imágenes para compartir), excluir `k7m2x9/`.
 
 ## Otras reglas
-- El repositorio del ranking (`ranking-evo-amf`) no se toca.
+- El repositorio del ranking (`ranking-evo-amf`) no se toca: lo lleva un compañero.
+- Liga Melide: las jornadas no tienen fecha exacta de juego (se juega fuera de orden), así que no se ofrece "Añadir al calendario" por jornada. El calendario abre en la primera jornada con partidos pendientes.
 - Ideas de repositorios de referencia: ver `.claude/skills/ref-*`.
