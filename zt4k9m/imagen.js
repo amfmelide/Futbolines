@@ -40,16 +40,17 @@
     ctx.strokeRect(28, 28, W - 56, H - 56);
 
     // cabecera
-    const logo = await cargarImagen(o.logo || "../favicon-192.png");
+    const logo = await cargarImagen(o.logo || "logo-amf.png");   // logo original de la AMF (fondo blanco)
     if (logo) {
-      ctx.save(); ctx.beginPath(); ctx.arc(110, 120, 52, 0, Math.PI * 2); ctx.clip();
-      ctx.drawImage(logo, 58, 68, 104, 104); ctx.restore();
+      ctx.save(); redondo(ctx, 50, 56, 128, 128, 22); ctx.clip();
+      ctx.fillStyle = "#fff"; ctx.fillRect(50, 56, 128, 128);
+      ctx.drawImage(logo, 50, 56, 128, 128); ctx.restore();
     }
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = ORO; ctx.font = '86px "Bebas Neue", Impact, sans-serif';
-    ctx.fillText(ajustar(ctx, (o.titulo || "Resultados").toUpperCase(), W - 230), 190, 140);
+    ctx.fillText(ajustar(ctx, (o.titulo || "Resultados").toUpperCase(), W - 230), 200, 140);
     ctx.fillStyle = DIM; ctx.font = '32px "Barlow", sans-serif';
-    ctx.fillText(ajustar(ctx, o.sub || "", W - 230), 192, 186);
+    ctx.fillText(ajustar(ctx, o.sub || "", W - 230), 202, 186);
 
     // bloques (categorías)
     const bloques = (o.bloques || []).filter(b => b.podio && b.podio.length).slice(0, 4);
