@@ -109,7 +109,7 @@ async function pantallaAcceso() {
       ${err ? `<div class="small" style="color:var(--bad)">${esc(err)}</div>` : ""}
       <div><label class="f" for="aPass">Contraseña</label><div class="row"><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}" style="flex:1" onkeydown="if(event.key==='Enter')verLista()"><button class="btn pri" type="button" onclick="verLista()">Entrar</button></div></div>
       <div><label class="f">Torneos Ciegos</label>
-        ${lista.length ? lista.map(t => `<button class="btn" style="width:100%;justify-content:space-between;margin-bottom:6px" onclick="entrar('${esc(t.codigo)}')"><span>${esc(t.nombre || t.codigo)}</span><span class="dim small">${esc(t.fecha || "")} · ${esc(fases[t.fase] || "")}</span></button>`).join("") : `<div class="dim small">${!PASS ? "Entra para ver los torneos." : "Todavía no hay ninguno."}</div>`}
+        ${lista.length ? lista.map(t => `<div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:nowrap"><button class="btn" style="flex:1;min-width:0;justify-content:space-between" onclick="entrar('${esc(t.codigo)}')"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.nombre || t.codigo)}</span><span class="dim small" style="white-space:nowrap">${esc(t.fecha || "")} · ${esc(fases[t.fase] || "")}</span></button><button class="btn bad" title="Borrar este torneo" aria-label="Borrar ${esc(t.nombre || t.codigo)}" onclick="borrarDeLista('${esc(t.codigo)}', this.dataset.nombre)" data-nombre="${esc(t.nombre || t.codigo)}">🗑</button></div>`).join("") : `<div class="dim small">${!PASS ? "Entra para ver los torneos." : "Todavía no hay ninguno."}</div>`}
       </div>
     </div>
     <form class="card stack" onsubmit="crear(event)">
@@ -121,6 +121,12 @@ async function pantallaAcceso() {
       <button class="btn pri">Crear</button>
     </form>
   </div>`;
+}
+async function borrarDeLista(codigo, nombre) {
+  if (!confirm(`¿Borrar el torneo «${nombre}»?\n\nSe borra para siempre, con todos sus resultados. No se puede deshacer.`)) return;
+  if (!(await comprobarPass())) return;
+  try { await S.borrar(codigo, PASS); TC.toast("Torneo borrado", "ok"); pantallaAcceso(); }
+  catch (e) { TC.toast(esc(e.message), "bad", 5000); }
 }
 async function verLista() { if (await comprobarPass()) pantallaAcceso(); }
 async function entrar(codigo) {
