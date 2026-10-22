@@ -10,6 +10,8 @@ description: Ideas del repositorio arp242/goatcounter (6,1k estrellas), el conta
 - No usa cookies ni identificadores únicos; cuenta visitas con un hash no identificable. Registra página, web de origen, navegador, tamaño de pantalla y país aproximado. No necesita aviso de consentimiento.
 
 ## Estado en la web AMF
+**Sustituido (22/10/2026) por Cloudflare Web Analytics**, que ya estaba funcionando; GoatCounter se quitó de todas las páginas. Lo de abajo queda como referencia.
+
 - Script al final de las páginas públicas: `<script data-goatcounter="https://amfmelide.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>`.
 - **Excluidas a propósito:** `k7m2x9/` (su aviso legal promete que no conecta con terceros), `index_futbolines.html` (herramienta interna) y la redirección `inscripciones/`.
 - La asociación tiene que crear la cuenta con el código `amfmelide`.
