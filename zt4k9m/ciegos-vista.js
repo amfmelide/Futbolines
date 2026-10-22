@@ -8,6 +8,8 @@
 
   const lado = (st, l) => esc(E.nombreLado(st, l));
   const hace = ts => window.TC.hace(ts);
+  // Lo que se ve al lado de cada pareja en un partido terminado: el marcador o, si sólo se apuntó el ganador, ✓
+  const marca = (p, l) => p.soloGanador ? (p.ganador === l ? "✓" : "") : (l === "a" ? p.ra : p.rb);
 
   function htmlMesas(st) {
     const enMesa = st.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
@@ -31,7 +33,7 @@
     return `<div class="card">` + ps.map(p => {
       if (p.bye) return `<div class="pg fin"><span class="a gana">${lado(st, p.a)}</span><span class="res">—</span><span class="b dim">descansa (cuenta como victoria)</span><span></span></div>`;
       const fin = p.estado === "fin";
-      const res = fin ? `${p.ra}-${p.rb}` : p.estado === "mesa" ? "M" + p.mesa : "vs";
+      const res = fin ? (p.soloGanador ? "✓" : `${p.ra}-${p.rb}`) : p.estado === "mesa" ? "M" + p.mesa : "vs";
       return `<div class="pg ${fin ? "fin" : ""} ${op.admin ? "click" : ""}" data-partido="${esc(p.id)}"><span class="a ${fin && p.ganador === "a" ? "gana" : ""}">${lado(st, p.a)}</span><span class="res" ${p.estado === "mesa" ? 'style="color:var(--ok)"' : ""}>${res}</span><span class="b ${fin && p.ganador === "b" ? "gana" : ""}">${lado(st, p.b)}</span><span></span></div>`;
     }).join("") + (E.individual(st) && (st.descansos || []).some(d => d.ronda === r) ? `<div class="small dim" style="padding-top:8px">Descansan: ${st.descansos.filter(d => d.ronda === r).flatMap(d => d.ids).map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>` : "") + `</div>`;
   }
@@ -46,7 +48,7 @@
       const linea = l => {
         const id = p[l], cls = fin && !p.bye ? (p.ganador === l ? "gana" : "pierde") : "";
         const txt = id ? lado(st, id) : (p.bye ? '<span class="dim">— pasa directo —</span>' : '<span class="dim">Por decidir</span>');
-        return `<div class="l ${cls}"><span>${txt}</span><span class="sc">${fin && !p.bye ? (l === "a" ? p.ra : p.rb) : ""}</span></div>`;
+        return `<div class="l ${cls}"><span>${txt}</span><span class="sc">${fin && !p.bye ? marca(p, l) : ""}</span></div>`;
       };
       const cls = ["mk"];
       if (p.bye) cls.push("bye");
@@ -204,7 +206,7 @@
       else if (!fin && vidas && e.estado === "espera") { cls += " espera"; aviso = `<div class="cr-aviso">⏳ Esperando a ${e.esperan.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>`; }
       else if (!fin && vidas && e.estado === "riesgo") { cls += " riesgo"; aviso = `<div class="cr-aviso ambar">⏸ Espera: ahora no se puede jugar sin arriesgar llegar a 8 justos</div>`; }
       else if (!fin) aviso = `<div class="cr-aviso">Por jugar</div>`;
-      const fila = l => `<div class="cr-l ${fin ? (p.ganador === l ? "gana" : "pierde") : ""}"><span>${lado(st, p[l])}</span><b>${fin ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
+      const fila = l => `<div class="cr-l ${fin ? (p.ganador === l ? "gana" : "pierde") : ""}"><span>${lado(st, p[l])}</span><b>${fin ? marca(p, l) : ""}</b></div>`;
       const clic = op.admin && (fin || p.estado === "mesa" || e.estado === "lista" || !vidas);
       return `<div class="cr-m ${clic ? "click" : ""} ${cls}" data-partido="${esc(p.id)}">${fila("a")}${fila("b")}${aviso}${p.rehecho && !fin ? `<div class="small dim">Partido rehecho (alguien quedó eliminado o para no bajar de 8)</div>` : ""}</div>`;
     };
@@ -245,7 +247,7 @@
         const id = p[l];
         const cls = terminado && !p.bye ? (p.ganador === l ? "gana" : "pierde") : "";
         const txt = id ? lado(st, id) : p.bye ? '<span class="dim">pasa directo</span>' : '<span class="dim">Por decidir</span>';
-        return `<div class="cf-l ${cls}"><span>${txt}</span><b>${terminado && !p.bye ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
+        return `<div class="cf-l ${cls}"><span>${txt}</span><b>${terminado && !p.bye ? marca(p, l) : ""}</b></div>`;
       };
       const cls = ["cf-m"];
       if (p.bye) cls.push("bye");

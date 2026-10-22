@@ -745,6 +745,7 @@
       if (e && e.estado === "riesgo") throw new Error("Este partido podría dejar a menos de 8 en pie: espera a que acaben los de las mesas");
       if (e && e.reparto) { p.a = e.reparto.a; p.b = e.reparto.b; }
     }
+    delete p.soloGanador;
     p.ra = ra; p.rb = rb; p.ganador = ra > rb ? "a" : "b"; p.ganadorId = Array.isArray(p.a) ? null : p[p.ganador];
     p.estado = "fin"; p.fin = Date.now(); p.mesa = null;
     if (st.modo === "vidas" && p.fase === "ronda") salvarHastaOcho(st, p);
@@ -787,10 +788,22 @@
     return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
   }
 
+  // ¿El marcador cuenta? Sólo en Monster y Suizo (desempata la clasificación). En Ciegos y Vidas basta con quién gana.
+  function usaMarcador(st) { return st.modo === "monster" || st.modo === "suizo"; }
+  // Apunta sólo el ganador (se guarda como la victoria más clara posible, p. ej. 2-0)
+  function registrarGanador(st, id, lado) {
+    if (lado !== "a" && lado !== "b") throw new Error("Falta el ganador");
+    const f = st.config.partidas;
+    const g = f.tipo === "fijo" ? Math.floor(f.partidas / 2) + 1 : f.partidas, q = f.tipo === "fijo" ? f.partidas - g : 0;
+    const p = registrarResultado(st, id, lado === "a" ? g : q, lado === "a" ? q : g);
+    p.soloGanador = true;
+    return p;
+  }
+
   function borrarResultado(st, id) {
     const p = partido(st, id);
     if (!puedeEditar(st, id) || p.estado !== "fin") throw new Error("Este resultado ya no se puede borrar");
-    p.ra = p.rb = null; p.ganador = p.ganadorId = null; p.estado = "pendiente";
+    p.ra = p.rb = null; p.ganador = p.ganadorId = null; p.estado = "pendiente"; delete p.soloGanador;
     if (p.fase !== "ronda") limpiarDespues(st, p);
     actualizarFase(st);
   }
@@ -920,7 +933,7 @@
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
-    nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
+    usaMarcador, registrarGanador, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, ganable, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO

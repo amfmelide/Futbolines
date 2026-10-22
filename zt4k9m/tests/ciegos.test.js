@@ -243,6 +243,21 @@ test("vidas: al acabar las semifinales se sortean otra vez las parejas de la fin
   }
 });
 
+test("resultados: en Ciegos y Vidas basta con apuntar quién gana; en Monster y Suizo cuenta el marcador", () => {
+  assert.equal(C.usaMarcador({ modo: "ciegos" }), false);
+  assert.equal(C.usaMarcador({ modo: "vidas" }), false);
+  assert.equal(C.usaMarcador({ modo: "monster" }), true);
+  assert.equal(C.usaMarcador({ modo: "suizo" }), true);
+  const st = conJugadores("ciegos", 8);
+  C.empezar(st);
+  const p = C.pendientes(st)[0];
+  C.registrarGanador(st, p.id, "b");
+  assert.equal(p.ganador, "b"); assert.ok(p.soloGanador); assert.ok(p.rb > p.ra);
+  C.registrarResultado(st, p.id, 2, 1);                  // corregir con marcador quita la marca
+  assert.equal(p.ganador, "a"); assert.ok(!p.soloGanador);
+  assert.throws(() => C.registrarGanador(st, p.id, "x"), /ganador/);
+});
+
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {
   const st = conJugadores("ciegos", 8);
   C.empezar(st);

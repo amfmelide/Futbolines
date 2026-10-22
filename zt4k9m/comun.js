@@ -420,6 +420,6 @@
   window.TC = {
     esc, $, $$, nombre, jugadores, colorCat, catDePosicion, hace, FASES,
     htmlGrupo, htmlFilaPartido, htmlCuadro, htmlMesasPublicas,
-    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema, sorteoEnDirecto, htmlFlujoNiveles, htmlCamino, datosImagen, imagenRedes
+    toast, modal, linkWhatsApp, registrarSW, suscripcionPush, esIOS, esPWA, pitido, cambiarTema, sorteoEnDirecto, confeti, htmlFlujoNiveles, htmlCamino, datosImagen, imagenRedes
   };
 })();
