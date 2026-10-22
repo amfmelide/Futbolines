@@ -49,7 +49,7 @@
 
   const Store = {
     get modo() { return modo; },
-    setModo(m) { modo = m; try { localStorage.setItem("torneo-modo", m); } catch (_) {} },
+    setModo(m, sinGuardar) { modo = m; if (!sinGuardar) try { localStorage.setItem("torneo-modo", m); } catch (_) {} },
     get pushDisponible() { return modo === "remoto" && !!vapid && "serviceWorker" in navigator && "PushManager" in window; },
     get vapidPublica() { return vapid; },
     async cargarConfig() {
