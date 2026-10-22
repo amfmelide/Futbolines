@@ -341,7 +341,7 @@ function vJuegoVidas() {
       <div class="small dim" style="margin:4px 0 8px">Se sortean 4 parejas entre ellos (da igual las vidas) → semifinales y final.</div>
       <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de semifinales</button></div>`;
   else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>¡Quedan 8 en pie!</b> <span class="dim">Cuando acabe lo que se está jugando en las mesas (ya no elimina a nadie) se sortean las semifinales.</span></div>`;
-  else if (e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se ponen en verde los partidos que no pueden dejar a menos de 8.</div>`;
+  else if (e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se ponen en verde los partidos que aseguran llegar a 8 justos (los demás se recolocan).</div>`;
   h += `<label class="check" style="margin-bottom:12px"><input type="checkbox" ${autoVidas ? "checked" : ""} onchange="autoVidas=this.checked;try{localStorage.setItem('ciegos-auto-vidas',autoVidas?'1':'0')}catch(_){};if(autoVidas)rellenar()"> Llamar solos a mesa los partidos listos (si no, los llamas tú con el botón verde)</label>`;
   const listos = CV.htmlListos(ST);
   if (listos) h += `<h2>✅ Listos para jugar</h2>` + listos;

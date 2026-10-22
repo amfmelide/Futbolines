@@ -143,6 +143,7 @@ test("vidas: a la fase final llegan siempre 8 en pie → 4 parejas, 2 semifinale
     }, ls => ls[Math.floor(Math.random() * ls.length)]);
     assert.equal(st.fase, "final", "n=" + n);
     assert.equal(C.vivos(st).length, 8, "n=" + n + " semilla " + semilla);
+    assert.ok(!st.partidos.some(p => p.salvados && p.salvados.length), "no debe hacer falta salvar a nadie por sorteo");
     assert.equal(st.parejas.length, 4);
     const semis = st.partidos.filter(p => p.fase === "final" && p.ronda === 1);
     assert.equal(semis.length, 2);
@@ -163,6 +164,14 @@ test("vidas: si un jugador cae y ya estaba sorteado en la ronda siguiente, ese p
   const muertos = p.b.filter(id => !(C.vidasDe(st)[id] > 0));
   assert.ok(muertos.length >= 1);
   st.partidos.filter(x => x.ronda === 2 && x.estado !== "fin").forEach(x => muertos.forEach(m => assert.ok(!x.a.concat(x.b).includes(m), "un eliminado sigue sorteado")));
+});
+
+test("vidas: el cálculo de salidas a 8 justos (callejones sin salida)", () => {
+  assert.equal(C.ganable(9, 0, 0), false);   // 9 con 1 vida: cualquier partido deja 7
+  assert.equal(C.ganable(10, 0, 0), true);   // 10 con 1 vida: cae una pareja → 8
+  assert.equal(C.ganable(11, 0, 0), false);  // 11 con 1 vida: quedarían 9 con 1 vida
+  assert.equal(C.ganable(7, 2, 0), true);    // 9 en pie con dos de 2 vidas: se mezclan y cae sólo uno
+  assert.equal(C.ganable(0, 0, 16), true);
 });
 
 test("vidas: atasco con 9 en pie y 1 vida cada uno → se juega y, si caen dos, uno se salva por sorteo y quedan 8", () => {

@@ -202,7 +202,7 @@
       if (p.estado === "mesa") aviso = `<div class="cr-aviso mesa">● Jugando en mesa ${p.mesa}${op.admin ? " · toca para anotar" : ""}</div>`;
       else if (!fin && vidas && e.estado === "lista") { cls += " lista"; aviso = lista(p, e); }
       else if (!fin && vidas && e.estado === "espera") { cls += " espera"; aviso = `<div class="cr-aviso">⏳ Esperando a ${e.esperan.map(id => esc(E.nombreJugador(st, id))).join(", ")}</div>`; }
-      else if (!fin && vidas && e.estado === "riesgo") { cls += " riesgo"; aviso = `<div class="cr-aviso ambar">⏸ Espera: ahora podría dejar a menos de 8 en pie</div>`; }
+      else if (!fin && vidas && e.estado === "riesgo") { cls += " riesgo"; aviso = `<div class="cr-aviso ambar">⏸ Espera: ahora no se puede jugar sin arriesgar llegar a 8 justos</div>`; }
       else if (!fin) aviso = `<div class="cr-aviso">Por jugar</div>`;
       const fila = l => `<div class="cr-l ${fin ? (p.ganador === l ? "gana" : "pierde") : ""}"><span>${lado(st, p[l])}</span><b>${fin ? (l === "a" ? p.ra : p.rb) : ""}</b></div>`;
       const clic = op.admin && (fin || p.estado === "mesa" || e.estado === "lista" || !vidas);
