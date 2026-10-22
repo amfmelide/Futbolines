@@ -3,7 +3,7 @@
    · Página y datos de la liga → primero la red; si no hay conexión, la última copia guardada.
    · Iconos e imágenes propias → copia guardada y se actualiza en segundo plano.
    Solo guarda datos públicos de la liga en este navegador. Los envíos (POST) nunca se tocan. */
-const CACHE = "liga-melide-v2";
+const CACHE = "liga-melide-v3";
 const BASE = ["/liga.html", "/liga.webmanifest", "/liga-icon-192.png", "/liga-icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -60,5 +60,6 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(redPrimero(req, "/liga.html"));
     return;
   }
-  if (/^\/liga[-.]/.test(url.pathname)) e.respondWith(copiaYActualiza(req));
+  // iconos de la liga y tipografías/imágenes compartidas (carpeta a/)
+  if (/^\/liga[-.]/.test(url.pathname) || url.pathname.startsWith("/a/")) e.respondWith(copiaYActualiza(req));
 });
