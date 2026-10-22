@@ -243,3 +243,27 @@ test("por defecto se juega a ganar 2 partidas de 7 goles", () => {
   for (const m of ["ciegos", "monster", "suizo", "vidas"]) assert.deepEqual(C.nuevoTorneo({ modo: m }).config.partidas, { tipo: "al", partidas: 2, goles: 7 });
 });
 
+
+test("vidas: equidad — nadie se adelanta en partidos (18 jugadores)", () => {
+  let suma = 0, n = 0;
+  for (let s = 1; s <= 25; s++) {
+    const st = C.nuevoTorneo({ modo: "vidas", semilla: s * 7 + 1, config: { mesas: 4 } });
+    for (let i = 1; i <= 18; i++) C.añadirJugador(st, "J" + i);
+    C.empezar(st); C.asignarMesas(st);
+    let g = 0, peor = 0, k = 0;
+    while (st.fase === "juego" && g++ < 4000) {
+      const pj = {};
+      st.partidos.forEach(p => { if (p.fase === "ronda" && p.estado !== "pendiente") p.a.concat(p.b).forEach(id => (pj[id] = (pj[id] || 0) + 1)); });
+      const viv = C.vivos(st).map(id => pj[id] || 0);
+      peor = Math.max(peor, Math.max(...viv) - Math.min(...viv));
+      const ms = st.partidos.filter(x => x.estado === "mesa");
+      if (!ms.length) { C.sortearVidas(st); C.asignarMesas(st); continue; }
+      const p = ms[(k * 7) % ms.length]; const a = (k++ % 3) !== 2;
+      C.registrarResultado(st, p.id, a ? 2 : 0, a ? 0 : 2); C.sortearVidas(st); C.asignarMesas(st);
+    }
+    assert.equal(st.fase, "final");
+    assert.ok(peor <= 3, "diferencia de partidos " + peor);
+    suma += peor; n++;
+  }
+  assert.ok(suma / n <= 2.2, "media " + (suma / n));
+});

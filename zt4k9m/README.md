@@ -97,7 +97,7 @@ intercalados) sin llamar nunca a una pareja que ya está jugando. En modo autom�
 
 ## Ciegos (torneos pequeños a sorteo)
 
-Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torneos; misma contraseña). Web pública: `ciegos.html?t=CODIGO` (y `&tv`). Usa la misma función de Supabase: no hay que desplegar nada nuevo. Sus torneos empiezan por `ciegos-` y no se mezclan con los grandes.
+Panel aparte (botón **🎲 Ciegos** en la pantalla de entrada del panel de torneos). Entra con la contraseña de organizador o con la de Ciegos (secreto `CIEGOS_PASS` en Supabase, opcional): esta última sirve sólo para Ciegos, para prestar la app sin dar acceso al panel de torneos ni al Admin. Web pública: `ciegos.html?t=CODIGO` (y `&tv`). Usa la misma función de Supabase: no hay que desplegar nada nuevo. Sus torneos empiezan por `ciegos-` y no se mezclan con los grandes.
 
 Pestañas: **Panel** (resumen: en pie, ronda, jugados, en mesa, esperando + vidas), **Rondas** (un botón por ronda; tocando un partido se anota el resultado), **🏆 Cuadro** (eliminatoria final con dos mitades y la final en el centro, como en la Champions o Roland Garros) y **Clasificación**. Por defecto se juega a ganar 2 partidas de 7 goles.
 

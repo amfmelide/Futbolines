@@ -46,6 +46,7 @@ const { esc, $, $$ } = TC;
 const PREFIJO = "ciegos-";
 
 let rondaSel = null;
+let ROL = null;                                      // "admin" (todo) o "ciegos" (sólo esta app)
 let ST = null, VERSION = 0, CODIGO = "", PASS = "", tab = "juego", guardando = null, pendiente = false, auto = true;
 const HIST = [];
 let autoVidas = false;                             // Vidas: por defecto los partidos listos se llaman a mano
@@ -71,7 +72,7 @@ async function comprobarPass() {
   const el = $("#aPass");
   if (el) PASS = el.value;
   if (!PASS) { TC.toast("Escribe la contraseña de organizador", "bad"); return false; }
-  try { await S.login(PASS); guardarSesion(); return true; }
+  try { const r = await S.login(PASS); ROL = r.rol || "admin"; guardarSesion(); return true; }
   catch (e) { TC.toast(esc(e.message), "bad", 5000); return false; }
 }
 function guardarSesion() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ codigo: CODIGO, pass: PASS, modo: S.modo })); } catch (_) {} }
@@ -93,11 +94,11 @@ async function pantallaAcceso() {
         <button class="btn sm ${S.modo === "remoto" ? "pri" : ""}" onclick="S.setModo('remoto');pantallaAcceso()">☁️ Supabase</button>
         <button class="btn sm ${S.modo === "local" ? "pri" : ""}" onclick="S.setModo('local');pantallaAcceso()">💻 Local</button>
       </div>
-      ${S.modo === "remoto" ? `<div><label class="f" for="aPass">Contraseña de organizador</label><div class="row"><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}" style="flex:1" onkeydown="if(event.key==='Enter')verLista()"><button class="btn pri" type="button" onclick="verLista()">Entrar</button></div><div class="small dim" style="margin-top:4px">La misma del panel de torneos.</div></div>` : `<p class="small dim">En modo local todo se guarda en este navegador.</p>`}
+      ${S.modo === "remoto" ? `<div><label class="f" for="aPass">Contraseña de organizador</label><div class="row"><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}" style="flex:1" onkeydown="if(event.key==='Enter')verLista()"><button class="btn pri" type="button" onclick="verLista()">Entrar</button></div><div class="small dim" style="margin-top:4px">La de organizador o la de Ciegos.</div></div>` : `<p class="small dim">En modo local todo se guarda en este navegador.</p>`}
       <div><label class="f">Torneos Ciegos</label>
         ${lista.length ? lista.map(t => `<button class="btn" style="width:100%;justify-content:space-between;margin-bottom:6px" onclick="entrar('${esc(t.codigo)}')"><span>${esc(t.nombre || t.codigo)}</span><span class="dim small">${esc(t.fecha || "")} · ${esc(fases[t.fase] || "")}</span></button>`).join("") : `<div class="dim small">${S.modo === "remoto" && !PASS ? "Entra para ver los torneos." : "Todavía no hay ninguno."}</div>`}
       </div>
-      <a class="btn sm" href="g0tla7y18tpb.html">← Panel de torneos grandes</a>
+      ${S.modo === "local" || ROL === "admin" ? `<a class="btn sm" href="g0tla7y18tpb.html">← Panel de torneos grandes</a>` : ""}
     </div>
     <form class="card stack" onsubmit="crear(event)">
       <h2>Nuevo torneo</h2>
@@ -134,7 +135,7 @@ async function abrir(codigo) {
   const r = await S.cargar(codigo);
   if (!r.datos || r.datos.app !== "ciegos") throw new Error("Ese no es un torneo Ciegos");
   CODIGO = codigo; ST = r.datos; VERSION = r.version;
-  if (S.modo === "remoto") await S.login(PASS);
+  if (S.modo === "remoto") ROL = (await S.login(PASS)).rol || "admin"; else ROL = "admin";
   guardarSesion();
   $("#bPublica").href = urlPublica(); $("#bPublica").classList.remove("oculto");
   tab = ST.fase === "inscripcion" ? "jugadores" : "juego";
