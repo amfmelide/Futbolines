@@ -1,7 +1,7 @@
 /* Service worker de la Liga La Unión: permite verla sin cobertura.
    · La página y los datos de la liga → primero la red; sin conexión, la última copia guardada.
    · Solo guarda datos públicos de la liga en este navegador. Los guardados del panel nunca se tocan. */
-const CACHE = "liga-launion-v1";
+const CACHE = "liga-launion-v2";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add("./")).then(() => self.skipWaiting()).catch(() => self.skipWaiting()));
@@ -27,6 +27,13 @@ async function redPrimero(req, clave) {
   }
 }
 
+async function copiaYActualiza(req) {
+  const c = await caches.open(CACHE);
+  const g = await c.match(req);
+  const red = fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => g);
+  return g || red;
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
@@ -41,5 +48,7 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   if (req.method !== "GET" || url.origin !== self.location.origin) return;
-  if (req.mode === "navigate") e.respondWith(redPrimero(req, "./"));
+  if (req.mode === "navigate") { e.respondWith(redPrimero(req, "./")); return; }
+  // tipografías e imágenes de la página (carpeta a/): copia guardada y se actualiza en segundo plano
+  if (url.pathname.includes("/k7m2x9/a/")) e.respondWith(copiaYActualiza(req));
 });
