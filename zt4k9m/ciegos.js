@@ -6,7 +6,7 @@
      suizo   → sistema suizo por parejas (a sorteo o fijas), N rondas
      vidas   → individual y sin rondas fijas: cada jugador tiene 3 vidas; en cuanto hay 4 libres se sortean
                parejas y rivales entre ellos y juegan ya; cada derrota quita una vida a los dos;
-               con 8 en pie (nunca menos): 4 parejas a sorteo, semifinales y final
+               con 8 en pie (nunca menos): 4 parejas a sorteo, semifinales y, con los 4 ganadores, nuevo sorteo de parejas para la final
    Funciona en el navegador (window.CiegosEngine) y en Node (tests).
    ============================================================== */
 (function (raiz, fabrica) {
@@ -202,6 +202,7 @@
       cambio = false;
       for (const p of st.partidos) {
         if (p.estado === "fin") continue;
+        if (p.sorteo) { if (!p.a && sortearFinal(st, p)) cambio = true; continue; }
         if (p.fa || p.fb) {
           const pa = partido(st, p.fa), pb = partido(st, p.fb);
           const val = x => x && x.estado === "fin" ? (p.toma === "p" ? perdedor(x) : x.ganadorId) : null;
@@ -217,6 +218,21 @@
     }
   }
   function perdedor(p) { return p.bye ? null : p.ganador === "a" ? p.b : p.a; }
+
+  // Vidas: al acabar las dos semifinales, los 4 ganadores se vuelven a sortear en 2 parejas nuevas para la final.
+  // Cada pareja nueva junta a uno de cada semifinal, así nadie repite compañero.
+  function sortearFinal(st, p) {
+    const sa = partido(st, p.fa), sb = partido(st, p.fb);
+    if (!sa || !sb || sa.estado !== "fin" || sb.estado !== "fin") return false;
+    const rand = azar(st);
+    const ga = barajar(jugadoresDe(st, sa.ganadorId), rand), gb = barajar(jugadoresDe(st, sb.ganadorId), rand);
+    if (ga.length < 2 || gb.length < 2) return false;
+    const n1 = { id: uid("p"), j1: ga[0], j2: gb[0], final: true, deFinal: true };
+    const n2 = { id: uid("p"), j1: ga[1], j2: gb[1], final: true, deFinal: true };
+    st.parejas.push(n1, n2);
+    p.a = n1.id; p.b = n2.id;
+    return true;
+  }
 
   /* ---------- rondas (monster, suizo, vidas) ---------- */
   function rondaActual(st) { return st.partidos.filter(p => p.fase === "ronda" && p.ronda === st.ronda); }
@@ -693,7 +709,7 @@
     }).sort((x, y) => (y.vidas > 0) - (x.vidas > 0) || y.vidas - x.vidas || y.pg - x.pg || x.nombre.localeCompare(y.nombre));
   }
 
-  // Quedan 8 en pie: se sortean 4 parejas entre ellos (da igual las vidas) → semifinales y final. Sin repesca.
+  // Quedan 8 en pie: se sortean 4 parejas entre ellos (da igual las vidas) → semifinales. Los 4 ganadores se sortean otra vez para la final. Sin repesca.
   function empezarFinalVidas(st) {
     const rand = azar(st);
     const js = barajar(vivos(st), rand);
@@ -701,6 +717,8 @@
     for (let i = 0; i + 1 < js.length; i += 2) st.parejas.push({ id: uid("p"), j1: js[i], j2: js[i + 1], final: true });
     st.fase = "final";
     generarCuadroKO(st, st.parejas.map(p => p.id), "final");
+    const f = partido(st, st.ko.finalId);
+    if (f && f.fa && f.fb) { f.sorteo = true; f.a = f.b = null; }      // la final se sortea otra vez al acabar las semifinales
     return st.partidos.filter(p => p.fase === "final");
   }
 
@@ -748,7 +766,12 @@
 
   // Si se corrige un resultado de eliminatoria, los partidos siguientes (aún sin jugar) cambian de rival
   function limpiarDespues(st, p) {
-    st.partidos.forEach(x => { if (x.estado !== "fin" && (x.fa === p.id || x.fb === p.id)) { if (x.fa === p.id) x.a = null; if (x.fb === p.id) x.b = null; } });
+    st.partidos.forEach(x => {
+      if (x.estado === "fin" || !x.sorteo || (x.fa !== p.id && x.fb !== p.id)) return;
+      st.parejas = st.parejas.filter(q => !(q.deFinal && (q.id === x.a || q.id === x.b)));   // se vuelve a sortear
+      x.a = x.b = null;
+    });
+    st.partidos.forEach(x => { if (x.sorteo) return; if (x.estado !== "fin" && (x.fa === p.id || x.fb === p.id)) { if (x.fa === p.id) x.a = null; if (x.fb === p.id) x.b = null; } });
   }
 
   function puedeEditar(st, id) {
