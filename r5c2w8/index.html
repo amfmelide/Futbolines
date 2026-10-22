@@ -25,6 +25,69 @@
   header.top { position: sticky; background: rgba(10,14,26,.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   :root[data-theme="light"] header.top { background: rgba(255,255,255,.8); }
   main.wrap { padding-bottom: 40px; }
+
+  /* entrada */
+  .acceso { max-width: 420px; margin: 24px auto; }
+  .t-lista { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .t-card { display: flex; gap: 8px; align-items: stretch; }
+  .t-abrir { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; }
+  .t-abrir:hover { border-color: var(--gold2); }
+  .t-ico { font-size: 1.7rem; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; background: var(--surface2); flex: none; }
+  .t-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .t-txt b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05rem; }
+  .t-fase { font-size: .72rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; background: var(--surface2); color: var(--dim); white-space: nowrap; }
+  .fase-juego .t-fase, .fase-final .t-fase { background: rgba(0,200,83,.14); color: var(--ok); }
+  .fase-terminado .t-fase { background: rgba(233,205,148,.14); color: var(--gold); }
+  .t-borrar { flex: none; width: 48px; justify-content: center; }
+  .formatos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .formato-op { display: flex; flex-direction: column; gap: 3px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; position: relative; }
+  .formato-op input { position: absolute; opacity: 0; pointer-events: none; }
+  .formato-op:has(input:checked) { border-color: var(--gold); background: rgba(233,205,148,.08); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .formato-op:has(input:focus-visible) { outline: 2px solid var(--accent); }
+  .fo-ico { font-size: 1.6rem; }
+
+  /* resultado: ¿quién ha ganado? */
+  .gana-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
+  .gana-btn { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 84px; padding: 12px; border-radius: 14px; cursor: pointer;
+    background: var(--surface2); border: 2px solid var(--border); color: var(--text); text-align: center; }
+  .gana-btn b { font-size: 1.05rem; }
+  .gana-btn .g-t { font-size: .75rem; color: var(--dim); }
+  .gana-btn:hover, .gana-btn.on { border-color: var(--ok); background: rgba(0,200,83,.12); }
+  .g-vs { align-self: center; color: var(--dim); font-size: .8rem; }
+  #mScB .btn { min-width: 72px; justify-content: center; }
+
+  /* campeones */
+  .campeones { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 16px; overflow: hidden;
+    background: radial-gradient(90% 70% at 50% 30%, rgba(233,205,148,.20), rgba(10,14,26,.96) 60%); backdrop-filter: blur(6px); animation: cp-entra .5s ease both; }
+  .cp-caja { text-align: center; max-width: 640px; position: relative; z-index: 5; }
+  .cp-copa { font-size: clamp(4rem, 18vw, 7rem); animation: cp-copa 1.2s cubic-bezier(.2,1.4,.4,1) both; filter: drop-shadow(0 10px 30px rgba(233,205,148,.45)); }
+  .cp-t { font-family: 'Bebas Neue', sans-serif; letter-spacing: .08em; font-size: clamp(1.4rem, 6vw, 2rem); color: var(--dim); }
+  .cp-n { font-family: 'Bebas Neue', sans-serif; letter-spacing: .03em; line-height: 1.05; font-size: clamp(2.4rem, 11vw, 4.6rem);
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 40%, #b08d4f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cp-n i { font-style: normal; font-size: .6em; color: var(--dim); -webkit-text-fill-color: var(--dim); }
+  .cp-sub { color: var(--dim); margin-top: 6px; }
+  .cp-resto { margin-top: 18px; display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+  .cp-resto i { font-style: normal; color: var(--dim); }
+  @keyframes cp-entra { from { opacity: 0; } }
+  @keyframes cp-copa { from { transform: scale(.2) rotate(-25deg); opacity: 0; } }
+
+  /* barra de abajo (sólo móvil) */
+  .barra-movil { display: none; }
+  @media (max-width: 760px) {
+    .barra-movil { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(10,14,26,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--border); }
+    .barra-movil.oculto { display: none; }
+    .barra-movil .btn { width: 100%; min-height: 54px; flex-direction: column; justify-content: center; gap: 0; }
+    .barra-movil .btn .small { opacity: .8; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    body.con-barra main.wrap { padding-bottom: 110px; }
+    body.con-barra #toasts { bottom: 96px; }
+    .cd { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+    .cd-t { padding: 8px 10px !important; }
+    .cd-t b { font-size: 1.4rem !important; }
+    .cd-t span { font-size: .62rem !important; }
+    :root[data-theme="light"] .barra-movil { background: rgba(255,255,255,.92); }
+  }
 </style>
 <link rel="stylesheet" href="../fx.css">
 <script src="../fx.js" defer></script>
@@ -48,6 +111,7 @@
   </div>
 </header>
 <main class="wrap" id="main"><div class="vacio">Cargando…</div></main>
+<div class="barra-movil oculto" id="barra"></div>
 
 <script src="../zt4k9m/config.js"></script>
 <script src="../zt4k9m/engine.js"></script>
@@ -94,33 +158,68 @@ async function comprobarPass() {
 }
 function guardarSesion() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ codigo: CODIGO, pass: PASS, modo: S.modo })); } catch (_) {} }
 
+const ICONO = { ciegos: "🎲", monster: "🔄", suizo: "⚖️", vidas: "❤️" };
+const FASES = { inscripcion: "Inscripción", juego: "Jugando", final: "Fase final", terminado: "Terminado" };
+let formAbierto = false;
+
 async function pantallaAcceso() {
   $("#tabs").innerHTML = "";
   $("#tTitulo").textContent = "Ciegos";
   $("#tSub").textContent = "Torneos pequeños a sorteo";
-  let lista = [], err = "";
+  pintarBarra();
+  let lista = null, err = "";
   if (PASS) { try { lista = (await S.listar(PASS)).filter(t => t.codigo.startsWith(PREFIJO)); } catch (e) { err = e.message; } }
-  const fases = { inscripcion: "Inscripción", juego: "Jugando", final: "Fase final", terminado: "Terminado" };
-  const hoy = new Date().toISOString().slice(0, 10);
-  $("#main").innerHTML = `
-  <div class="grid" style="align-items:start">
-    <div class="card stack">
+  // sin contraseña (o mal): sólo la tarjeta para entrar
+  if (!lista) {
+    $("#main").innerHTML = `<div class="acceso"><form class="card stack" onsubmit="event.preventDefault();verLista()">
       <h2>Entrar</h2>
       ${err ? `<div class="small" style="color:var(--bad)">${esc(err)}</div>` : ""}
-      <div><label class="f" for="aPass">Contraseña</label><div class="row"><input type="password" id="aPass" autocomplete="current-password" value="${esc(PASS)}" style="flex:1" onkeydown="if(event.key==='Enter')verLista()"><button class="btn pri" type="button" onclick="verLista()">Entrar</button></div></div>
-      <div><label class="f">Torneos Ciegos</label>
-        ${lista.length ? lista.map(t => `<div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:nowrap"><button class="btn" style="flex:1;min-width:0;justify-content:space-between" onclick="entrar('${esc(t.codigo)}')"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.nombre || t.codigo)}</span><span class="dim small" style="white-space:nowrap">${esc(t.fecha || "")} · ${esc(fases[t.fase] || "")}</span></button><button class="btn bad" title="Borrar este torneo" aria-label="Borrar ${esc(t.nombre || t.codigo)}" onclick="borrarDeLista('${esc(t.codigo)}', this.dataset.nombre)" data-nombre="${esc(t.nombre || t.codigo)}">🗑</button></div>`).join("") : `<div class="dim small">${!PASS ? "Entra para ver los torneos." : "Todavía no hay ninguno."}</div>`}
-      </div>
-    </div>
-    <form class="card stack" onsubmit="crear(event)">
-      <h2>Nuevo torneo</h2>
+      <div><label class="f" for="aPass">Contraseña</label><input type="password" id="aPass" autocomplete="current-password" autofocus></div>
+      <button class="btn pri big">Entrar</button>
+    </form></div>`;
+    return;
+  }
+  const hoy = new Date().toISOString().slice(0, 10);
+  const abierto = formAbierto || !lista.length;
+  $("#main").innerHTML = `
+  <div class="row" style="margin:4px 0 14px">
+    <h2 style="margin:0">Torneos</h2><span class="spacer"></span>
+    <span class="small dim">Conectado ✓</span><button class="btn sm" type="button" onclick="cerrarSesion()">Salir</button>
+  </div>
+  ${lista.length ? `<div class="t-lista">${lista.map(t => `<div class="t-card fase-${esc(t.fase || "")}">
+      <button class="t-abrir" type="button" onclick="entrar('${esc(t.codigo)}')">
+        <span class="t-ico" data-ico="${esc(t.codigo)}">🏆</span>
+        <span class="t-txt"><b>${esc(t.nombre || t.codigo)}</b><span class="small dim" data-info="${esc(t.codigo)}">${esc(t.fecha || "")}</span></span>
+        <span class="t-fase">${esc(FASES[t.fase] || "")}</span>
+      </button>
+      <button class="btn bad t-borrar" type="button" title="Borrar este torneo" aria-label="Borrar ${esc(t.nombre || t.codigo)}" data-nombre="${esc(t.nombre || t.codigo)}" onclick="borrarDeLista('${esc(t.codigo)}', this.dataset.nombre)">🗑</button>
+    </div>`).join("")}</div>` : `<div class="vacio">Todavía no hay ningún torneo. Crea el primero 👇</div>`}
+  <div style="margin-top:16px">
+    ${abierto ? "" : `<button class="btn pri big" type="button" style="width:100%" onclick="formAbierto=true;pantallaAcceso()">＋ Nuevo torneo</button>`}
+    <form class="card stack ${abierto ? "" : "oculto"}" onsubmit="crear(event)">
+      <div class="row"><h2 style="margin:0">Nuevo torneo</h2><span class="spacer"></span>${lista.length ? `<button class="btn sm" type="button" onclick="formAbierto=false;pantallaAcceso()">Cancelar</button>` : ""}</div>
       <div><label class="f" for="nNombre">Nombre</label><input type="text" id="nNombre" required placeholder="Ciegos de los viernes"></div>
       <div class="row"><div style="flex:1"><label class="f" for="nFecha">Fecha</label><input type="date" id="nFecha" value="${hoy}"></div><div style="flex:1"><label class="f" for="nLugar">Lugar</label><input type="text" id="nLugar" placeholder="Melide"></div></div>
       <div><label class="f">Formato</label>
-        <div class="stack" style="gap:6px">${Object.entries(E.MODOS).map(([k, m], i) => `<label class="opcion"><input type="radio" name="nModo" value="${k}" ${i ? "" : "checked"}><span><b>${esc(m.nombre)}</b><br><span class="small dim">${esc(m.texto)}</span></span></label>`).join("")}</div></div>
-      <button class="btn pri">Crear</button>
+        <div class="formatos">${Object.entries(E.MODOS).map(([k, m], i) => `<label class="formato-op"><input type="radio" name="nModo" value="${k}" ${i ? "" : "checked"}><span class="fo-ico">${ICONO[k] || "🏆"}</span><b>${esc(m.nombre)}</b><span class="small dim">${esc(m.texto)}</span></label>`).join("")}</div></div>
+      <button class="btn pri big">Crear torneo</button>
     </form>
   </div>`;
+  // formato y nº de jugadores de cada torneo (se cargan aparte)
+  lista.forEach(async t => {
+    try {
+      const d = (await S.cargar(t.codigo)).datos || {};
+      const n = (d.jugadores || []).filter(j => !j.baja).length;
+      const ico = $(`[data-ico="${CSS.escape(t.codigo)}"]`), inf = $(`[data-info="${CSS.escape(t.codigo)}"]`);
+      if (ico) ico.textContent = ICONO[d.modo] || "🏆";
+      if (inf) inf.textContent = [(E.MODOS[d.modo] || {}).nombre, n ? n + " jugadores" : "", t.fecha].filter(Boolean).join(" · ");
+    } catch (_) {}
+  });
+}
+function cerrarSesion() {
+  PASS = ""; ROL = null; CODIGO = "";
+  try { sessionStorage.removeItem("ciegos-admin"); sessionStorage.removeItem("torneo-admin"); } catch (_) {}
+  pantallaAcceso();
 }
 async function borrarDeLista(codigo, nombre) {
   if (!confirm(`¿Borrar el torneo «${nombre}»?\n\nSe borra para siempre, con todos sus resultados. No se puede deshacer.`)) return;
@@ -219,6 +318,7 @@ function pintar() {
   if (foco && $("#" + foco)) $("#" + foco).focus();
   window.scrollTo(0, y);
   estadoSync($("#sync").textContent);
+  pintarBarra();
 }
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-tab]");
@@ -328,7 +428,7 @@ function sorteoFinal() {
 function vJuego() {
   if (ST.fase === "inscripcion") return `<div class="vacio">Primero <button class="btn sm" data-tab="jugadores">apunta a los jugadores</button> y empieza el torneo.</div>`;
   let h = "";
-  if (ST.fase === "terminado") h += `<div class="card" style="margin-bottom:14px;text-align:center"><h2>🏁 Torneo terminado</h2>${CV.htmlPodio(ST)}<button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen de resultados para redes</button></div>`;
+  if (ST.fase === "terminado") h += `<div class="card" style="margin-bottom:14px;text-align:center"><h2>🏁 Torneo terminado</h2>${CV.htmlPodio(ST)}<div class="row" style="justify-content:center"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen de resultados para redes</button><button class="btn" onclick="celebrar()">🏆 Ver campeones</button></div></div>`;
   h += CV.htmlResumen(ST);
   if (ST.modo === "vidas" && ST.fase === "juego") return h + vJuegoVidas();
   const libres = E.mesasLibres(ST).length, pend = E.pendientes(ST).filter(p => p.estado === "pendiente");
@@ -346,11 +446,8 @@ function vJuego() {
       ${fin ? `<div class="small dim" style="margin-top:6px">Quedan ${E.vivos(ST).length} jugadores en pie: se sortean ${Math.floor(E.vivos(ST).length / 2)} parejas${E.vivos(ST).length % 2 ? " (impar: se queda fuera quien tenga menos vidas)" : ""}.</div>` : ""}</div>`;
   }
   // mesas
-  const enMesa = ST.partidos.filter(p => p.estado === "mesa").sort((a, b) => a.mesa - b.mesa);
-  if (enMesa.length) h += `<h2>En mesa</h2><div class="mesas">` + enMesa.map(p => `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${p.mesa}</span><span class="spacer"></span><span class="t">⏱ ${TC.hace(p.llamado)}</span></div>
-      <div class="small dim">${esc(E.nombrePartido(ST, p))}</div>
-      <div class="vs"><span>${esc(E.nombreLado(ST, p.a))}</span><i>contra</i><span>${esc(E.nombreLado(ST, p.b))}</span></div>
-      <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
+  const mesas = htmlMesasPanel();
+  if (mesas) h += `<h2>En mesa</h2>` + mesas;
   // ronda actual / cuadro
   if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadroFinal(ST, { admin: true });
   if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
@@ -364,7 +461,7 @@ function htmlMesasPanel() {
   return `<div class="mesas">` + enMesa.map(p => `<div class="mesa ocupada"><div class="row"><span class="num">Mesa ${p.mesa}</span><span class="spacer"></span><span class="t">⏱ ${TC.hace(p.llamado)}</span></div>
       <div class="small dim">${esc(E.nombrePartido(ST, p))}</div>
       <div class="vs"><span>${esc(E.nombreLado(ST, p.a))}</span><i>contra</i><span>${esc(E.nombreLado(ST, p.b))}</span></div>
-      <div class="row"><button class="btn sm ok" onclick="modalResultado('${p.id}')">Resultado</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
+      <div class="row"><button class="btn ok" style="flex:1" onclick="modalResultado('${p.id}')">✍ ¿Quién ha ganado?</button><button class="btn sm" onclick="cambio(()=>E.soltar(ST,'${p.id}'))" title="Devolver a la espera" aria-label="Devolver a la espera">↩</button></div></div>`).join("") + `</div>`;
 }
 
 // Vidas: sin rondas. Al acabar un partido, en cuanto hay 4 libres se sortea otro.
@@ -377,11 +474,12 @@ function vJuegoVidas() {
   else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>¡Quedan 8 en pie!</b> <span class="dim">Cuando acabe lo que se está jugando en las mesas (ya no elimina a nadie) se sortean las semifinales.</span></div>`;
   else if (e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se ponen en verde los partidos que aseguran llegar a 8 justos (los demás se recolocan).</div>`;
   h += `<label class="check" style="margin-bottom:12px"><input type="checkbox" ${autoVidas ? "checked" : ""} onchange="autoVidas=this.checked;try{localStorage.setItem('ciegos-auto-vidas',autoVidas?'1':'0')}catch(_){};if(autoVidas)rellenar()"> Llamar solos a mesa los partidos listos (si no, los llamas tú con el botón verde)</label>`;
-  const listos = CV.htmlListos(ST);
-  if (listos) h += `<h2>✅ Listos para jugar</h2>` + listos;
   const mesas = htmlMesasPanel();
-  if (mesas) h += `<h2 style="margin-top:16px">En mesa</h2>` + mesas;
-  h += `<h2 style="margin-top:16px">Rondas</h2>` + CV.htmlRondas(ST, rondaSel, { admin: true });
+  if (mesas) h += `<h2>En mesa</h2>` + mesas;
+  const listos = CV.htmlListos(ST);
+  if (listos) h += `<h2 style="margin-top:16px">✅ Listos para jugar</h2>` + listos;
+  if (!mesas && !listos) h += `<div class="vacio">Nadie en mesa y ningún partido listo todavía.</div>`;
+  h += `<div class="row" style="margin-top:12px"><button class="btn sm" data-tab="rondas">Ver todas las rondas →</button></div>`;
   h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   return h;
 }
@@ -413,7 +511,7 @@ function siguiente() {
   if (!cambio(() => E.siguienteRonda(ST), "Siguiente ronda")) return;
   if (autoActivo()) cambio(() => E.asignarMesas(ST));
   if (antes === "juego" && ST.fase === "final") sorteoParejas();       // Vidas: parejas de la fase final
-  if (ST.fase === "terminado") TC.toast("🏁 Torneo terminado", "ok", 5000);
+  if (ST.fase === "terminado") celebrar();
 }
 
 function modalResultado(id) {
@@ -421,28 +519,95 @@ function modalResultado(id) {
   if (!p || !p.a || !p.b || p.bye) return;
   const editar = p.estado === "fin";
   if (editar && !E.puedeEditar(ST, id)) return TC.toast("Ese resultado ya no se puede cambiar: hay partidos posteriores jugados", "bad");
-  const pos = E.marcadoresPosibles(ST);
+  const conMarcador = E.usaMarcador(ST);
+  const nom = l => E.nombreLado(ST, p[l]);
+  const boton = l => `<button type="button" class="gana-btn ${editar && p.ganador === l ? "on" : ""}" data-g="${l}"><span class="g-t">🏆 Gana</span><b>${esc(nom(l))}</b></button>`;
   TC.modal(`<h3>${esc(E.nombrePartido(ST, p))}${p.mesa ? " · Mesa " + p.mesa : ""}</h3>
     <p class="formato" style="margin:-6px 0 12px">${esc(E.textoFormato(ST.config.partidas))}</p>
-    <div class="stack" style="gap:8px">
-      <div class="marcador"><b>${esc(E.nombreLado(ST, p.a))}</b></div>
-      <div class="rapidos">${pos.map(([x, y]) => `<button type="button" class="btn ${editar && p.ra === x && p.rb === y ? "pri" : ""}" data-m="${x}-${y}">${x}-${y}</button>`).join("")}</div>
-      <div class="marcador"><b>${esc(E.nombreLado(ST, p.b))}</b></div>
-    </div>
-    <div class="small dim" style="margin:8px 0">El primer número es de la pareja de arriba.</div>
-    <div class="row">${editar ? `<button class="btn sm bad" id="borrar">Borrar resultado</button>` : ""}<span class="spacer"></span><button class="btn" data-cerrar>Cancelar</button></div>`, (el, cerrar) => {
-    el.querySelectorAll("[data-m]").forEach(b => b.onclick = () => {
-      const [x, y] = b.dataset.m.split("-").map(Number);
+    <div class="small dim" style="margin-bottom:8px">¿Quién ha ganado?</div>
+    <div class="gana-grid">${boton("a")}<span class="g-vs">contra</span>${boton("b")}</div>
+    ${conMarcador ? `<div id="mSc" class="oculto" style="margin-top:12px"><div class="small dim" style="margin-bottom:6px" id="mScT"></div><div class="rapidos" id="mScB"></div><div class="small dim">El marcador desempata la clasificación.</div></div>` : ""}
+    <div class="row" style="margin-top:12px">${editar ? `<button class="btn sm bad" id="borrar">Borrar resultado</button>` : ""}<span class="spacer"></span><button class="btn" data-cerrar>Cancelar</button></div>`, (el, cerrar) => {
+    const guardarRes = (fn, txt) => {
       const estaba = p.estado === "mesa";
-      if (cambio(() => E.registrarResultado(ST, id, x, y), `${E.nombreLado(ST, p.a)} ${x}-${y} ${E.nombreLado(ST, p.b)}`)) {
-        cerrar(); TC.toast("Resultado guardado", "ok");
-        trasResultado(estaba);
-        if (ST.fase === "terminado") TC.toast("🏁 ¡Torneo terminado!", "ok", 6000);
-      }
+      if (!cambio(fn, txt)) return;
+      cerrar();
+      if (ST.fase === "terminado") { celebrar(); return; }
+      TC.toast("Resultado guardado", "ok");
+      trasResultado(estaba);
+    };
+    el.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+      const l = b.dataset.g;
+      if (!conMarcador) return guardarRes(() => E.registrarGanador(ST, id, l), `Gana ${nom(l)}`);
+      // Monster y Suizo: después del ganador, el marcador
+      el.querySelectorAll("[data-g]").forEach(x => x.classList.toggle("on", x === b));
+      const pos = E.marcadoresPosibles(ST).filter(([x, y]) => l === "a" ? x > y : y > x);
+      el.querySelector("#mSc").classList.remove("oculto");
+      el.querySelector("#mScT").innerHTML = `Marcador de <b>${esc(nom(l))}</b>:`;
+      el.querySelector("#mScB").innerHTML = pos.map(([x, y]) => { const g = Math.max(x, y), q = Math.min(x, y); return `<button type="button" class="btn big ${editar && p.ra === x && p.rb === y ? "pri" : ""}" data-m="${x}-${y}">${g}-${q}</button>`; }).join("");
+      el.querySelectorAll("[data-m]").forEach(m => m.onclick = () => {
+        const [x, y] = m.dataset.m.split("-").map(Number);
+        guardarRes(() => E.registrarResultado(ST, id, x, y), `${nom("a")} ${x}-${y} ${nom("b")}`);
+      });
     });
     const br = el.querySelector("#borrar");
     if (br) br.onclick = () => { if (confirm("¿Borrar el resultado?") && cambio(() => E.borrarResultado(ST, id), "Resultado borrado")) cerrar(); };
   });
+}
+
+/* ---------- campeones: pantalla grande al acabar ---------- */
+function celebrar() {
+  const pod = E.podio(ST);
+  if (!pod.length) return;
+  const nombres = x => x.ids.map(id => esc(E.nombreJugador(ST, id))).join(" <i>y</i> ");
+  const fondo = document.createElement("div");
+  fondo.className = "campeones";
+  fondo.innerHTML = `<div class="cp-caja">
+    <div class="cp-copa">🏆</div>
+    <div class="cp-t">¡Campeones!</div>
+    <div class="cp-n">${nombres(pod[0])}</div>
+    <div class="cp-sub">${esc(ST.nombre)}</div>
+    <div class="cp-resto">${pod.slice(1).map(x => `<div><span>${x.pos === 2 ? "🥈" : "🥉"}</span> ${nombres(x)}</div>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:18px"><button class="btn pri big" data-img>📸 Imagen para redes</button><button class="btn big" data-cerrar>Cerrar</button></div>
+  </div>`;
+  document.body.appendChild(fondo);
+  TC.confeti(fondo);
+  setTimeout(() => TC.confeti(fondo), 1600);
+  fondo.addEventListener("click", e => {
+    if (e.target.closest("[data-img]")) CV.imagenRedes(ST);
+    else if (e.target === fondo || e.target.closest("[data-cerrar]")) fondo.remove();
+  });
+}
+
+/* ---------- barra de abajo en el móvil: lo siguiente que toca hacer ---------- */
+function accionSiguiente() {
+  if (!ST) return null;
+  if (ST.fase === "inscripcion") {
+    const n = E.parejasFijas(ST) ? ST.parejas.length * 2 : E.activos(ST).length;
+    return n >= (ST.modo === "vidas" ? 8 : 4) ? { txt: "▶ Empezar el torneo", fn: "empezar()" } : null;
+  }
+  if (ST.fase === "terminado") return { txt: "📸 Imagen para redes", fn: "CV.imagenRedes(ST)" };
+  if (ST.modo === "vidas" && ST.fase === "juego") {
+    const e = E.estadoVidas(ST);
+    if (e.listaFinal) return { txt: "🎲 Sortear las semifinales", fn: "siguiente()" };
+  } else if (E.puedeSiguienteRonda(ST) && ST.fase === "juego") return { txt: "▶ Siguiente ronda", fn: "siguiente()" };
+  const libre = E.mesasLibres(ST)[0];
+  if (libre) {
+    if (ST.modo === "vidas" && ST.fase === "juego") {
+      const est = E.estadosVidas(ST);
+      const lista = ST.partidos.filter(p => (est[p.id] || {}).estado === "lista").sort((x, y) => x.ronda - y.ronda || x.n - y.n)[0];
+      if (lista) return { txt: `▶ Llamar a mesa ${libre}`, sub: `${E.nombreLado(ST, lista.a)} vs ${E.nombreLado(ST, lista.b)}`, fn: `llamarA('${lista.id}')` };
+    } else if (E.pendientes(ST).some(p => p.estado === "pendiente")) return { txt: `▶ Llamar a mesa ${libre}`, fn: "rellenar()" };
+  }
+  const mesa = ST.partidos.filter(p => p.estado === "mesa").sort((x, y) => (x.llamado || 0) - (y.llamado || 0))[0];
+  if (mesa) return { txt: `✍ Anotar mesa ${mesa.mesa}`, sub: `${E.nombreLado(ST, mesa.a)} vs ${E.nombreLado(ST, mesa.b)}`, fn: `modalResultado('${mesa.id}')` };
+  return null;
+}
+function pintarBarra() {
+  const b = $("#barra"), a = accionSiguiente();
+  document.body.classList.toggle("con-barra", !!a);
+  b.classList.toggle("oculto", !a);
+  b.innerHTML = a ? `<button class="btn pri big" onclick="${a.fn}"><span>${esc(a.txt)}</span>${a.sub ? `<span class="small">${esc(a.sub)}</span>` : ""}</button>` : "";
 }
 
 /* ---------- clasificación / cuadro ---------- */
