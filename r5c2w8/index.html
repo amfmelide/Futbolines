@@ -9,6 +9,11 @@
 <meta name="theme-color" content="#0a0e1a">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ciegos">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../zt4k9m/app.css">
@@ -22,9 +27,14 @@
   :root[data-theme="light"] .fondo-foto { filter: brightness(1.1) blur(3px) grayscale(.3); }
   :root[data-theme="light"] .fondo-velo { background: linear-gradient(180deg, rgba(244,246,250,.82) 0%, rgba(244,246,250,.9) 60%, rgba(244,246,250,.96) 100%); }
   header.top, main.wrap { position: relative; z-index: 2; }
-  header.top { position: sticky; background: rgba(10,14,26,.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  header.top { position: sticky; z-index: 20; background: rgba(10,14,26,.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   :root[data-theme="light"] header.top { background: rgba(255,255,255,.8); }
   main.wrap { padding-bottom: 40px; }
+
+  /* toques rápidos sin zoom ni retraso */
+  button, .btn, .tab, [data-partido], .gana-btn, .formato-op, .t-abrir { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  body.sin-red #sync { color: var(--warn); }
+  .instalar { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; border-color: var(--gold2); }
 
   /* entrada */
   .acceso { max-width: 420px; margin: 24px auto; }
@@ -87,6 +97,19 @@
     .cd-t b { font-size: 1.4rem !important; }
     .cd-t span { font-size: .62rem !important; }
     :root[data-theme="light"] .barra-movil { background: rgba(255,255,255,.92); }
+    /* cabecera compacta: título, guardado y botones en una línea */
+    header.top { padding-top: calc(8px + env(safe-area-inset-top)); }
+    header.top .top-row { flex-wrap: nowrap; gap: 8px; }
+    header.top .top-row > div:first-child { min-width: 0; flex: 1; }
+    header.top .titulo { font-size: 1.45rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    header.top .sub { font-size: .72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    header.top .top-row > .spacer { display: none; }
+    #sync { font-size: .68rem; max-width: 70px; text-align: right; line-height: 1.1; }
+    #bDeshacer { font-size: 0; padding: 8px 10px; } #bDeshacer::before { content: "↶"; font-size: 1.1rem; }
+    .tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { white-space: nowrap; }
+    input, select, textarea { font-size: 16px !important; }       /* iPhone no hace zoom al escribir */
   }
 </style>
 <link rel="stylesheet" href="../fx.css">
@@ -134,6 +157,56 @@ let autoVidas = false;                             // Vidas: por defecto los par
 try { auto = localStorage.getItem("ciegos-auto") !== "0"; autoVidas = localStorage.getItem("ciegos-auto-vidas") === "1"; } catch (_) {}
 const autoActivo = () => (ST && ST.modo === "vidas" ? autoVidas : auto);
 
+const ICONO = { ciegos: "🎲", monster: "🔄", suizo: "⚖️", vidas: "❤️" };
+const FASES = { inscripcion: "Inscripción", juego: "Jugando", final: "Fase final", terminado: "Terminado" };
+let formAbierto = false;
+
+/* ================= SIN COBERTURA EN EL BAR =================
+   Cada cambio se guarda también en el móvil. Si no hay red, se sigue jugando
+   y se sube solo en cuanto vuelve la conexión (o al volver a abrir la app). */
+const LSC = "ciegos-copia:";
+function copiaLocal(codigo) { try { return JSON.parse(localStorage.getItem(LSC + codigo)) || null; } catch (_) { return null; } }
+function copiaGuardar(pendienteSubir) {
+  if (!CODIGO || !ST) return;
+  try { localStorage.setItem(LSC + CODIGO, JSON.stringify({ datos: ST, version: VERSION, pendiente: !!pendienteSubir, ts: Date.now() })); } catch (_) {}
+}
+function copiasLocales() {
+  const r = [];
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(LSC)) { const c = copiaLocal(k.slice(LSC.length)); if (c && c.datos) r.push(Object.assign({ codigo: k.slice(LSC.length) }, c)); } } } catch (_) {}
+  return r.sort((a, b) => b.ts - a.ts);
+}
+let offline = false, reintento = null;
+function sinRed(si) {
+  if (si && !offline) TC.toast("📴 Sin cobertura. Sigue jugando: todo queda guardado en el móvil y se sube solo al volver la conexión.", "", 7000);
+  if (!si && offline) TC.toast("✅ Conexión recuperada: todo subido", "ok");
+  offline = si;
+  document.body.classList.toggle("sin-red", si);
+  if (si) { estadoSync("📴 Sin red · guardado en el móvil", true); clearTimeout(reintento); reintento = setTimeout(() => { if (offline) guardar(); }, 8000); }
+}
+window.addEventListener("online", () => { if (CODIGO && (copiaLocal(CODIGO) || {}).pendiente) guardar(); });
+window.addEventListener("beforeunload", e => { if (CODIGO && (copiaLocal(CODIGO) || {}).pendiente) { e.preventDefault(); e.returnValue = ""; } });
+
+/* pantalla siempre encendida mientras se juega */
+let candado = null;
+async function pantallaEncendida() {
+  if (!("wakeLock" in navigator) || document.hidden || candado) return;
+  if (!ST || ST.fase === "inscripcion" || ST.fase === "terminado") return;
+  try { candado = await navigator.wakeLock.request("screen"); candado.addEventListener("release", () => (candado = null)); } catch (_) {}
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { pantallaEncendida(); if (CODIGO) sondear(); } });
+
+/* instalar como app */
+let avisoInstalar = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); avisoInstalar = e; const b = $("#bInstalar"); if (b) b.classList.remove("oculto"); });
+async function instalar() { if (!avisoInstalar) return; avisoInstalar.prompt(); await avisoInstalar.userChoice.catch(() => {}); avisoInstalar = null; pantallaAcceso(); }
+function htmlInstalar() {
+  if (TC.esPWA() || !matchMedia("(max-width: 760px)").matches) return "";
+  return `<div class="card instalar"><b>📲 Llévala en el móvil como una app</b>
+    <div class="small dim">${TC.esIOS() ? "En Safari: botón <b>Compartir</b> ⬆️ → <b>Añadir a pantalla de inicio</b>." : "Ábrela desde la pantalla de inicio: se abre al momento y funciona aunque en el bar no haya cobertura."}</div>
+    <button class="btn sm pri ${avisoInstalar ? "" : "oculto"}" id="bInstalar" onclick="instalar()">Instalar</button></div>`;
+}
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
+
 /* ================= ACCESO ================= */
 (async function inicio() {
   S.setModo("remoto", true);
@@ -158,9 +231,6 @@ async function comprobarPass() {
 }
 function guardarSesion() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ codigo: CODIGO, pass: PASS, modo: S.modo })); } catch (_) {} }
 
-const ICONO = { ciegos: "🎲", monster: "🔄", suizo: "⚖️", vidas: "❤️" };
-const FASES = { inscripcion: "Inscripción", juego: "Jugando", final: "Fase final", terminado: "Terminado" };
-let formAbierto = false;
 
 async function pantallaAcceso() {
   $("#tabs").innerHTML = "";
@@ -171,12 +241,16 @@ async function pantallaAcceso() {
   if (PASS) { try { lista = (await S.listar(PASS)).filter(t => t.codigo.startsWith(PREFIJO)); } catch (e) { err = e.message; } }
   // sin contraseña (o mal): sólo la tarjeta para entrar
   if (!lista) {
+    const locales = copiasLocales();
+    const faltaRed = !navigator.onLine || /fetch|network|load failed|conex/i.test(err);
     $("#main").innerHTML = `<div class="acceso"><form class="card stack" onsubmit="event.preventDefault();verLista()">
       <h2>Entrar</h2>
-      ${err ? `<div class="small" style="color:var(--bad)">${esc(err)}</div>` : ""}
-      <div><label class="f" for="aPass">Contraseña</label><input type="password" id="aPass" autocomplete="current-password" autofocus></div>
+      ${err ? `<div class="small" style="color:var(--bad)">${faltaRed ? "📴 Sin conexión." : esc(err)}</div>` : ""}
+      <div><label class="f" for="aPass">Contraseña</label><input type="password" id="aPass" autocomplete="current-password" enterkeyhint="go"></div>
       <button class="btn pri big">Entrar</button>
-    </form></div>`;
+      ${locales.length ? `<div><label class="f">Guardados en este móvil${faltaRed ? " (para seguir sin cobertura)" : ""}</label>
+        ${locales.slice(0, 5).map(c => `<button type="button" class="btn" style="width:100%;justify-content:space-between;margin-bottom:6px" onclick="abrirLocal('${esc(c.codigo)}')"><span>${ICONO[c.datos.modo] || "🏆"} ${esc(c.datos.nombre || c.codigo)}</span><span class="small ${c.pendiente ? "" : "dim"}">${c.pendiente ? "⬆ sin subir" : esc(FASES[c.datos.fase] || "")}</span></button>`).join("")}</div>` : ""}
+    </form>${htmlInstalar()}</div>`;
     return;
   }
   const hoy = new Date().toISOString().slice(0, 10);
@@ -196,6 +270,7 @@ async function pantallaAcceso() {
     </div>`).join("")}</div>` : `<div class="vacio">Todavía no hay ningún torneo. Crea el primero 👇</div>`}
   <div style="margin-top:16px">
     ${abierto ? "" : `<button class="btn pri big" type="button" style="width:100%" onclick="formAbierto=true;pantallaAcceso()">＋ Nuevo torneo</button>`}
+    ${htmlInstalar()}
     <form class="card stack ${abierto ? "" : "oculto"}" onsubmit="crear(event)">
       <div class="row"><h2 style="margin:0">Nuevo torneo</h2><span class="spacer"></span>${lista.length ? `<button class="btn sm" type="button" onclick="formAbierto=false;pantallaAcceso()">Cancelar</button>` : ""}</div>
       <div><label class="f" for="nNombre">Nombre</label><input type="text" id="nNombre" required placeholder="Ciegos de los viernes"></div>
@@ -224,8 +299,13 @@ function cerrarSesion() {
 async function borrarDeLista(codigo, nombre) {
   if (!confirm(`¿Borrar el torneo «${nombre}»?\n\nSe borra para siempre, con todos sus resultados. No se puede deshacer.`)) return;
   if (!(await comprobarPass())) return;
-  try { await S.borrar(codigo, PASS); TC.toast("Torneo borrado", "ok"); pantallaAcceso(); }
+  try { await S.borrar(codigo, PASS); try { localStorage.removeItem(LSC + codigo); } catch (_) {} TC.toast("Torneo borrado", "ok"); pantallaAcceso(); }
   catch (e) { TC.toast(esc(e.message), "bad", 5000); }
+}
+async function abrirLocal(codigo) {
+  const el = $("#aPass"); if (el && el.value) PASS = el.value;
+  if (!PASS) return TC.toast("Escribe la contraseña (se comprueba al volver la conexión)", "bad", 5000);
+  try { await abrir(codigo); } catch (e) { TC.toast(esc(e.message), "bad", 5000); }
 }
 async function verLista() { if (await comprobarPass()) pantallaAcceso(); }
 async function entrar(codigo) {
@@ -248,14 +328,26 @@ async function crear(ev) {
   } catch (e) { TC.toast(esc(e.message), "bad"); }
 }
 
+let intervalos = false;
 async function abrir(codigo) {
-  const r = await S.cargar(codigo);
-  if (!r.datos || r.datos.app !== "ciegos") throw new Error("Ese no es un torneo Ciegos");
-  CODIGO = codigo; ST = r.datos; VERSION = r.version;
-  ROL = (await S.login(PASS)).rol || "admin";
+  const loc = copiaLocal(codigo);
+  let r = null;
+  try { r = await S.cargar(codigo); }
+  catch (e) { if (e.status || !loc) throw e; }                       // sin red: se abre la copia del móvil
+  if (r && (!r.datos || r.datos.app !== "ciegos")) throw new Error("Ese no es un torneo Ciegos");
+  CODIGO = codigo;
+  if (!r) { ST = loc.datos; VERSION = loc.version; sinRed(true); }
+  else if (loc && loc.pendiente && loc.version >= r.version) { ST = loc.datos; VERSION = r.version; }   // cambios hechos sin cobertura
+  else { ST = r.datos; VERSION = r.version; }
+  try { ROL = (await S.login(PASS)).rol || "admin"; } catch (e) { if (e.status) throw e; }
   guardarSesion();
+  copiaGuardar(loc && loc.pendiente);
+  if (loc && loc.pendiente && r) guardar();
+  pantallaEncendida();
   tab = ST.fase === "inscripcion" ? "jugadores" : "juego";
   pintar();
+  if (intervalos) return;
+  intervalos = true;
   setInterval(sondear, (C.refrescoSeg || 10) * 1000);
   setInterval(() => { if (tab === "juego" && !$(".modal-bg")) pintar(); }, 30000);
 }
@@ -267,12 +359,14 @@ function cambio(fn, txt) {
   try { fn(); } catch (e) { TC.toast(esc(e.message), "bad", 5000); return false; }
   HIST.push(copia); if (HIST.length > 40) HIST.shift();
   if (txt) { ST.log = (ST.log || []).slice(-199); ST.log.push({ ts: Date.now(), txt }); }
+  copiaGuardar(true);
   pintar(); guardar();
   return true;
 }
 function deshacer() {
   if (!HIST.length) return;
   ST = JSON.parse(HIST.pop());
+  copiaGuardar(true);
   pintar(); guardar(); TC.toast("Cambio deshecho");
 }
 async function guardar() {
@@ -280,8 +374,9 @@ async function guardar() {
   estadoSync("Guardando…");
   guardando = (async () => {
     for (let i = 0; i < 2; i++) {
-      try { VERSION = (await S.guardar(CODIGO, ST, VERSION, PASS)).version; estadoSync("Guardado ✓"); return; }
+      try { VERSION = (await S.guardar(CODIGO, ST, VERSION, PASS)).version; copiaGuardar(false); sinRed(false); estadoSync("Guardado ✓"); return; }
       catch (e) {
+        if (!e.status && !e.conflicto) { sinRed(true); return; }           // sin cobertura: queda en el móvil y se reintenta
         if (!e.conflicto) { estadoSync("Error al guardar", true); TC.toast("No se pudo guardar: " + esc(e.message), "bad", 6000); return; }
         VERSION = (await S.cargar(CODIGO)).version;      // sólo escribe el organizador: se queda lo de este dispositivo
       }
@@ -292,11 +387,14 @@ async function guardar() {
 function estadoSync(txt, err) { const s = $("#sync"); s.textContent = txt; s.classList.toggle("err", !!err); $("#bDeshacer").classList.toggle("oculto", !HIST.length); }
 async function sondear() {
   if (guardando || document.hidden || $(".modal-bg")) return;
+  if ((copiaLocal(CODIGO) || {}).pendiente) { guardar(); return; }  // primero subir lo que se hizo sin cobertura
   try {
     const v = await S.version(CODIGO);
     if (v !== VERSION) { const r = await S.cargar(CODIGO); ST = r.datos; VERSION = r.version; if (tab !== "ajustes") pintar(); }
-  } catch (_) { estadoSync("Sin conexión", true); }
+  } catch (_) { estadoSync("📴 Sin conexión", true); }
 }
+
+
 
 /* ================= PINTADO ================= */
 const VISTAS = { jugadores: vJugadores, juego: vJuego, rondas: vRondas, cuadro: vCuadro, tabla: vTabla, ajustes: vAjustes };
@@ -319,6 +417,7 @@ function pintar() {
   window.scrollTo(0, y);
   estadoSync($("#sync").textContent);
   pintarBarra();
+  pantallaEncendida();
 }
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-tab]");
@@ -531,6 +630,7 @@ function modalResultado(id) {
     const guardarRes = (fn, txt) => {
       const estaba = p.estado === "mesa";
       if (!cambio(fn, txt)) return;
+      if (navigator.vibrate) navigator.vibrate(35);
       cerrar();
       if (ST.fase === "terminado") { celebrar(); return; }
       TC.toast("Resultado guardado", "ok");
