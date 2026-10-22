@@ -3,7 +3,8 @@
 // Todas las escrituras de la herramienta de torneos pasan por aquí.
 //
 // Secretos necesarios (supabase secrets set ...):
-//   TORNEO_ADMIN_PASS   contraseña del organizador
+//   TORNEO_ADMIN_PASS   contraseña del organizador (todo)
+//   CIEGOS_PASS         (opcional) contraseña sólo para la app Ciegos, para prestársela a otra persona
 // Necesita también el SQL 20261013000000_freno_accesos.sql (freno contra adivinar contraseñas).
 //   VAPID_PUBLIC_KEY    } claves Web Push  (npx web-push generate-vapid-keys)
 //   VAPID_PRIVATE_KEY   }
@@ -91,15 +92,36 @@ async function limitarUso(accion: string, ip: string, max: number, ventanaSeg: n
   return 0;
 }
 
-// Contraseña de organizador con freno. Sin contraseña → false sin contar como fallo.
-async function adminValido(b: any): Promise<boolean> {
-  if (b.pass == null || b.pass === "") return false;
-  const r = await comprobarConFreno("torneo-admin", b.__ip, b.pass, Deno.env.get("TORNEO_ADMIN_PASS"));
-  if (r.espera > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(r.espera / 60)} min.`, 429);
-  return r.ok;
+// Contraseñas de organizador (con freno). Hay dos:
+//   TORNEO_ADMIN_PASS → todo (torneos grandes y Ciegos)
+//   CIEGOS_PASS       → sólo la app Ciegos (torneos cuyo código empieza por «ciegos-»), para prestarla
+// Devuelve "admin", "ciegos" o null (sin contraseña: null sin contar como fallo). Se recuerda en la petición.
+const PREFIJO_CIEGOS = "ciegos-";
+async function rolDe(b: any): Promise<"admin" | "ciegos" | null> {
+  if (b.__rol !== undefined) return b.__rol;
+  if (b.pass == null || b.pass === "") return (b.__rol = null);
+  const espera = await esperaFreno("torneo-admin", b.__ip);
+  if (espera > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(espera / 60)} min.`, 429);
+  let rol: "admin" | "ciegos" | null = null;
+  if (igualSeguro(b.pass, Deno.env.get("TORNEO_ADMIN_PASS"))) rol = "admin";
+  else if (igualSeguro(b.pass, Deno.env.get("CIEGOS_PASS"))) rol = "ciegos";
+  if (rol) await rpcFreno("acceso_ok", { p_clave: `torneo-admin|${b.__ip}` });
+  else await apuntarFallo("torneo-admin", b.__ip);
+  return (b.__rol = rol);
 }
-async function exigirAdmin(b: any) {
-  if (!(await adminValido(b))) throw new Fallo("Contraseña incorrecta", 401);
+function puede(rol: string | null, codigo: string) {
+  return rol === "admin" || (rol === "ciegos" && codigo.startsWith(PREFIJO_CIEGOS));
+}
+// ¿Tiene permiso de organizador sobre este torneo?
+async function adminValido(b: any): Promise<boolean> {
+  return puede(await rolDe(b), texto(b.codigo));
+}
+// Exige contraseña. Con la de Ciegos sólo vale para torneos «ciegos-» (salvo entrar y listar).
+async function exigirAdmin(b: any, sinTorneo = false) {
+  const rol = await rolDe(b);
+  if (!rol) throw new Fallo("Contraseña incorrecta", 401);
+  if (!sinTorneo && !puede(rol, texto(b.codigo))) throw new Fallo("Esta contraseña sólo sirve para la app Ciegos", 403);
+  return rol;
 }
 
 async function sha256(txt: string) {
@@ -261,8 +283,8 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   // ---------- sólo organizador ----------
   async login(b) {
-    await exigirAdmin(b);
-    return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV) };
+    const rol = await exigirAdmin(b, true);
+    return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV), rol };
   },
 
   async propuestas(b) {
@@ -285,11 +307,11 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async listar(b) {
-    await exigirAdmin(b);
+    const rol = await exigirAdmin(b, true);
     const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase")
       .order("updated_at", { ascending: false }).limit(50);
     if (error) throw new Fallo(error.message, 500);
-    return { torneos: (data ?? []).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase })) };
+    return { rol, torneos: (data ?? []).filter((r: any) => rol === "admin" || String(r.codigo).startsWith(PREFIJO_CIEGOS)).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase })) };
   },
 
   // Fin del torneo: se borran teléfonos y avisos (un torneo nuevo empieza de cero)
@@ -390,7 +412,10 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
   try {
     const b = await req.json();
-    if (b && typeof b === "object") b.__ip = ipDe(req);        // la pone el servidor; el cliente no puede falsearla en el cuerpo
+    if (b && typeof b === "object") {
+      b.__ip = ipDe(req);                                      // la pone el servidor; el cliente no puede falsearla en el cuerpo
+      delete b.__rol;                                          // el rol lo calcula el servidor con la contraseña, nunca el cliente
+    }
     const fn = acciones[b?.accion];
     if (!fn) return json({ error: "Acción desconocida" }, 400);
     return json(await fn(b));

@@ -125,7 +125,11 @@ function slug(s) {
 async function comprobarPass() {
   if (S.modo === "local") return true;
   PASS = ($("#aPass") || {}).value || PASS;
-  try { const r = await S.login(PASS); PUSH_OK = !!r.push; return true; }
+  try {
+    const r = await S.login(PASS);
+    if (r.rol === "ciegos") { TC.toast("Esa contraseña sólo sirve para la app Ciegos", "bad", 5000); return false; }
+    PUSH_OK = !!r.push; return true;
+  }
   catch (e) { TC.toast(esc(e.message), "bad"); return false; }
 }
 
@@ -172,7 +176,10 @@ async function abrir(codigo) {
   const r = await S.cargar(codigo);
   CODIGO = codigo; ST = r.datos; VERSION = r.version;
   try { sessionStorage.setItem("torneo-admin", JSON.stringify({ codigo, pass: PASS, modo: S.modo })); } catch (_) {}
-  if (S.modo === "remoto" && !PUSH_OK) { try { PUSH_OK = !!(await S.login(PASS)).push; } catch (e) { sessionStorage.removeItem("torneo-admin"); throw e; } }
+  if (S.modo === "remoto" && !PUSH_OK) {
+    try { const r = await S.login(PASS); if (r.rol === "ciegos") throw new Error("Esa contraseña sólo sirve para la app Ciegos"); PUSH_OK = !!r.push; }
+    catch (e) { sessionStorage.removeItem("torneo-admin"); throw e; }
+  }
   await cargarPrivado();
   const pub = "index.html?t=" + encodeURIComponent(codigo) + (S.modo === "local" ? "&local" : "");
   $("#bPublica").href = pub; $("#bPublica").classList.remove("oculto");
