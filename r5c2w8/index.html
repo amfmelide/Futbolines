@@ -299,6 +299,25 @@ function sorteoParejas() {
   });
 }
 
+// Vidas: al acabar las semifinales se sortean otra vez las parejas de la final
+let finalVista = null;
+function sorteoFinalNuevo() {
+  const f = ST.ko && E.partido(ST, ST.ko.finalId);
+  if (!f || !f.sorteo || !f.a || !f.b || f.estado === "fin") return false;
+  const clave = f.a + "|" + f.b;
+  if (finalVista === clave) return false;
+  finalVista = clave; return true;
+}
+function sorteoFinal() {
+  const f = E.partido(ST, ST.ko.finalId);
+  const ps = [f.a, f.b].map(id => E.pareja(ST, id));
+  TC.sorteoEnDirecto({
+    titulo: "Sorteo de la final · " + ST.nombre,
+    columnas: ps.map((p, i) => ({ titulo: "Pareja " + (i + 1) })),
+    bolas: ps.flatMap((p, i) => [{ col: i, texto: E.nombreJugador(ST, p.j1) }, { col: i, texto: E.nombreJugador(ST, p.j2) }])
+  });
+}
+
 /* ---------- juego ---------- */
 function vJuego() {
   if (ST.fase === "inscripcion") return `<div class="vacio">Primero <button class="btn sm" data-tab="jugadores">apunta a los jugadores</button> y empieza el torneo.</div>`;
@@ -330,7 +349,7 @@ function vJuego() {
   if (ST.ko) h += `<h2 style="margin-top:18px">${ST.ko.fase === "final" ? "Fase final" : "Cuadro"}</h2>` + CV.htmlCuadroFinal(ST, { admin: true });
   if (ST.modo === "vidas") h += `<h2 style="margin-top:18px">Vidas</h2>` + CV.htmlTableroVidas(ST);
   if (ST.modo !== "ciegos" && ST.modo !== "vidas" && ST.ronda) h += `<h2 style="margin-top:18px">Ronda ${ST.ronda}${E.rondasTotales(ST) ? " de " + E.rondasTotales(ST) : ""}</h2>` + CV.htmlRonda(ST, ST.ronda, { admin: ST.fase === "juego" });
-  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 en pie, 4 parejas a sorteo: semifinales y final.</div>`;
+  if (ST.modo === "vidas" && ST.fase === "juego") h += `<div class="small dim" style="margin-top:8px">Quedan <b>${E.vivos(ST).length}</b> jugadores en pie. Con 8 en pie, 4 parejas a sorteo para semifinales y nuevo sorteo para la final.</div>`;
   return h;
 }
 function htmlMesasPanel() {
@@ -347,7 +366,7 @@ function vJuegoVidas() {
   const e = E.estadoVidas(ST);
   let h = "";
   if (e.listaFinal) h += `<div class="card" style="margin-bottom:14px;border-color:var(--gold2)"><b>¡Quedan 8 en pie!</b>
-      <div class="small dim" style="margin:4px 0 8px">Se sortean 4 parejas entre ellos (da igual las vidas) → semifinales y final.</div>
+      <div class="small dim" style="margin:4px 0 8px">Se sortean 4 parejas entre ellos (da igual las vidas) → semifinales. Los 4 ganadores se vuelven a sortear para la final.</div>
       <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de semifinales</button></div>`;
   else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>¡Quedan 8 en pie!</b> <span class="dim">Cuando acabe lo que se está jugando en las mesas (ya no elimina a nadie) se sortean las semifinales.</span></div>`;
   else if (e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se ponen en verde los partidos que aseguran llegar a 8 justos (los demás se recolocan).</div>`;
@@ -379,6 +398,7 @@ function trasResultado(estaba) {
   if (ST.modo === "vidas" && ST.fase === "juego") cambio(() => { nuevos = E.sortearVidas(ST); });
   if (autoActivo() && (estaba || nuevos.length || ST.fase !== antes)) cambio(() => E.asignarMesas(ST));
   if (antes === "juego" && ST.fase === "final") sorteoParejas();
+  else if (sorteoFinalNuevo()) sorteoFinal();
   else if (nuevos.length) TC.toast(`🎲 Sorteada la ronda ${Math.max(...nuevos.map(p => p.ronda))}`, "ok", 5000);
 }
 function rellenar() { cambio(() => E.asignarMesas(ST)); }

@@ -214,6 +214,35 @@ test("vidas: hacen falta 8 jugadores; con 8 justos se va directo a semifinales",
   assert.equal(st.parejas.length, 4);
 });
 
+test("vidas: al acabar las semifinales se sortean otra vez las parejas de la final (uno de cada semifinal)", () => {
+  for (const semilla of [1, 2, 3, 4, 5, 6]) {
+    const st = C.nuevoTorneo({ modo: "vidas", semilla });
+    for (let i = 1; i <= 8; i++) C.añadirJugador(st, "J" + i);
+    C.empezar(st);
+    const [s1, s2] = st.partidos.filter(p => p.fase === "final" && p.ronda === 1);
+    const final = C.partido(st, st.ko.finalId);
+    assert.ok(final.sorteo && !final.a && !final.b, "la final aún sin parejas");
+    C.registrarResultado(st, s1.id, 2, 0);
+    assert.ok(!final.a && !final.b, "con una semifinal no se sortea todavía");
+    C.registrarResultado(st, s2.id, 0, 2);
+    assert.ok(final.a && final.b, "sorteada al acabar las dos");
+    const g1 = C.jugadoresDe(st, s1.ganadorId), g2 = C.jugadoresDe(st, s2.ganadorId);
+    const nuevas = [final.a, final.b].map(id => C.jugadoresDe(st, id));
+    assert.deepEqual(nuevas.flat().sort(), g1.concat(g2).sort(), "en la final están los 4 ganadores");
+    nuevas.forEach(par => { assert.equal(par.filter(id => g1.includes(id)).length, 1); assert.equal(par.filter(id => g2.includes(id)).length, 1); });
+    // corregir una semifinal vuelve a sortear la final con los nuevos ganadores
+    const parejasAntes = st.parejas.length;
+    C.registrarResultado(st, s1.id, 0, 2);
+    assert.equal(st.parejas.length, parejasAntes, "no se acumulan parejas viejas");
+    assert.deepEqual([final.a, final.b].flatMap(id => C.jugadoresDe(st, id)).sort(), C.jugadoresDe(st, s1.ganadorId).concat(g2).sort());
+    C.registrarResultado(st, final.id, 2, 1);
+    assert.equal(st.fase, "terminado");
+    const pod = C.podio(st);
+    assert.deepEqual(pod.map(x => x.pos), [1, 2, 3, 3]);
+    assert.equal(new Set(pod.flatMap(x => x.ids)).size, 8, "los 8 en el podio, sin repetir");
+  }
+});
+
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {
   const st = conJugadores("ciegos", 8);
   C.empezar(st);
