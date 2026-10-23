@@ -36,6 +36,26 @@
   body.sin-red #sync { color: var(--warn); }
   .instalar { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; border-color: var(--gold2); }
 
+  /* habituales, bote y jugadores */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--border); background: var(--surface2); color: var(--text); border-radius: 999px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+  .chip:hover { border-color: var(--gold2); }
+  .pago { border: 1px solid var(--border); background: transparent; border-radius: 10px; padding: 4px 8px; cursor: pointer; filter: grayscale(1); opacity: .45; font-size: 1.05rem; }
+  .pago.si { filter: none; opacity: 1; border-color: var(--ok); background: rgba(0,200,83,.12); }
+  .bote-n b { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--gold); }
+  .premio, .cp-premio { display: block; color: var(--ok); font-weight: 700; margin-top: 4px; }
+  .cp-premio { display: inline-block; font-size: 1.2rem; }
+  .jug { gap: 8px; flex-wrap: wrap; } .jug.fuera b { text-decoration: line-through; color: var(--dim); }
+  .vidas-mini { color: #f50057; letter-spacing: 1px; }
+  .grid-s > .card.row { flex-wrap: nowrap; gap: 8px; align-items: center; }
+  .grid-s > .card.row > b, .jug > b { flex: 1 1 auto; min-width: 4.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .grid-s > .card.row > :not(b), .jug > :not(b) { flex: none; white-space: nowrap; }
+  .grid-j { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 8px; }
+  .grid-j .jug { flex-wrap: nowrap; align-items: center; padding: 10px 12px; }
+  .jug .pill { font-size: .72rem; padding: 3px 8px; }
+  .cp-premio small { font-size: .65em; color: var(--dim); font-weight: 600; }
+  @media (max-width: 760px) { #bTV { display: none !important; } }
+
   /* entrada */
   .acceso { max-width: 420px; margin: 24px auto; }
   .t-lista { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
@@ -127,6 +147,7 @@
       </div>
       <span class="spacer"></span>
       <span class="sync" id="sync"></span>
+      <a class="btn sm oculto" id="bTV" target="_blank" rel="noopener" title="Abrir la pantalla para la tele">📺 TV</a>
       <button class="btn sm oculto" id="bDeshacer" onclick="deshacer()" title="Deshacer el último cambio">↶ Deshacer</button>
       <button class="btn sm" onclick="TC.cambiarTema()" aria-label="Cambiar tema">◐</button>
     </div>
@@ -285,6 +306,7 @@ async function pantallaAcceso() {
     try {
       const d = (await S.cargar(t.codigo)).datos || {};
       const n = (d.jugadores || []).filter(j => !j.baja).length;
+      if (d.fase && d.fase !== "inscripcion" && n) { const ns = d.jugadores.filter(j => !j.baja).map(j => j.nombre); apuntarHabituales(t.codigo, ns, d.fecha); guardarUltimos(t.codigo, ns, d.fecha); }
       const ico = $(`[data-ico="${CSS.escape(t.codigo)}"]`), inf = $(`[data-info="${CSS.escape(t.codigo)}"]`);
       if (ico) ico.textContent = ICONO[d.modo] || "🏆";
       if (inf) inf.textContent = [(E.MODOS[d.modo] || {}).nombre, n ? n + " jugadores" : "", t.fecha].filter(Boolean).join(" · ");
@@ -329,6 +351,7 @@ async function crear(ev) {
 }
 
 let intervalos = false;
+function urlTV() { return new URL("tv.html?t=" + encodeURIComponent(CODIGO), location.href).href; }
 async function abrir(codigo) {
   const loc = copiaLocal(codigo);
   let r = null;
@@ -340,6 +363,7 @@ async function abrir(codigo) {
   else if (loc && loc.pendiente && loc.version >= r.version) { ST = loc.datos; VERSION = r.version; }   // cambios hechos sin cobertura
   else { ST = r.datos; VERSION = r.version; }
   try { ROL = (await S.login(PASS)).rol || "admin"; } catch (e) { if (e.status) throw e; }
+  $("#bTV").href = urlTV(); $("#bTV").classList.remove("oculto");
   guardarSesion();
   copiaGuardar(loc && loc.pendiente);
   if (loc && loc.pendiente && r) guardar();
@@ -430,22 +454,81 @@ document.addEventListener("click", e => {
   if (p && (p.classList.contains("click"))) modalResultado(p.dataset.partido);
 });
 
+/* ---------- habituales: nombres de otros torneos guardados en este móvil ---------- */
+const LSH = "ciegos-habituales", LSU = "ciegos-ultimos";
+function habituales() { try { return JSON.parse(localStorage.getItem(LSH)) || {}; } catch (_) { return {}; } }
+// Apunta los jugadores de un torneo (una vez por torneo: no infla la cuenta al repetir)
+function apuntarHabituales(codigo, nombres, fecha) {
+  const h = habituales(), t = fecha ? Date.parse(fecha) || Date.now() : Date.now();
+  nombres.forEach(n => {
+    n = String(n || "").trim(); if (!n) return;
+    const k = n.toLowerCase(), e = h[k] || { nombre: n, torneos: [], ult: 0 };
+    if (!e.torneos.includes(codigo)) e.torneos.push(codigo);
+    e.torneos = e.torneos.slice(-50); e.ult = Math.max(e.ult, t); e.nombre = n;
+    h[k] = e;
+  });
+  try { localStorage.setItem(LSH, JSON.stringify(h)); } catch (_) {}
+}
+function listaHabituales() { return Object.values(habituales()).sort((a, b) => b.torneos.length - a.torneos.length || b.ult - a.ult).map(e => e.nombre); }
+function ultimos() { try { return JSON.parse(localStorage.getItem(LSU)) || null; } catch (_) { return null; } }
+function guardarUltimos(codigo, nombres, fecha) {
+  const u = ultimos();
+  if (u && u.codigo !== codigo && (u.fecha || "") > (fecha || "")) return;          // sólo el más reciente
+  try { localStorage.setItem(LSU, JSON.stringify({ codigo, nombres, fecha: fecha || "" })); } catch (_) {}
+}
+function htmlHabituales() {
+  const ya = new Set(E.activos(ST).map(j => j.nombre.toLowerCase()));
+  const hs = listaHabituales().filter(n => !ya.has(n.toLowerCase())).slice(0, 40);
+  const u = ultimos(), deUlt = u && u.codigo !== CODIGO ? u.nombres.filter(n => !ya.has(n.toLowerCase())) : [];
+  if (!hs.length && !deUlt.length) return "";
+  return `<div class="card stack" style="margin-top:14px"><div class="row"><h2 style="margin:0">⚡ Habituales</h2><span class="spacer"></span>
+      ${deUlt.length ? `<button class="btn sm" onclick="cargarUltimos()">↺ Los ${deUlt.length} del último torneo</button>` : ""}</div>
+    <div class="small dim">Toca un nombre para apuntarlo.</div>
+    <div class="chips">${hs.map(n => `<button type="button" class="chip" data-hab="${esc(n)}">＋ ${esc(n)}</button>`).join("")}</div></div>`;
+}
+function cargarUltimos() {
+  const u = ultimos(); if (!u) return;
+  const ya = new Set(E.activos(ST).map(j => j.nombre.toLowerCase()));
+  const nuevos = u.nombres.filter(n => !ya.has(n.toLowerCase()));
+  if (nuevos.length) cambio(() => nuevos.forEach(n => E.añadirJugador(ST, n)), `${nuevos.length} apuntados del último torneo`);
+}
+document.addEventListener("click", e => {
+  const h = e.target.closest("[data-hab]");
+  if (h && ST && ST.fase === "inscripcion") cambio(() => E.añadirJugador(ST, h.dataset.hab));
+});
+
+/* ---------- bote ---------- */
+function htmlBote() {
+  const b = E.bote(ST);
+  return `<div class="card stack bote">
+    <div class="row"><h2 style="margin:0">💶 Bote</h2><span class="spacer"></span>
+      <label class="small dim" for="cuota">Cuota</label><input type="number" id="cuota" min="0" step="0.5" inputmode="decimal" value="${b.cuota || ""}" placeholder="0" style="width:84px" onchange="ponerCuota(this.value)"><span class="small dim">€</span></div>
+    ${b.cuota ? `<div class="bote-n"><b>${CV.euros(b.total)}</b> <span class="dim">de ${CV.euros(b.previsto)}</span>${b.faltan ? ` · <span style="color:var(--warn)">faltan ${b.faltan} por pagar</span>` : ` · <span style="color:var(--ok)">todos han pagado ✓</span>`}</div>
+      <div class="small">${b.premios.filter(p => p.pct).map(p => `${["🥇", "🥈", "🥉"][p.pos - 1]} ${CV.euros(p.euros)} <span class="dim">(${p.pct}%)</span>`).join(" · ")}</div>
+      <div class="row">${b.faltan ? `<button class="btn sm" onclick="todosPagan()">✓ Todos han pagado</button>` : ""}<span class="small dim">Toca 💶 en cada jugador para marcar quién ha pagado. El reparto se cambia en Ajustes.</span></div>`
+      : `<div class="small dim">Pon la cuota por jugador para llevar el bote y los premios.</div>`}
+  </div>`;
+}
+function ponerCuota(v) { cambio(() => { ST.config.cuota = Math.max(0, Number(String(v).replace(",", ".")) || 0); }); }
+function pagar(id) { cambio(() => { const j = E.jugador(ST, id); j.pagado = !j.pagado; }); }
+function todosPagan() { cambio(() => E.activos(ST).forEach(j => (j.pagado = true)), "Todos han pagado"); }
+const btnPago = j => ST.config.cuota ? `<button class="pago ${j.pagado ? "si" : ""}" onclick="pagar('${j.id}')" aria-label="${j.pagado ? "Ha pagado" : "No ha pagado"}" title="${j.pagado ? "Ha pagado" : "Sin pagar"}">💶</button>` : "";
+
 /* ---------- jugadores ---------- */
 function vJugadores() {
   const fijas = E.parejasFijas(ST), insc = ST.fase === "inscripcion";
-  if (!insc) {
-    return `<div class="card small" style="margin-bottom:14px">${CV.reglas(ST)}</div>` +
-      (ST.parejas.length ? `<h2>Parejas</h2>${CV.htmlParejas(ST)}` : `<h2>Jugadores</h2><div class="grid-s">${E.activos(ST).map(j => `<div class="card"><b>${esc(j.nombre)}</b></div>`).join("")}</div>`);
-  }
+  if (!insc) return vJugadoresEnJuego();
   const js = E.activos(ST);
-  const necesita = E.individual(ST) ? "4 jugadores o más" : "2 parejas o más";
+  const necesita = E.individual(ST) ? (ST.modo === "vidas" ? "8 jugadores o más" : "4 jugadores o más") : "2 parejas o más";
   const par = !fijas && !E.individual(ST) && js.length % 2;
+  const dl = `<datalist id="dlHab">${listaHabituales().slice(0, 200).map(n => `<option value="${esc(n)}">`).join("")}</datalist>`;
   let h = `<div class="card small" style="margin-bottom:14px"><b>${esc(E.MODOS[ST.modo].nombre)}:</b> ${CV.reglas(ST)}</div>
   <div class="grid" style="align-items:start">
     <div class="card stack">
       <h2>${fijas ? "Apuntar pareja" : "Apuntar jugador"}</h2>
-      ${fijas ? `<form class="row" onsubmit="event.preventDefault();añadirPareja()"><input type="text" id="nJ1" placeholder="Jugador 1" style="flex:1" autocomplete="off"><input type="text" id="nJ2" placeholder="Jugador 2" style="flex:1" autocomplete="off"><button class="btn pri">Añadir</button></form>`
-        : `<form class="row" onsubmit="event.preventDefault();añadir()"><input type="text" id="nJug" placeholder="Nombre" style="flex:1" autocomplete="off" autofocus><button class="btn pri">Añadir</button></form>`}
+      ${fijas ? `<form class="row" onsubmit="event.preventDefault();añadirPareja()"><input type="text" id="nJ1" placeholder="Jugador 1" style="flex:1" autocomplete="off" list="dlHab" enterkeyhint="next" autocapitalize="words"><input type="text" id="nJ2" placeholder="Jugador 2" style="flex:1" autocomplete="off" list="dlHab" enterkeyhint="done" autocapitalize="words"><button class="btn pri">Añadir</button></form>`
+        : `<form class="row" onsubmit="event.preventDefault();añadir()"><input type="text" id="nJug" placeholder="Nombre" style="flex:1" autocomplete="off" list="dlHab" enterkeyhint="done" autocapitalize="words"><button class="btn pri">Añadir</button></form>`}
+      ${dl}
       <details><summary class="small">Pegar una lista</summary>
         <textarea id="lista" rows="6" placeholder="${fijas ? "Una pareja por línea: Ana / Luis" : "Un nombre por línea"}" style="width:100%;margin-top:6px"></textarea>
         <button class="btn sm" type="button" onclick="pegarLista()" style="margin-top:6px">Añadir la lista</button></details>
@@ -458,16 +541,66 @@ function vJugadores() {
       <button class="btn pri big" onclick="empezar()" ${par ? "disabled" : ""}>${E.individual(ST) ? "▶ Empezar la ronda 1" : fijas ? "▶ Empezar" : "🎲 Sortear parejas y empezar"}</button>
     </div>
   </div>
+  ${htmlHabituales()}
+  <div style="margin-top:14px">${htmlBote()}</div>
   <h2 style="margin-top:18px">${fijas ? "Parejas apuntadas" : "Apuntados"}</h2>`;
-  if (fijas) h += ST.parejas.length ? `<div class="grid-s">${ST.parejas.map(p => `<div class="card row"><span><b>${esc(E.nombreJugador(ST, p.j1))}</b> y <b>${esc(E.nombreJugador(ST, p.j2))}</b></span><span class="spacer"></span><button class="btn sm" onclick="quitarPareja('${p.id}')" aria-label="Quitar">✕</button></div>`).join("")}</div>` : `<div class="vacio">Aún no hay nadie.</div>`;
-  else h += js.length ? `<div class="grid-s">${js.map((j, i) => `<div class="card row"><span class="dim small">${i + 1}</span><b>${esc(j.nombre)}</b><span class="spacer"></span><button class="btn sm" onclick="quitar('${j.id}')" aria-label="Quitar">✕</button></div>`).join("")}</div>` : `<div class="vacio">Aún no hay nadie.</div>`;
+  if (fijas) h += ST.parejas.length ? `<div class="grid-s">${ST.parejas.map(p => { const a = E.jugador(ST, p.j1), b = E.jugador(ST, p.j2); return `<div class="card row"><span><b>${esc(a.nombre)}</b> ${btnPago(a)} y <b>${esc(b.nombre)}</b> ${btnPago(b)}</span><span class="spacer"></span><button class="btn sm" onclick="quitarPareja('${p.id}')" aria-label="Quitar">✕</button></div>`; }).join("")}</div>` : `<div class="vacio">Aún no hay nadie.</div>`;
+  else h += js.length ? `<div class="grid-s">${js.map((j, i) => `<div class="card row"><span class="dim small">${i + 1}</span><b>${esc(j.nombre)}</b><span class="spacer"></span>${btnPago(j)}<button class="btn sm" onclick="quitar('${j.id}')" aria-label="Quitar">✕</button></div>`).join("")}</div>` : `<div class="vacio">Aún no hay nadie.</div>`;
   return h;
 }
-function añadir() {
-  const v = $("#nJug").value.trim();
+
+// Con el torneo empezado: quién llega tarde, quién se va y quién ha pagado
+function vJugadoresEnJuego() {
+  const js = E.activos(ST), v = ST.modo === "vidas" ? E.vidasDe(ST) : null;
+  const puedeEntrar = ST.fase === "juego" && ST.modo !== "ciegos";
+  const puedeIrse = ST.fase === "juego" || (ST.fase === "final" && ST.modo !== "vidas");
+  let h = `<div class="card small" style="margin-bottom:14px">${CV.reglas(ST)}</div>`;
+  if (puedeEntrar) h += `<div class="card stack" style="margin-bottom:14px"><h2>➕ Llega alguien tarde</h2>
+    <datalist id="dlHab">${listaHabituales().slice(0, 200).map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+    <form class="row" onsubmit="event.preventDefault();llegaTarde()">
+      <input type="text" id="tJ1" placeholder="${ST.modo === "suizo" ? "Jugador 1" : "Nombre"}" style="flex:1" autocomplete="off" list="dlHab" autocapitalize="words">
+      ${ST.modo === "suizo" ? `<input type="text" id="tJ2" placeholder="Jugador 2" style="flex:1" autocomplete="off" list="dlHab" autocapitalize="words">` : ""}
+      <button class="btn pri">Entrar</button></form>
+    <div class="small dim">${ST.modo === "vidas" ? "Entra con las vidas del que menos tiene en pie, y se le sortea en las rondas que vienen." : ST.modo === "suizo" ? "En Suizo se entra por parejas; juega desde la ronda siguiente con 0 puntos." : "Juega desde la ronda siguiente."}</div></div>`;
+  else if (ST.modo === "ciegos" && ST.fase === "juego") h += `<div class="small dim" style="margin-bottom:12px">En Ciegos el cuadro ya está sorteado: no puede entrar nadie a mitad. Si alguien se va, su pareja pierde por W.O.</div>`;
+  h += htmlBote();
+  const fila = j => {
+    const enMesa = E.jugandoEnMesa(ST, j.id);
+    const estado = j.retirado ? `<span class="pill">🚪 Se fue</span>` : enMesa ? `<span class="pill ok">● Mesa ${enMesa.mesa}</span>` : v && !(v[j.id] > 0) ? `<span class="pill">Eliminado</span>` : "";
+    const corazones = v && !j.retirado && v[j.id] > 0 ? `<span class="vidas-mini">${"♥".repeat(v[j.id])}</span>` : "";
+    return `<div class="card row jug ${j.retirado ? "fuera" : ""}"><b>${esc(j.nombre)}</b>${j.tarde ? `<span class="small dim">tarde</span>` : ""}${corazones}${estado}<span class="spacer"></span>${btnPago(j)}
+      ${puedeIrse && !j.retirado && !enMesa && !(v && !(v[j.id] > 0)) ? `<button class="btn sm" onclick="seVa('${j.id}')" title="Se va del torneo">🚪</button>` : ""}</div>`;
+  };
+  if (ST.parejas.length && ST.modo !== "vidas") h += `<h2 style="margin-top:18px">Parejas</h2><div class="grid-j">${ST.parejas.filter(p => !p.deFinal).map((p, i) => `<div class="card stack" style="gap:6px"><span class="dim small">Pareja ${i + 1}${p.retirada ? " · 🚪 retirada" : ""}</span>${[p.j1, p.j2].map(id => fila(E.jugador(ST, id)).replace('class="card row jug', 'class="row jug')).join("")}</div>`).join("")}</div>`;
+  else h += `<h2 style="margin-top:18px">Jugadores</h2><div class="grid-j">${js.map(fila).join("")}</div>`;
+  return h;
+}
+function llegaTarde() {
+  const a = $("#tJ1").value.trim(), b = $("#tJ2") ? $("#tJ2").value.trim() : "";
+  if (!a) return TC.toast("Falta el nombre", "bad");
+  let nuevo = null;
+  if (cambio(() => { nuevo = E.altaTarde(ST, a, b); }, `Llega tarde: ${a}${b ? " y " + b : ""}`)) {
+    apuntarHabituales(CODIGO, [a, b].filter(Boolean), ST.fecha);
+    TC.toast(ST.modo === "vidas" ? `➕ ${esc(a)} entra con ${E.vidasDe(ST)[nuevo.id]} vida(s)` : `➕ ${esc(a)}${b ? " y " + esc(b) : ""} entra${b ? "n" : ""} en la ronda siguiente`, "ok", 5000);
+  }
+}
+function seVa(id) {
+  const j = E.jugador(ST, id);
+  const txt = ST.modo === "vidas" ? `${j.nombre} se va: se queda sin vidas y sus partidos sin jugar se rehacen sin él.`
+    : ST.modo === "monster" ? `${j.nombre} se va: no jugará más rondas.`
+    : `${j.nombre} se va: su pareja se retira y, si tenía un partido pendiente, lo gana el rival (W.O.).`;
+  if (!confirm(txt + "\n\n¿Seguir?")) return;
+  let r = null;
+  if (cambio(() => { r = E.retirar(ST, id); }, `Se va: ${j.nombre}`)) {
+    TC.toast(`🚪 ${esc(j.nombre)} se ha ido${r && r.wo ? " · W.O. para el rival" : ""}`, "ok", 5000);
+    if (r && r.wo) trasResultado(false);
+  }
+}
+function añadir(nombre) {
+  const v = nombre || $("#nJug").value.trim();
   if (!v) return;
   if (E.activos(ST).some(j => j.nombre.toLowerCase() === v.toLowerCase()) && !confirm(`Ya hay un «${v}». ¿Añadirlo igualmente?`)) return;
-  if (cambio(() => E.añadirJugador(ST, v))) { $("#nJug").value = ""; $("#nJug").focus(); }
+  if (cambio(() => E.añadirJugador(ST, v)) && !nombre) { $("#nJug").value = ""; $("#nJug").focus(); }
 }
 function añadirPareja() {
   const a = $("#nJ1").value.trim(), b = $("#nJ2").value.trim();
@@ -492,6 +625,8 @@ function empezar() {
   const sortea = !E.parejasFijas(ST) && !E.individual(ST);
   if (!confirm(sortea ? "Se sortean las parejas y empieza el torneo. ¿Seguir?" : "¿Empezar el torneo?")) return;
   if (!cambio(() => E.empezar(ST), "Torneo empezado")) return;
+  const nombres = E.activos(ST).map(j => j.nombre);
+  apuntarHabituales(CODIGO, nombres, ST.fecha); guardarUltimos(CODIGO, nombres, ST.fecha);
   if (autoActivo()) cambio(() => E.asignarMesas(ST));
   tab = "juego"; pintar();
   if (sortea || ST.fase === "final") sorteoParejas();
@@ -660,14 +795,15 @@ function celebrar() {
   const pod = E.podio(ST);
   if (!pod.length) return;
   const nombres = x => x.ids.map(id => esc(E.nombreJugador(ST, id))).join(" <i>y</i> ");
+  const pr = E.premiosPodio(ST), premio = x => { const e = pr[x.pos + "|" + String(x.lado)]; return e ? ` <span class="cp-premio">💶 ${esc(CV.euros(e))}${x.ids.length > 1 ? ` <small>(${esc(CV.euros(e / x.ids.length))} c/u)</small>` : ""}</span>` : ""; };
   const fondo = document.createElement("div");
   fondo.className = "campeones";
   fondo.innerHTML = `<div class="cp-caja">
     <div class="cp-copa">🏆</div>
     <div class="cp-t">¡Campeones!</div>
-    <div class="cp-n">${nombres(pod[0])}</div>
+    <div class="cp-n">${nombres(pod[0])}</div>${premio(pod[0])}
     <div class="cp-sub">${esc(ST.nombre)}</div>
-    <div class="cp-resto">${pod.slice(1).map(x => `<div><span>${x.pos === 2 ? "🥈" : "🥉"}</span> ${nombres(x)}</div>`).join("")}</div>
+    <div class="cp-resto">${pod.slice(1).map(x => `<div><span>${x.pos === 2 ? "🥈" : "🥉"}</span> ${nombres(x)}${premio(x)}</div>`).join("")}</div>
     <div class="row" style="justify-content:center;margin-top:18px"><button class="btn pri big" data-img>📸 Imagen para redes</button><button class="btn big" data-cerrar>Cerrar</button></div>
   </div>`;
   document.body.appendChild(fondo);
@@ -751,7 +887,13 @@ function vAjustes() {
   </div>
   <div class="card stack">
     <h2>Compartir</h2>
+    <a class="btn" href="${esc(urlTV())}" target="_blank" rel="noopener">📺 Pantalla TV (ábrela en el PC conectado a la tele)</a>
     <button type="button" class="btn" onclick="CV.imagenRedes(ST)" ${ST.fase === "terminado" ? "" : "disabled"}>📸 Imagen para redes</button>
+  </div>
+  <div class="card stack">
+    <h2>💶 Reparto del bote</h2>
+    <div class="row">${[0, 1, 2].map(i => `<label class="small" style="flex:1">${["🥇 1º", "🥈 2º", "🥉 3º"][i]}<input type="number" id="cRep${i}" min="0" max="100" inputmode="numeric" value="${(c.reparto || [60, 30, 10])[i] || 0}"> %</label>`).join("")}</div>
+    <div class="small dim">La cuota por jugador y quién ha pagado se apuntan en la pestaña de jugadores. Si dos comparten el 3º, se reparte entre ellos.</div>
   </div>
   <div class="card stack">
     <h2>Guardar</h2>
@@ -779,6 +921,11 @@ function guardarAjustes(ev) {
       c.parejas = nuevo;
     }
     if ($("#cTercer") && insc) c.tercerPuesto = $("#cTercer").checked;
+    if ($("#cRep0")) {
+      const rep = [0, 1, 2].map(i => Math.max(0, Math.round(Number($("#cRep" + i).value) || 0)));
+      if (rep.reduce((a, b) => a + b, 0) > 100) throw new Error("El reparto suma más del 100 %");
+      c.reparto = rep;
+    }
   }, "Ajustes guardados") && TC.toast("Ajustes guardados", "ok");
 }
 async function borrar() {

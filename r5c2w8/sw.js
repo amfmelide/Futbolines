@@ -5,9 +5,9 @@
    · Tipografías de Google → copia guardada y se actualiza en segundo plano.
    Nunca toca los POST (leer y guardar torneos): de eso se encarga la propia página, que guarda una copia
    del torneo en el móvil y la sube sola cuando vuelve la conexión. */
-const CACHE = "ciegos-app-v1";
+const CACHE = "ciegos-app-v2";
 const BASE = [
-  "./", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",
+  "./", "tv.html", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",
   "../zt4k9m/app.css", "../fx.css", "../fx.js",
   "../zt4k9m/config.js", "../zt4k9m/engine.js", "../zt4k9m/store.js", "../zt4k9m/comun.js",
   "../zt4k9m/imagen.js", "../zt4k9m/ciegos.js", "../zt4k9m/ciegos-vista.js"
@@ -44,6 +44,11 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") { e.respondWith(copiaYActualiza(req)); return; }
   if (url.origin !== self.location.origin) return;
-  if (req.mode === "navigate") { e.respondWith(redPrimero(req, new URL("./", self.registration.scope).href)); return; }
+  if (req.mode === "navigate") {
+    // cada página con su copia (panel en «./», la TV en «tv.html»), sin mirar los parámetros (?t=…)
+    const ruta = url.pathname.endsWith("/") || url.pathname.endsWith("/index.html") ? new URL("./", self.registration.scope).href : url.origin + url.pathname;
+    e.respondWith(redPrimero(req, ruta));
+    return;
+  }
   e.respondWith(redPrimero(req));
 });
