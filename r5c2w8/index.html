@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../zt4k9m/app.css">
+<link rel="stylesheet" href="../zt4k9m/app.css?v=20261023b">
 <style>
   /* Fondo de la web de la AMF: foto del futbolín oscurecida */
   .fondo-foto { position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -132,8 +132,8 @@
     input, select, textarea { font-size: 16px !important; }       /* iPhone no hace zoom al escribir */
   }
 </style>
-<link rel="stylesheet" href="../fx.css">
-<script src="../fx.js" defer></script>
+<link rel="stylesheet" href="../fx.css?v=20261023b">
+<script src="../fx.js?v=20261023b" defer></script>
 </head>
 <body>
 <div class="fondo-foto" aria-hidden="true"></div>
@@ -146,7 +146,7 @@
         <div class="sub" id="tSub">Torneos a sorteo</div>
       </div>
       <span class="spacer"></span>
-      <span class="sync" id="sync"></span>
+      <span class="sync" id="sync" onclick="if(CODIGO&&(copiaLocal(CODIGO)||{}).pendiente){errorGuardar=null;guardar();}"></span>
       <a class="btn sm oculto" id="bTV" target="_blank" rel="noopener" title="Abrir la pantalla para la tele">📺 TV</a>
       <button class="btn sm oculto" id="bDeshacer" onclick="deshacer()" title="Deshacer el último cambio">↶ Deshacer</button>
       <button class="btn sm" onclick="TC.cambiarTema()" aria-label="Cambiar tema">◐</button>
@@ -157,13 +157,13 @@
 <main class="wrap" id="main"><div class="vacio">Cargando…</div></main>
 <div class="barra-movil oculto" id="barra"></div>
 
-<script src="../zt4k9m/config.js"></script>
-<script src="../zt4k9m/engine.js"></script>
-<script src="../zt4k9m/store.js"></script>
-<script src="../zt4k9m/comun.js"></script>
-<script src="../zt4k9m/imagen.js"></script>
-<script src="../zt4k9m/ciegos.js"></script>
-<script src="../zt4k9m/ciegos-vista.js"></script>
+<script src="../zt4k9m/config.js?v=20261023b"></script>
+<script src="../zt4k9m/engine.js?v=20261023b"></script>
+<script src="../zt4k9m/store.js?v=20261023b"></script>
+<script src="../zt4k9m/comun.js?v=20261023b"></script>
+<script src="../zt4k9m/imagen.js?v=20261023b"></script>
+<script src="../zt4k9m/ciegos.js?v=20261023b"></script>
+<script src="../zt4k9m/ciegos-vista.js?v=20261023b"></script>
 <script>
 "use strict";
 const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
@@ -202,7 +202,7 @@ function sinRed(si) {
   if (!si && offline) TC.toast("✅ Conexión recuperada: todo subido", "ok");
   offline = si;
   document.body.classList.toggle("sin-red", si);
-  if (si) { estadoSync("📴 Sin red · guardado en el móvil", true); clearTimeout(reintento); reintento = setTimeout(() => { if (offline) guardar(); }, 8000); }
+  if (si) { estadoSync("📴 Sin red · guardado en el móvil", true); clearTimeout(reintento); reintento = setTimeout(() => { if (offline && (copiaLocal(CODIGO) || {}).pendiente) guardar(); }, 8000); }
 }
 window.addEventListener("online", () => { if (CODIGO && (copiaLocal(CODIGO) || {}).pendiente) guardar(); });
 window.addEventListener("beforeunload", e => { if (CODIGO && (copiaLocal(CODIGO) || {}).pendiente) { e.preventDefault(); e.returnValue = ""; } });
@@ -359,9 +359,11 @@ async function abrir(codigo) {
   catch (e) { if (e.status || !loc) throw e; }                       // sin red: se abre la copia del móvil
   if (r && (!r.datos || r.datos.app !== "ciegos")) throw new Error("Ese no es un torneo Ciegos");
   CODIGO = codigo;
+  if (r && loc && loc.pendiente && JSON.stringify(loc.datos) === JSON.stringify(r.datos)) loc.pendiente = false;   // ya había llegado
   if (!r) { ST = loc.datos; VERSION = loc.version; sinRed(true); }
   else if (loc && loc.pendiente && loc.version >= r.version) { ST = loc.datos; VERSION = r.version; }   // cambios hechos sin cobertura
-  else { ST = r.datos; VERSION = r.version; }
+  else if (loc && loc.pendiente && confirm(`Este móvil tiene cambios de «${loc.datos.nombre}» sin subir, pero en el servidor hay otros más nuevos (de otro móvil).\n\nAceptar = quedarse con los de ESTE móvil\nCancelar = quedarse con los del servidor`)) { ST = loc.datos; VERSION = r.version; }
+  else { ST = r.datos; VERSION = r.version; if (loc) loc.pendiente = false; }
   try { ROL = (await S.login(PASS)).rol || "admin"; } catch (e) { if (e.status) throw e; }
   $("#bTV").href = urlTV(); $("#bTV").classList.remove("oculto");
   guardarSesion();
@@ -378,10 +380,13 @@ async function abrir(codigo) {
 function salir() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ pass: PASS, modo: S.modo })); } catch (_) {} location.reload(); }
 
 /* ================= GUARDADO ================= */
-function cambio(fn, txt) {
+function cambio(fn, txt, junto) {
   const copia = JSON.stringify(ST);
   try { fn(); } catch (e) { TC.toast(esc(e.message), "bad", 5000); return false; }
-  HIST.push(copia); if (HIST.length > 40) HIST.shift();
+  if (!txt && JSON.stringify(ST) === copia) { pintar(); return true; }      // no ha cambiado nada
+  nCambios++;
+  // lo que la app hace sola justo después (sortear, llamar a mesa) va «junto» con la acción: un «deshacer» lo quita todo
+  if (!(junto && HIST.length)) { HIST.push(copia); if (HIST.length > 40) HIST.shift(); }
   if (txt) { ST.log = (ST.log || []).slice(-199); ST.log.push({ ts: Date.now(), txt }); }
   copiaGuardar(true);
   pintar(); guardar();
@@ -390,6 +395,7 @@ function cambio(fn, txt) {
 function deshacer() {
   if (!HIST.length) return;
   ST = JSON.parse(HIST.pop());
+  nCambios++;
   copiaGuardar(true);
   pintar(); guardar(); TC.toast("Cambio deshecho");
 }
@@ -397,24 +403,50 @@ async function guardar() {
   if (guardando) { pendiente = true; return guardando; }
   estadoSync("Guardando…");
   guardando = (async () => {
-    for (let i = 0; i < 2; i++) {
-      try { VERSION = (await S.guardar(CODIGO, ST, VERSION, PASS)).version; copiaGuardar(false); sinRed(false); estadoSync("Guardado ✓"); return; }
+    for (let i = 0; i < 3; i++) {
+      const envio = JSON.stringify(ST); enviados.push(envio); if (enviados.length > 6) enviados.shift();
+      try { VERSION = (await S.guardar(CODIGO, ST, VERSION, PASS)).version; copiaGuardar(false); sinRed(false); errorGuardar = null; estadoSync("Guardado ✓"); return; }
       catch (e) {
         if (!e.status && !e.conflicto) { sinRed(true); return; }           // sin cobertura: queda en el móvil y se reintenta
-        if (!e.conflicto) { estadoSync("Error al guardar", true); TC.toast("No se pudo guardar: " + esc(e.message), "bad", 6000); return; }
-        VERSION = (await S.cargar(CODIGO)).version;      // sólo escribe el organizador: se queda lo de este dispositivo
+        if (!e.conflicto) {                                               // error de verdad (contraseña, servidor…): se avisa una vez
+          const msg = e.status === 401 ? "La contraseña no vale: sal y vuelve a entrar" : "No se pudo guardar: " + e.message;
+          if (errorGuardar !== msg) TC.toast(esc(msg) + ". Lo tienes guardado en el móvil.", "bad", 8000);
+          errorGuardar = msg; erroresSeguidos++;
+          estadoSync("⚠ Sin guardar · toca para reintentar", true);
+          return;
+        }
+        // alguien guardó este torneo desde otro móvil mientras tanto
+        let srv;
+        try { srv = await S.cargar(CODIGO); } catch (_) { sinRed(true); return; }
+        const enServidor = JSON.stringify(srv.datos);
+        if (enServidor === JSON.stringify(ST)) { VERSION = srv.version; copiaGuardar(false); sinRed(false); errorGuardar = null; estadoSync("Guardado ✓"); return; }
+        if (enviados.includes(enServidor)) { VERSION = srv.version; continue; }   // era un guardado nuestro que sí llegó: se sigue sin preguntar
+        const quedarme = confirm("Mientras tanto se han guardado cambios en este torneo desde otro móvil.\n\nAceptar = guardar los de ESTE móvil (se pierden los del otro)\nCancelar = quedarse con los del otro móvil");
+        VERSION = srv.version;
+        if (!quedarme) { ST = srv.datos; HIST.length = 0; copiaGuardar(false); pintar(); estadoSync("Actualizado"); return; }
       }
     }
   })();
   try { await guardando; } finally { guardando = null; if (pendiente) { pendiente = false; guardar(); } }
 }
+let errorGuardar = null, erroresSeguidos = 0, nCambios = 0, ticks = 0;
+const enviados = [];                       // lo último que se mandó al servidor (por si llegó aunque no hubo respuesta)
 function estadoSync(txt, err) { const s = $("#sync"); s.textContent = txt; s.classList.toggle("err", !!err); $("#bDeshacer").classList.toggle("oculto", !HIST.length); }
 async function sondear() {
   if (guardando || document.hidden || $(".modal-bg")) return;
-  if ((copiaLocal(CODIGO) || {}).pendiente) { guardar(); return; }  // primero subir lo que se hizo sin cobertura
+  ticks++;
+  if ((copiaLocal(CODIGO) || {}).pendiente) {                     // primero subir lo que se hizo sin cobertura
+    if (!errorGuardar || ticks % 6 === 0) guardar();               // tras un error de verdad, sólo cada minuto
+    return;
+  }
+  const marca = nCambios, intocado = () => !guardando && nCambios === marca && !(copiaLocal(CODIGO) || {}).pendiente;
   try {
     const v = await S.version(CODIGO);
-    if (v !== VERSION) { const r = await S.cargar(CODIGO); ST = r.datos; VERSION = r.version; if (tab !== "ajustes") pintar(); }
+    if (v === VERSION || !intocado()) return;
+    const r = await S.cargar(CODIGO);
+    if (!intocado()) return;                                       // se ha tocado algo mientras: manda lo de este móvil
+    ST = r.datos; VERSION = r.version; copiaGuardar(false);
+    if (tab !== "ajustes") pintar();
   } catch (_) { estadoSync("📴 Sin conexión", true); }
 }
 
@@ -591,9 +623,12 @@ function seVa(id) {
     : `${j.nombre} se va: su pareja se retira y, si tenía un partido pendiente, lo gana el rival (W.O.).`;
   if (!confirm(txt + "\n\n¿Seguir?")) return;
   let r = null;
+  const antes = ST.fase;
   if (cambio(() => { r = E.retirar(ST, id); }, `Se va: ${j.nombre}`)) {
     TC.toast(`🚪 ${esc(j.nombre)} se ha ido${r && r.wo ? " · W.O. para el rival" : ""}`, "ok", 5000);
-    if (r && r.wo) trasResultado(false);
+    if (ST.fase === "terminado") celebrar();
+    else if (antes === "juego" && ST.fase === "final") { if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true); sorteoParejas(); }
+    else if (r && r.wo) trasResultado(false);
   }
 }
 function añadir(nombre) {
@@ -627,7 +662,7 @@ function empezar() {
   if (!cambio(() => E.empezar(ST), "Torneo empezado")) return;
   const nombres = E.activos(ST).map(j => j.nombre);
   apuntarHabituales(CODIGO, nombres, ST.fecha); guardarUltimos(CODIGO, nombres, ST.fecha);
-  if (autoActivo()) cambio(() => E.asignarMesas(ST));
+  if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true);
   tab = "juego"; pintar();
   if (sortea || ST.fase === "final") sorteoParejas();
 }
@@ -733,8 +768,8 @@ function trasResultado(estaba) {
   const antes = ST.fase;
   let nuevos = [];
   // En Vidas siempre: rehacer partidos si alguien cae, sortear la ronda siguiente y, con 8, la fase final
-  if (ST.modo === "vidas" && ST.fase === "juego") cambio(() => { nuevos = E.sortearVidas(ST); });
-  if (autoActivo() && (estaba || nuevos.length || ST.fase !== antes)) cambio(() => E.asignarMesas(ST));
+  if (ST.modo === "vidas" && ST.fase === "juego") cambio(() => { nuevos = E.sortearVidas(ST); }, "", true);
+  if (autoActivo() && (estaba || nuevos.length || ST.fase !== antes)) cambio(() => E.asignarMesas(ST), "", true);
   if (antes === "juego" && ST.fase === "final") sorteoParejas();
   else if (sorteoFinalNuevo()) sorteoFinal();
   else if (nuevos.length) TC.toast(`🎲 Sorteada la ronda ${Math.max(...nuevos.map(p => p.ronda))}`, "ok", 5000);
@@ -743,7 +778,7 @@ function rellenar() { cambio(() => E.asignarMesas(ST)); }
 function siguiente() {
   const antes = ST.fase;
   if (!cambio(() => E.siguienteRonda(ST), "Siguiente ronda")) return;
-  if (autoActivo()) cambio(() => E.asignarMesas(ST));
+  if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true);
   if (antes === "juego" && ST.fase === "final") sorteoParejas();       // Vidas: parejas de la fase final
   if (ST.fase === "terminado") celebrar();
 }
@@ -752,7 +787,7 @@ function modalResultado(id) {
   const p = E.partido(ST, id);
   if (!p || !p.a || !p.b || p.bye) return;
   const editar = p.estado === "fin";
-  if (editar && !E.puedeEditar(ST, id)) return TC.toast("Ese resultado ya no se puede cambiar: hay partidos posteriores jugados", "bad");
+  if (editar && !E.puedeEditar(ST, id)) return TC.toast(esc(E.motivoNoEditar(ST, id)), "bad", 6000);
   const conMarcador = E.usaMarcador(ST);
   const nom = l => E.nombreLado(ST, p[l]);
   const boton = l => `<button type="button" class="gana-btn ${editar && p.ganador === l ? "on" : ""}" data-g="${l}"><span class="g-t">🏆 Gana</span><b>${esc(nom(l))}</b></button>`;

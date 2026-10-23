@@ -376,3 +376,44 @@ test("vidas: equidad — nadie se adelanta en partidos (18 jugadores)", () => {
   }
   assert.ok(suma / n <= 2.2, "media " + (suma / n));
 });
+
+test("revisión: corregir una semifinal con el mismo ganador no vuelve a sortear la final", () => {
+  const st = conJugadores("vidas", 8); C.empezar(st);
+  const [s1, s2] = st.partidos.filter(p => p.fase === "final" && p.ronda === 1);
+  C.registrarGanador(st, s1.id, "a"); C.registrarGanador(st, s2.id, "b");
+  const f = C.partido(st, st.ko.finalId), antes = [f.a, f.b].map(id => C.jugadoresDe(st, id).join("+"));
+  C.registrarResultado(st, s1.id, 2, 1);                         // mismo ganador, otro marcador
+  assert.deepEqual([f.a, f.b].map(id => C.jugadoresDe(st, id).join("+")), antes);
+  C.asignarMesas(st);
+  assert.equal(f.estado, "mesa");
+  assert.equal(C.puedeEditar(st, s1.id), false, "con la final en mesa no se tocan las semifinales");
+});
+
+test("revisión: borrar un resultado saca de la mesa el partido que dependía de él", () => {
+  const st = conJugadores("ciegos", 8); C.empezar(st);
+  const cuartos = st.partidos.filter(p => p.ronda === 1);
+  cuartos.slice(0, 2).forEach(p => C.registrarGanador(st, p.id, "a"));
+  C.asignarMesas(st);
+  const semi = st.partidos.find(p => p.ronda === 2 && p.a && p.b);
+  if (semi.estado !== "mesa") { semi.estado = "mesa"; semi.mesa = 1; }
+  assert.throws(() => C.borrarResultado(st, cuartos[0].id), /mesa 1: devuélvelo a la espera/, "con la semifinal en mesa no se borra el cuarto");
+  semi.estado = "pendiente"; semi.mesa = null;
+  C.borrarResultado(st, cuartos[0].id);                          // sin mesa sí, y la semifinal se queda esperando rival
+  st.partidos.filter(p => p.estado === "mesa").forEach(p => assert.ok(p.a && p.b, "en mesa con un hueco vacío"));
+});
+
+test("revisión: quien se va no sube al podio ni cobra (y en la tabla se ve que se fue)", () => {
+  const st = conJugadores("suizo", 8, { cuota: 5, rondas: 2 });
+  st.jugadores.forEach(j => (j.pagado = true));
+  C.empezar(st);
+  C.pendientes(st).forEach(p => C.registrarGanador(st, p.id, "a"));
+  const lider = C.clasificacion(st)[0].id, par = C.pareja(st, lider);
+  C.siguienteRonda(st);
+  C.retirar(st, par.j1);
+  C.pendientes(st).filter(p => p.estado !== "fin").forEach(p => C.registrarGanador(st, p.id, "a"));
+  C.siguienteRonda(st);
+  assert.equal(st.fase, "terminado");
+  const pod = C.podio(st);
+  assert.ok(!pod.some(x => x.lado === lider), "la pareja que se fue no está en el podio");
+  assert.deepEqual(pod.map(x => x.pos), [1, 2, 3]);
+});

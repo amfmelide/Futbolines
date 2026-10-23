@@ -77,7 +77,8 @@
   function htmlTabla(st) {
     if (st.modo === "ciegos") return "";
     const t = E.clasificacion(st);
-    const nombreFila = f => E.individual(st) ? esc(E.nombreJugador(st, f.id)) : lado(st, f.id);
+    const seFue = f => E.individual(st) ? (E.jugador(st, f.id) || {}).retirado : (E.pareja(st, f.id) || {}).retirada;
+    const nombreFila = f => (E.individual(st) ? esc(E.nombreJugador(st, f.id)) : lado(st, f.id)) + (seFue(f) ? ' <span class="pill">🚪 se fue</span>' : "");
     const enFinal = st.ko ? new Set(st.partidos.filter(p => p.fase === "final").flatMap(p => [p.a, p.b]).filter(Boolean).flatMap(l => E.individual(st) ? E.jugadoresDe(st, l) : [l])) : null;
     return `<div class="card scroll-x"><table class="tabla"><thead><tr><th class="n">#</th><th>${E.individual(st) ? "Jugador" : "Pareja"}</th>
       ${st.modo === "vidas" ? '<th class="n">Vidas</th>' : '<th class="n">Ptos</th>'}<th class="n">PJ</th><th class="n">G</th><th class="n">P</th><th class="n">Dif</th>${st.modo === "suizo" ? '<th class="n" title="Buchholz: suma de los puntos de tus rivales">Bh</th>' : ""}${st.modo === "monster" ? '<th class="n">Desc.</th>' : ""}</tr></thead><tbody>` +

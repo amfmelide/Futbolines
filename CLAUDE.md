@@ -8,6 +8,7 @@
 ## Otras reglas
 - **Notion es la memoria compartida entre sesiones**: siempre, antes de empezar y otra vez antes de publicar (PR/merge), revisar Notion (Centro de proyectos, «Registro de versiones», «Pendientes») y `git log origin/main` para ver qué han hecho otras sesiones y no pisarlo. Al terminar, apuntar los cambios en Notion.
 - Ciegos (torneos pequeños a sorteo) es una herramienta aparte en `r5c2w8/` para poder prestarla: sin enlaces al panel de torneos (`zt4k9m/`), ni a la web pública, ni a la AMF Admin.
+- Ciegos: al cambiar cualquier archivo que usa (`zt4k9m/ciegos*.js`, `store.js`, `comun.js`, `app.css`…) hay que subir la versión `?v=` en `r5c2w8/index.html`, `r5c2w8/tv.html` y `const V` de `r5c2w8/sw.js` (lo vigila `zt4k9m/tests/version.test.js`). Antes de publicar: `node --test zt4k9m/tests/*.test.js` (incluye la prueba de estrés `fuzz.test.js`; `FUZZ_N=2000` para una más larga).
 - El repositorio del ranking (`ranking-evo-amf`) no se toca: lo lleva un compañero.
 - Liga Melide: las jornadas no tienen fecha exacta de juego (se juega fuera de orden), así que no se ofrece "Añadir al calendario" por jornada. El calendario abre en la primera jornada con partidos pendientes.
 - Ideas de repositorios de referencia: ver `.claude/skills/ref-*`.

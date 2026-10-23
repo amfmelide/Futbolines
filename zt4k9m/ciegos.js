@@ -346,6 +346,9 @@
     if (st.ronda > 0 && !rondaTerminada(st)) throw new Error("Aún quedan partidos de esta ronda");
     const tot = rondasTotales(st);
     if (tot && st.ronda >= tot) { st.fase = "terminado"; return []; }
+    // si se ha ido tanta gente que ya no da para un partido, se cierra con la clasificación que hay
+    const quedan = st.modo === "monster" ? activos(st).filter(j => !j.retirado).length : st.parejas.filter(p => !p.retirada).length;
+    if (quedan < (st.modo === "monster" ? 4 : 2)) { st.fase = "terminado"; return []; }
     st.ronda++;
     const ps = st.modo === "monster" ? rondaMonster(st) : rondaSuiza(st);
     ps.forEach((p, i) => { p.n = i + 1; st.partidos.push(p); });
@@ -493,8 +496,11 @@
     (st.descansos || []).forEach(d => d.ids.forEach(id => (desc[id] = (desc[id] || 0) + 1)));
     const pj = partidosAsignados(st);
     // juegan primero los que menos partidos llevan (contando los ya sorteados); a igualdad, los que más han descansado
-    const ids = barajar(vivos(st), rand).sort((x, y) => (pj[x] || 0) - (pj[y] || 0) || (desc[y] || 0) - (desc[x] || 0));
-    const r = ++st.ronda;
+    const r = st.ronda + 1;
+    // nadie juega dos partidos de la misma ronda (por si ya tenía uno en ella)
+    const yaEnR = new Set(st.partidos.filter(p => p.fase === "ronda" && p.ronda === r && !p.bye).flatMap(cuatroDe));
+    const ids = barajar(vivos(st).filter(id => !yaEnR.has(id)), rand).sort((x, y) => (pj[x] || 0) - (pj[y] || 0) || (desc[y] || 0) - (desc[x] || 0));
+    st.ronda = r;
     const { grupos, descansan } = agrupar(st, ids, v, rand);
     if (descansan.length) st.descansos = (st.descansos || []).concat([{ ronda: r, ids: descansan }]);
     const total = st.partidos.filter(p => p.fase === "ronda").length;
@@ -736,9 +742,23 @@
     const ids = vivos(st);
     const { grupos, resto } = formarSeguros(st, ids, v, h, ids, []);
     if (!grupos.length) return false;               // sin salida: se jugará el de menos riesgo (salvado por sorteo)
-    const k = Math.min(...pend.map(p => p.ronda));
+    // Se vuelve a sortear desde la primera ronda con partidos sin jugar. Si de esa ronda alguien ya jugó,
+    // se empieza en la siguiente (los que no llegaron a jugarla descansan), para que nadie juegue dos veces en una ronda.
+    let k = Math.min(...pend.map(p => p.ronda));
+    const jugadas = st.partidos.filter(p => p.fase === "ronda" && p.ronda >= k && p.estado !== "pendiente" && !p.bye);
+    const descansanK = [];
+    if (jugadas.length) {
+      const ultima = Math.max(...jugadas.map(p => p.ronda));
+      const yaJugaron = new Set(jugadas.filter(p => p.ronda === k).flatMap(cuatroDe));
+      ids.forEach(id => { if (!yaJugaron.has(id)) descansanK.push(id); });
+      k = ultima + 1;
+    }
     st.partidos = st.partidos.filter(p => !pend.includes(p));
     st.descansos = (st.descansos || []).filter(d => d.ronda < k);
+    if (descansanK.length) {
+      const k0 = Math.min(...pend.map(p => p.ronda)), d = st.descansos.find(x => x.ronda === k0);
+      if (d) d.ids = [...new Set(d.ids.concat(descansanK))]; else st.descansos.push({ ronda: k0, ids: descansanK });
+    }
     st.ronda = k;
     if (resto.length) st.descansos.push({ ronda: k, ids: resto });
     grupos.forEach(g => st.partidos.push(nuevoPartido({ ronda: k, n: 0, a: g.a, b: g.b, rehecho: true })));
@@ -828,18 +848,19 @@
     if (!p.a || !p.b) throw new Error("Aún no se conocen los dos rivales");
     ra = Number(ra); rb = Number(rb);
     comprobarMarcador(st, ra, rb);
-    if (p.estado === "fin" && !puedeEditar(st, id)) throw new Error("Ya se han jugado partidos que dependen de este resultado");
+    if (p.estado === "fin" && !puedeEditar(st, id)) throw new Error(motivoNoEditar(st, id));
     if (st.modo === "vidas" && p.fase === "ronda" && p.estado === "pendiente") {
       const e = estadosVidas(st)[p.id];
       if (e && e.estado === "espera") throw new Error("Aún hay jugadores de este partido jugando la ronda anterior");
       if (e && e.estado === "riesgo") throw new Error("Este partido podría dejar a menos de 8 en pie: espera a que acaben los de las mesas");
       if (e && e.reparto) { p.a = e.reparto.a; p.b = e.reparto.b; }
     }
+    const mismoGanador = p.estado === "fin" && p.ganador === (ra > rb ? "a" : "b");
     delete p.soloGanador;
     p.ra = ra; p.rb = rb; p.ganador = ra > rb ? "a" : "b"; p.ganadorId = Array.isArray(p.a) ? null : p[p.ganador];
     p.estado = "fin"; p.fin = Date.now(); p.mesa = null;
     if (st.modo === "vidas" && p.fase === "ronda") salvarHastaOcho(st, p);
-    if (p.fase !== "ronda") { limpiarDespues(st, p); resolverKO(st); }
+    if (p.fase !== "ronda" && !mismoGanador) { limpiarDespues(st, p); resolverKO(st); }
     actualizarFase(st);
     return p;
   }
@@ -861,10 +882,26 @@
       if (x.estado === "fin" || !x.sorteo || (x.fa !== p.id && x.fb !== p.id)) return;
       st.parejas = st.parejas.filter(q => !(q.deFinal && (q.id === x.a || q.id === x.b)));   // se vuelve a sortear
       x.a = x.b = null;
+      if (x.estado === "mesa") { x.estado = "pendiente"; x.mesa = null; }
     });
-    st.partidos.forEach(x => { if (x.sorteo) return; if (x.estado !== "fin" && (x.fa === p.id || x.fb === p.id)) { if (x.fa === p.id) x.a = null; if (x.fb === p.id) x.b = null; } });
+    st.partidos.forEach(x => {
+      if (x.sorteo || x.estado === "fin" || (x.fa !== p.id && x.fb !== p.id)) return;
+      if (x.fa === p.id) x.a = null;
+      if (x.fb === p.id) x.b = null;
+      if (x.estado === "mesa") { x.estado = "pendiente"; x.mesa = null; }   // ya no se sabe quién juega: sale de la mesa
+    });
   }
 
+  // Por qué no se puede corregir un resultado (para decírselo claro al organizador)
+  function motivoNoEditar(st, id) {
+    const p = partido(st, id);
+    if (!p || p.bye) return "Este partido no se puede tocar";
+    const ids = cuatroDe(p);
+    const enMesa = st.partidos.find(x => x !== p && x.estado === "mesa" && (x.fa === p.id || x.fb === p.id ||
+      (p.fase === "ronda" && x.fase === "ronda" && x.ronda >= p.ronda && cuatroDe(x).some(i => ids.includes(i)))));
+    if (enMesa) return `El partido siguiente ya está en la mesa ${enMesa.mesa}: devuélvelo a la espera (↩) para corregir este`;
+    return "Ya se han jugado partidos que dependen de este resultado";
+  }
   function puedeEditar(st, id) {
     const p = partido(st, id);
     if (!p || p.bye) return false;
@@ -872,10 +909,10 @@
       // se puede corregir mientras ninguno de los 4 haya empezado un partido de una ronda posterior
       if (st.fase !== "juego") return false;
       const ids = cuatroDe(p);
-      return !st.partidos.some(x => x.fase === "ronda" && x.ronda > p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
+      return !st.partidos.some(x => x !== p && x.fase === "ronda" && x.ronda >= p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
     }
     if (p.fase === "ronda") return p.ronda === st.ronda && st.fase === "juego";
-    return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
+    return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && (x.estado === "fin" || x.estado === "mesa") && !x.bye);
   }
 
   // ¿El marcador cuenta? Sólo en Monster y Suizo (desempata la clasificación). En Ciegos y Vidas basta con quién gana.
@@ -892,7 +929,8 @@
 
   function borrarResultado(st, id) {
     const p = partido(st, id);
-    if (!puedeEditar(st, id) || p.estado !== "fin") throw new Error("Este resultado ya no se puede borrar");
+    if (p.estado !== "fin") throw new Error("Este partido aún no tiene resultado");
+    if (!puedeEditar(st, id)) throw new Error(motivoNoEditar(st, id));
     p.ra = p.rb = null; p.ganador = p.ganadorId = null; p.estado = "pendiente"; delete p.soloGanador;
     if (p.fase !== "ronda") limpiarDespues(st, p);
     actualizarFase(st);
@@ -958,7 +996,8 @@
       else [f.fa, f.fb].forEach(id => { const s = partido(st, id); if (s && !s.bye && perdedor(s)) res.push({ pos: 3, lado: perdedor(s) }); });
       return res.map(r => Object.assign(r, { ids: jugadoresDe(st, r.lado) }));
     }
-    return clasificacion(st).slice(0, 3).map(f => ({ pos: f.pos, lado: st.modo === "monster" ? [f.id] : f.id, ids: st.modo === "monster" ? [f.id] : jugadoresDe(st, f.id) }));
+    const seFue = f => st.modo === "monster" ? (jugador(st, f.id) || {}).retirado : (pareja(st, f.id) || {}).retirada;
+    return clasificacion(st).filter(f => !seFue(f)).slice(0, 3).map((f, i) => Object.assign(f, { pos: i + 1 })).map(f => ({ pos: f.pos, lado: st.modo === "monster" ? [f.id] : f.id, ids: st.modo === "monster" ? [f.id] : jugadoresDe(st, f.id) }));
   }
 
   /* ---------- mesas ---------- */
@@ -1023,7 +1062,7 @@
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
-    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
+    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, motivoNoEditar, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, ganable, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
