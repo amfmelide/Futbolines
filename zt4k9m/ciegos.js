@@ -346,6 +346,9 @@
     if (st.ronda > 0 && !rondaTerminada(st)) throw new Error("Aún quedan partidos de esta ronda");
     const tot = rondasTotales(st);
     if (tot && st.ronda >= tot) { st.fase = "terminado"; return []; }
+    // si se ha ido tanta gente que ya no da para un partido, se cierra con la clasificación que hay
+    const quedan = st.modo === "monster" ? activos(st).filter(j => !j.retirado).length : st.parejas.filter(p => !p.retirada).length;
+    if (quedan < (st.modo === "monster" ? 4 : 2)) { st.fase = "terminado"; return []; }
     st.ronda++;
     const ps = st.modo === "monster" ? rondaMonster(st) : rondaSuiza(st);
     ps.forEach((p, i) => { p.n = i + 1; st.partidos.push(p); });
@@ -493,8 +496,11 @@
     (st.descansos || []).forEach(d => d.ids.forEach(id => (desc[id] = (desc[id] || 0) + 1)));
     const pj = partidosAsignados(st);
     // juegan primero los que menos partidos llevan (contando los ya sorteados); a igualdad, los que más han descansado
-    const ids = barajar(vivos(st), rand).sort((x, y) => (pj[x] || 0) - (pj[y] || 0) || (desc[y] || 0) - (desc[x] || 0));
-    const r = ++st.ronda;
+    const r = st.ronda + 1;
+    // nadie juega dos partidos de la misma ronda (por si ya tenía uno en ella)
+    const yaEnR = new Set(st.partidos.filter(p => p.fase === "ronda" && p.ronda === r && !p.bye).flatMap(cuatroDe));
+    const ids = barajar(vivos(st).filter(id => !yaEnR.has(id)), rand).sort((x, y) => (pj[x] || 0) - (pj[y] || 0) || (desc[y] || 0) - (desc[x] || 0));
+    st.ronda = r;
     const { grupos, descansan } = agrupar(st, ids, v, rand);
     if (descansan.length) st.descansos = (st.descansos || []).concat([{ ronda: r, ids: descansan }]);
     const total = st.partidos.filter(p => p.fase === "ronda").length;
@@ -736,9 +742,23 @@
     const ids = vivos(st);
     const { grupos, resto } = formarSeguros(st, ids, v, h, ids, []);
     if (!grupos.length) return false;               // sin salida: se jugará el de menos riesgo (salvado por sorteo)
-    const k = Math.min(...pend.map(p => p.ronda));
+    // Se vuelve a sortear desde la primera ronda con partidos sin jugar. Si de esa ronda alguien ya jugó,
+    // se empieza en la siguiente (los que no llegaron a jugarla descansan), para que nadie juegue dos veces en una ronda.
+    let k = Math.min(...pend.map(p => p.ronda));
+    const jugadas = st.partidos.filter(p => p.fase === "ronda" && p.ronda >= k && p.estado !== "pendiente" && !p.bye);
+    const descansanK = [];
+    if (jugadas.length) {
+      const ultima = Math.max(...jugadas.map(p => p.ronda));
+      const yaJugaron = new Set(jugadas.filter(p => p.ronda === k).flatMap(cuatroDe));
+      ids.forEach(id => { if (!yaJugaron.has(id)) descansanK.push(id); });
+      k = ultima + 1;
+    }
     st.partidos = st.partidos.filter(p => !pend.includes(p));
     st.descansos = (st.descansos || []).filter(d => d.ronda < k);
+    if (descansanK.length) {
+      const k0 = Math.min(...pend.map(p => p.ronda)), d = st.descansos.find(x => x.ronda === k0);
+      if (d) d.ids = [...new Set(d.ids.concat(descansanK))]; else st.descansos.push({ ronda: k0, ids: descansanK });
+    }
     st.ronda = k;
     if (resto.length) st.descansos.push({ ronda: k, ids: resto });
     grupos.forEach(g => st.partidos.push(nuevoPartido({ ronda: k, n: 0, a: g.a, b: g.b, rehecho: true })));
@@ -872,7 +892,7 @@
       // se puede corregir mientras ninguno de los 4 haya empezado un partido de una ronda posterior
       if (st.fase !== "juego") return false;
       const ids = cuatroDe(p);
-      return !st.partidos.some(x => x.fase === "ronda" && x.ronda > p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
+      return !st.partidos.some(x => x !== p && x.fase === "ronda" && x.ronda >= p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
     }
     if (p.fase === "ronda") return p.ronda === st.ronda && st.fase === "juego";
     return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
