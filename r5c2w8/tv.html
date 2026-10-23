@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es" data-fx="off">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Ciegos · TV</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../zt4k9m/app.css">
+<style>
+  /* Pantalla TV: se abre en el PC conectado a la tele. Sólo mira, no toca nada. Va cambiando sola. */
+  html { font-size: clamp(15px, 1.12vw, 30px); }
+  body { background: #0a0e1a; overflow: hidden; height: 100vh; }
+  .fondo-foto { position: fixed; inset: 0; z-index: 0; background: url('fondo.jpg') center top / cover no-repeat; filter: brightness(.22) blur(3px); transform: scale(1.06); }
+  .fondo-velo { position: fixed; inset: 0; z-index: 1; background: radial-gradient(120% 90% at 50% 0%, rgba(10,14,26,.35), rgba(10,14,26,.92) 70%); }
+  .tv { position: relative; z-index: 2; height: 100vh; display: flex; flex-direction: column; padding: 1.4rem 2rem 1.2rem; gap: 1rem; }
+  .tv-top { display: flex; align-items: center; gap: 1.2rem; }
+  .tv-top img { width: 3.4rem; height: 3.4rem; border-radius: .8rem; background: #fff; }
+  .tv-tit { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 2.6rem; line-height: 1;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 40%, #b08d4f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tv-sub { color: var(--dim); font-size: 1rem; }
+  .tv-dato { text-align: right; } .tv-dato b { display: block; font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; line-height: 1; color: var(--gold); }
+  .tv-dato span { color: var(--dim); font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+  .tv-reloj { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; color: var(--text); }
+  .tv-barra { display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid var(--border); padding-bottom: .6rem; }
+  .tv-barra h2 { margin: 0; font-size: 2.2rem; }
+  .tv-progreso { flex: 1; height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .tv-progreso i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold2), var(--gold)); }
+  .tv-main { flex: 1; min-height: 0; overflow: hidden; }
+  .tv-dos { display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.6rem; height: 100%; }
+  .tv-dos h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.6rem; color: var(--gold); margin: 0 0 .6rem; }
+  /* mesas grandes */
+  .tv .mesas { display: grid; grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr)); gap: 1rem; }
+  .tv .mesa { padding: 1.1rem 1.3rem; }
+  .tv .mesa .num { font-size: 2rem; }
+  .tv .mesa .vs span { font-size: 1.45rem; font-weight: 700; }
+  .tv .cr-llamar, .tv .cr-aviso .btn { display: none !important; }
+  .tv .cr-grid { grid-template-columns: 1fr; }
+  .tv .cr-l span { font-size: 1.2rem; }
+  .tv .pg { font-size: 1.15rem; padding: .55rem 0; }
+  .tv table { font-size: 1.15rem; } .tv table td, .tv table th { padding: .55rem .7rem; }
+  .tv .vt { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .7rem; }
+  .tv .vt-nom { font-size: 1.35rem; } .tv .vt-vidas { font-size: 2rem; }
+  .tv .cf-col { min-width: 15rem; max-width: 19rem; } .tv .cf-l { font-size: 1.15rem; padding: .7rem .9rem; }
+  /* campeones */
+  .tv-campeon { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .6rem; }
+  .tv-campeon .copa { font-size: 8rem; filter: drop-shadow(0 10px 40px rgba(233,205,148,.5)); animation: copa 1.2s cubic-bezier(.2,1.4,.4,1) both; }
+  .tv-campeon .t { font-family: 'Bebas Neue', sans-serif; letter-spacing: .1em; font-size: 2.2rem; color: var(--dim); }
+  .tv-campeon .n { font-family: 'Bebas Neue', sans-serif; font-size: 6rem; line-height: 1;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 40%, #b08d4f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tv-campeon .resto { display: flex; gap: 3rem; margin-top: 1.4rem; font-size: 1.5rem; font-weight: 700; }
+  .tv-campeon .premio, .premio { display: block; color: var(--ok); font-weight: 700; margin-top: .2rem; }
+  .tv-campeon > .premio { font-size: 2.4rem; }
+  @keyframes copa { from { transform: scale(.2) rotate(-25deg); opacity: 0; } }
+  .tv-diapo { animation: tvEntra .7s ease both; }
+  @keyframes tvEntra { from { opacity: 0; transform: translateY(12px); } }
+  /* botón pantalla completa (se esconde al ponerla) */
+  .tv-fs { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 5; }
+  body.quieto { cursor: none; } body.quieto .tv-fs { opacity: 0; pointer-events: none; }
+  .tv-fs { transition: opacity .4s; }
+  .vacio { font-size: 1.4rem; }
+</style>
+</head>
+<body>
+<div class="fondo-foto" aria-hidden="true"></div>
+<div class="fondo-velo" aria-hidden="true"></div>
+<div class="tv">
+  <div class="tv-top">
+    <img src="logo-amf.png" alt="AMF">
+    <div style="flex:1;min-width:0"><div class="tv-tit" id="tTit">Ciegos</div><div class="tv-sub" id="tSub"></div></div>
+    <div class="tv-dato" id="tBote"></div>
+    <div class="tv-dato" id="tPie"></div>
+    <div class="tv-reloj" id="tReloj"></div>
+  </div>
+  <div class="tv-barra"><h2 id="tDiapo"></h2><div class="tv-progreso"><i id="tProg"></i></div><span class="tv-puntos" id="tPuntos"></span></div>
+  <main class="tv-main" id="main"><div class="vacio">Cargando…</div></main>
+</div>
+<button class="btn pri tv-fs" id="bFS" onclick="pantallaCompleta()">⛶ Pantalla completa (F)</button>
+
+<script src="../zt4k9m/config.js"></script>
+<script src="../zt4k9m/engine.js"></script>
+<script src="../zt4k9m/store.js"></script>
+<script src="../zt4k9m/comun.js"></script>
+<script src="../zt4k9m/ciegos.js"></script>
+<script src="../zt4k9m/ciegos-vista.js"></script>
+<script>
+"use strict";
+const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
+const { esc, $ } = TC;
+const params = new URLSearchParams(location.search);
+const CODIGO = params.get("t") || "";
+const SEG = Math.max(6, Number(params.get("seg")) || 12);
+let ST = null, VERSION = 0, idx = 0, inicioDiapo = Date.now(), ultimaFase = null;
+S.setModo("remoto", true);
+
+(async function inicio() {
+  if (!CODIGO.startsWith("ciegos-")) { $("#main").innerHTML = `<div class="vacio">Abre la pantalla TV desde el botón 📺 del panel de Ciegos.</div>`; return; }
+  try { await recargar(); } catch (e) { $("#main").innerHTML = `<div class="vacio">${esc(e.message)}</div>`; }
+  setInterval(comprobar, 8000);
+  setInterval(() => { idx++; inicioDiapo = Date.now(); pintar(true); }, SEG * 1000);
+  setInterval(reloj, 1000); reloj();
+  requestAnimationFrame(progreso);
+  encendida();
+})();
+
+async function recargar() {
+  const r = await S.cargar(CODIGO);
+  if (!r.datos || r.datos.app !== "ciegos") throw new Error("Torneo no encontrado");
+  ST = r.datos; VERSION = r.version;
+  // al terminar, la de campeones sale la primera
+  if (ST.fase === "terminado" && ultimaFase && ultimaFase !== "terminado") { idx = 0; inicioDiapo = Date.now(); }
+  ultimaFase = ST.fase;
+  pintar(false);
+}
+async function comprobar() { try { if ((await S.version(CODIGO)) !== VERSION) await recargar(); } catch (_) {} }
+
+function cabecera() {
+  document.title = ST.nombre + " · TV";
+  $("#tTit").textContent = ST.nombre;
+  $("#tSub").textContent = [ST.fecha, ST.lugar, CV.estadoTexto(ST)].filter(Boolean).join(" · ");
+  const b = E.bote(ST);
+  $("#tBote").innerHTML = b.cuota && b.total ? `<b>${esc(CV.euros(b.total))}</b><span>bote</span>` : "";
+  $("#tPie").innerHTML = ST.modo === "vidas" && ST.fase === "juego" ? `<b>${E.vivos(ST).length}</b><span>en pie</span>` : "";
+}
+
+function diapositivas() {
+  const d = [], f = ST.fase;
+  if (f === "terminado") d.push({ t: "🏆 Campeones", h: vCampeones });
+  if (f === "inscripcion") d.push({ t: "Apuntados", h: () => `<div class="vt">${E.activos(ST).map(j => `<div class="vt-j"><div class="vt-nom">${esc(j.nombre)}</div></div>`).join("")}</div><div class="small dim" style="margin-top:1rem">${CV.reglas(ST)}</div>` });
+  if (f === "juego" || f === "final") d.push({ t: "En juego", h: vJuego });
+  if (ST.modo === "vidas" && f !== "inscripcion") d.push({ t: "❤️ Vidas", h: () => CV.htmlTableroVidas(ST) });
+  if (ST.ko) d.push({ t: f === "terminado" ? "Cuadro final" : "🏆 Cuadro", h: () => `<div class="tv-cuadro">${CV.htmlCuadroFinal(ST)}</div>` });
+  if (ST.modo !== "ciegos" && f !== "inscripcion") d.push({ t: "Clasificación", h: () => CV.htmlTabla(ST) });
+  return d;
+}
+function vJuego() {
+  const mesas = CV.htmlMesas(ST);
+  let lado = "";
+  if (ST.modo === "vidas" && ST.fase === "juego") lado = CV.htmlListos(ST) ? `<h3>✅ Listos para jugar</h3>${CV.htmlListos(ST)}` : "";
+  else { const cola = CV.htmlCola(ST, 8); lado = cola ? `<h3>Próximos</h3>${cola}` : ""; }
+  return lado ? `<div class="tv-dos"><div><h3>En mesa</h3>${mesas}</div><div>${lado}</div></div>` : `<h3 style="font-family:'Bebas Neue';color:var(--gold);font-size:1.6rem">En mesa</h3>${mesas}`;
+}
+function vCampeones() {
+  const pod = E.podio(ST), pr = E.premiosPodio(ST);
+  if (!pod.length) return "";
+  const nom = x => x.ids.map(id => esc(E.nombreJugador(ST, id))).join(" y ");
+  const premio = x => { const e = pr[x.pos + "|" + String(x.lado)]; return e ? `<span class="premio">💶 ${esc(CV.euros(e))}${x.ids.length > 1 ? ` <small class="dim">(${esc(CV.euros(e / x.ids.length))} c/u)</small>` : ""}</span>` : ""; };
+  return `<div class="tv-campeon"><div class="copa">🏆</div><div class="t">¡Campeones!</div><div class="n">${nom(pod[0])}</div>${premio(pod[0])}
+    <div class="resto">${pod.slice(1).map(x => `<div>${x.pos === 2 ? "🥈" : "🥉"} ${nom(x)}${premio(x)}</div>`).join("")}</div></div>`;
+}
+
+function pintar(cambia) {
+  if (!ST) return;
+  cabecera();
+  const d = diapositivas().filter(x => x.h());
+  if (!d.length) { $("#main").innerHTML = `<div class="vacio">Esperando…</div>`; return; }
+  idx = idx % d.length;
+  const s = d[idx];
+  $("#tDiapo").textContent = s.t;
+  $("#tPuntos").innerHTML = d.length > 1 ? d.map((_, i) => `<i class="${i === idx ? "on" : ""}"></i>`).join("") : "";
+  $("#main").innerHTML = `<div class="${cambia ? "tv-diapo" : ""}" style="height:100%">${s.h()}</div>`;
+  CV.lineas($("#main"));
+  if (cambia && s.h === vCampeones && TC.confeti) TC.confeti(document.body);
+}
+function progreso() { const p = Math.min(1, (Date.now() - inicioDiapo) / (SEG * 1000)); $("#tProg").style.width = (p * 100) + "%"; requestAnimationFrame(progreso); }
+function reloj() { $("#tReloj").textContent = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }); }
+
+/* pantalla completa, cursor que se esconde y pantalla siempre encendida */
+function pantallaCompleta() { const el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el); }
+document.addEventListener("keydown", e => {
+  if (e.key === "f" || e.key === "F") pantallaCompleta();
+  if (e.key === "ArrowRight") { idx++; inicioDiapo = Date.now(); pintar(true); }
+  if (e.key === "ArrowLeft") { idx = Math.max(0, idx - 1); inicioDiapo = Date.now(); pintar(true); }
+});
+let quieto = null;
+document.addEventListener("mousemove", () => { document.body.classList.remove("quieto"); clearTimeout(quieto); quieto = setTimeout(() => document.body.classList.add("quieto"), 3000); });
+quieto = setTimeout(() => document.body.classList.add("quieto"), 4000);
+let candado = null;
+async function encendida() { try { if ("wakeLock" in navigator && !candado) { candado = await navigator.wakeLock.request("screen"); candado.addEventListener("release", () => (candado = null)); } } catch (_) {} }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { encendida(); comprobar(); } });
+</script>
+</body>
+</html>

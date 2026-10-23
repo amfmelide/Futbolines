@@ -8,6 +8,7 @@
 
   const lado = (st, l) => esc(E.nombreLado(st, l));
   const hace = ts => window.TC.hace(ts);
+  const euros = n => (Math.round(n * 100) / 100).toLocaleString("es-ES", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + " €";
   // Lo que se ve al lado de cada pareja en un partido terminado: el marcador o, si sólo se apuntó el ganador, ✓
   const marca = (p, l) => p.soloGanador ? (p.ganador === l ? "✓" : "") : (l === "a" ? p.ra : p.rb);
 
@@ -94,7 +95,8 @@
     const pod = E.podio(st);
     if (!pod.length) return "";
     const med = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "4º" };
-    return `<div class="grid" style="margin-bottom:16px">` + pod.map(x => `<div class="card campeon"><span class="dim">${med[x.pos]} ${x.pos}º</span><b>${x.ids.map(id => esc(E.nombreJugador(st, id))).join(" y ")}</b></div>`).join("") + `</div>`;
+    const pr = E.premiosPodio(st);
+    return `<div class="grid" style="margin-bottom:16px">` + pod.map(x => { const e = pr[x.pos + "|" + String(x.lado)]; return `<div class="card campeon"><span class="dim">${med[x.pos]} ${x.pos}º</span><b>${x.ids.map(id => esc(E.nombreJugador(st, id))).join(" y ")}</b>${e ? `<span class="premio">💶 ${euros(e)}${x.ids.length > 1 ? ` <small class="dim">(${euros(e / x.ids.length)} c/u)</small>` : ""}</span>` : ""}</div>`; }).join("") + `</div>`;
   }
 
   function estadoTexto(st) {
@@ -144,6 +146,7 @@
       espera: `<span class="vt-est">⏳ Ronda ${j.ronda}</span>`,
       descansa: `<span class="vt-est">Descansa</span>`,
       eliminado: `<span class="vt-est fuera">Eliminado</span>`,
+      retirado: `<span class="vt-est fuera">🚪 Se fue</span>`,
       final: `<span class="vt-est final">🏆 Fase final</span>`
     })[j.estado] || "";
     const vivos = t.filter(j => j.vidas > 0).length;
@@ -303,5 +306,5 @@
   let tLineas;
   window.addEventListener("resize", () => { clearTimeout(tLineas); tLineas = setTimeout(() => lineas(), 120); });
 
-  window.CV = { htmlListos, htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
+  window.CV = { euros, htmlListos, htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
 })();

@@ -258,6 +258,71 @@ test("resultados: en Ciegos y Vidas basta con apuntar quién gana; en Monster y 
   assert.throws(() => C.registrarGanador(st, p.id, "x"), /ganador/);
 });
 
+test("llega tarde y se va: vidas, monster, suizo y ciegos", () => {
+  // Vidas: entra con las vidas del que menos tiene en pie y se le sortea en las rondas que vienen
+  let st = conJugadores("vidas", 14);
+  C.empezar(st);
+  let p = C.pendientes(st).find(x => x.estado === "pendiente" && C.estadosVidas(st)[x.id].estado === "lista");
+  C.registrarGanador(st, p.id, "a");
+  C.sortearVidas(st);
+  const j = C.altaTarde(st, "Tardón");
+  const v = C.vidasDe(st);
+  assert.equal(v[j.id], Math.min(...C.vivos(st).filter(id => id !== j.id).map(id => v[id])));
+  for (let k = 0; k < 6 && !st.partidos.some(x => x.fase === "ronda" && x.estado !== "fin" && x.a.concat(x.b).includes(j.id)); k++) {
+    const l = st.partidos.find(x => x.fase === "ronda" && x.estado === "pendiente" && (C.estadosVidas(st)[x.id] || {}).estado === "lista");
+    if (!l) break; C.registrarGanador(st, l.id, "a"); C.sortearVidas(st);
+  }
+  assert.ok(st.partidos.some(x => x.fase === "ronda" && x.a.concat(x.b).includes(j.id)), "al que llega tarde se le sortea");
+  // Vidas: se va → 0 vidas y sus partidos sin jugar se rehacen sin él
+  const fuera = C.vivos(st).find(id => !C.jugandoEnMesa(st, id) && id !== j.id);
+  C.retirar(st, fuera);
+  assert.equal(C.vidasDe(st)[fuera], 0);
+  assert.ok(!st.partidos.some(x => x.fase === "ronda" && x.estado === "pendiente" && x.a.concat(x.b).includes(fuera)), "sin partidos pendientes del que se va");
+  // con 8 en pie ya no se puede retirar a nadie
+  st = conJugadores("vidas", 8); C.empezar(st);
+  assert.throws(() => C.retirar(st, st.jugadores[0].id), /fase final/);
+
+  // Monster: entra desde la ronda siguiente; el que se va no juega más rondas
+  st = conJugadores("monster", 8); C.empezar(st);
+  assert.throws(() => C.retirar(st, st.jugadores[0].id), /sin jugar/);
+  jugarTodo(st);
+  const nuevo = C.altaTarde(st, "Nuevo");
+  C.retirar(st, st.jugadores[1].id);
+  C.siguienteRonda(st);
+  const enRonda = st.partidos.filter(x => x.ronda === st.ronda && !x.bye).flatMap(x => x.a.concat(x.b)).concat((st.descansos.find(d => d.ronda === st.ronda) || { ids: [] }).ids);
+  assert.ok(enRonda.includes(nuevo.id)); assert.ok(!enRonda.includes(st.jugadores[1].id));
+
+  // Suizo: se entra por parejas; si se va uno, su partido pendiente es W.O. para el rival
+  st = conJugadores("suizo", 8); C.empezar(st);
+  assert.throws(() => C.altaTarde(st, "Solo"), /parejas/);
+  const pz = C.altaTarde(st, "X", "Y"); assert.ok(C.pareja(st, pz.id));
+  const pend = C.pendientes(st)[0], par = C.pareja(st, pend.a);
+  const r = C.retirar(st, par.j1);
+  assert.equal(r.wo.id, pend.id); assert.equal(pend.ganador, "b"); assert.ok(pend.wo);
+  jugarTodo(st); C.siguienteRonda(st);
+  assert.ok(!st.partidos.some(x => x.ronda === st.ronda && (x.a === par.id || x.b === par.id)), "la pareja retirada no juega más");
+
+  // Ciegos: no entra nadie a mitad; si se va uno, W.O.
+  st = conJugadores("ciegos", 8); C.empezar(st);
+  assert.throws(() => C.altaTarde(st, "Z"), /cuadro/);
+  const k = C.pendientes(st)[0]; const pk = C.pareja(st, k.b);
+  C.retirar(st, pk.j2);
+  assert.equal(k.ganador, "a"); assert.ok(k.wo);
+});
+
+test("bote: cuota, pagados y reparto de premios (el 3º compartido se divide)", () => {
+  const st = conJugadores("ciegos", 8, { cuota: 5 });
+  st.jugadores.slice(0, 6).forEach(j => (j.pagado = true));
+  let b = C.bote(st);
+  assert.equal(b.total, 30); assert.equal(b.previsto, 40); assert.equal(b.faltan, 2);
+  assert.deepEqual(b.premios.map(x => x.euros), [18, 9, 3]);
+  st.jugadores.forEach(j => (j.pagado = true));
+  C.empezar(st); jugarTodo(st);
+  const pr = C.premiosPodio(st), pod = C.podio(st);
+  assert.equal(pr["1|" + pod[0].lado], 24); assert.equal(pr["2|" + pod[1].lado], 12);
+  assert.equal(pr["3|" + pod[2].lado], 2); assert.equal(pr["3|" + pod[3].lado], 2);
+});
+
 test("resultados: formato, corrección y no se puede tocar lo que ya tiene partidos detrás", () => {
   const st = conJugadores("ciegos", 8);
   C.empezar(st);

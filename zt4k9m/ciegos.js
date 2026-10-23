@@ -63,9 +63,11 @@
         rondas: 0,                            // monster / suizo: 0 = automático
         vidas: 3,
         parejas: "sorteo",                    // suizo: "sorteo" (se apuntan solos) o "fijas" (se apuntan por parejas)
-        tercerPuesto: false
+        tercerPuesto: false,
+        cuota: 0,                             // € por jugador (0 = sin bote)
+        reparto: [60, 30, 10]                 // % del bote para 1º, 2º y 3º
       }, o.config || {}),
-      jugadores: [],                          // {id, nombre, baja}
+      jugadores: [],                          // {id, nombre, baja, pagado, retirado, tarde, vidasIni}
       parejas: [],                            // {id, j1, j2}  (todos los modos menos monster)
       partidos: [],                           // ver nuevoPartido
       ronda: 0,
@@ -234,6 +236,93 @@
     return true;
   }
 
+  /* ---------- llega tarde / se va a mitad ---------- */
+  function jugandoEnMesa(st, id) {
+    return st.partidos.find(p => p.estado === "mesa" && jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).includes(id)) || null;
+  }
+  // Alguien llega con el torneo empezado. Suizo: entra una pareja (n1 y n2). Vidas: con las vidas del que menos tiene en pie.
+  function altaTarde(st, n1, n2) {
+    if (st.fase === "inscripcion") return porParejas(st) && parejasFijas(st) ? añadirPareja(st, n1, n2) : añadirJugador(st, n1);
+    if (st.fase !== "juego") throw new Error("Ya se está jugando la fase final: no puede entrar nadie");
+    if (st.modo === "ciegos") throw new Error("En Ciegos el cuadro ya está sorteado: no puede entrar nadie a mitad");
+    const nuevo = nombre => {
+      nombre = String(nombre || "").trim();
+      if (!nombre) throw new Error("Falta el nombre");
+      const j = { id: uid("j"), nombre, baja: false, tarde: st.ronda || 1 };
+      st.jugadores.push(j);
+      return j;
+    };
+    if (st.modo === "suizo") {
+      if (!String(n2 || "").trim()) throw new Error("En Suizo se entra por parejas: faltan los dos nombres");
+      const a = nuevo(n1), b = nuevo(n2);
+      const p = { id: uid("p"), j1: a.id, j2: b.id, tarde: st.ronda };
+      st.parejas.push(p);
+      return p;
+    }
+    if (st.modo === "vidas") {
+      const v = vidasDe(st), enPie = vivos(st).map(id => v[id]);
+      const j = nuevo(n1);
+      j.vidasIni = enPie.length ? Math.min(...enPie) : st.config.vidas;
+      sortearVidas(st);
+      return j;
+    }
+    return nuevo(n1);                                  // monster: juega desde la ronda siguiente
+  }
+  // Alguien se va a mitad. Suizo y Ciegos: se retira su pareja y el partido que tenga pendiente lo gana el rival (W.O.).
+  function retirar(st, id) {
+    const j = jugador(st, id);
+    if (!j || j.retirado) throw new Error("Ese jugador no está en el torneo");
+    if (st.fase === "inscripcion") { st.jugadores = st.jugadores.filter(x => x.id !== id); st.parejas = st.parejas.filter(p => p.j1 !== id && p.j2 !== id); return { quitado: true }; }
+    if (st.fase === "terminado") throw new Error("El torneo ya ha terminado");
+    const m = jugandoEnMesa(st, id);
+    if (m) throw new Error(`Está jugando en la mesa ${m.mesa}: anota antes ese resultado`);
+    if (st.modo === "vidas") {
+      if (st.fase !== "juego") throw new Error("En la fase final no se puede retirar a nadie");
+      const v = vidasDe(st);
+      if (v[id] > 0 && vivos(st).length <= FINALISTAS) throw new Error(`Quedan ${FINALISTAS} en pie: ya no se puede retirar a nadie`);
+      j.retirado = true;
+      sortearVidas(st);
+      return { jugador: j };
+    }
+    if (st.modo === "monster") {
+      const pend = st.partidos.find(p => p.fase === "ronda" && p.estado !== "fin" && jugadoresDe(st, p.a).concat(jugadoresDe(st, p.b)).includes(id));
+      if (pend) throw new Error("Tiene un partido sin jugar en esta ronda: anótalo y se retira al acabar la ronda");
+      j.retirado = true;
+      return { jugador: j };
+    }
+    // por parejas (suizo, ciegos)
+    const par = st.parejas.find(p => !p.retirada && (p.j1 === id || p.j2 === id));
+    if (!par) throw new Error("No está en ninguna pareja");
+    const pend = st.partidos.find(p => p.estado !== "fin" && (p.a === par.id || p.b === par.id));
+    if (pend && (!pend.a || !pend.b)) throw new Error("Aún no se sabe contra quién juega su pareja: espera a que acabe ese partido");
+    par.retirada = true;
+    [par.j1, par.j2].forEach(x => { const y = jugador(st, x); if (y) y.retirado = true; });
+    if (pend) { registrarGanador(st, pend.id, pend.a === par.id ? "b" : "a"); pend.wo = true; }
+    return { pareja: par, wo: pend || null };
+  }
+
+  /* ---------- bote y premios ---------- */
+  function bote(st) {
+    const cuota = Number(st.config.cuota) || 0;
+    const js = activos(st);
+    const pagados = js.filter(j => j.pagado).length;
+    const total = cuota * pagados, previsto = cuota * js.length;
+    const reparto = (st.config.reparto || [60, 30, 10]).map(Number);
+    const premios = reparto.map((pct, i) => ({ pos: i + 1, pct, euros: Math.round(total * pct) / 100 }));
+    return { cuota, apuntados: js.length, pagados, faltan: js.length - pagados, total, previsto, premios };
+  }
+  // € de premio de cada puesto del podio (si dos comparten el 3º, se reparte)
+  function premiosPodio(st) {
+    const b = bote(st);
+    if (!b.cuota || !b.total) return {};
+    const pod = podio(st), r = {};
+    [1, 2, 3].forEach(pos => {
+      const de = pod.filter(x => x.pos === pos), pr = b.premios[pos - 1];
+      if (de.length && pr) de.forEach(x => (r[pos + "|" + String(x.lado)] = Math.round(pr.euros / de.length * 100) / 100));
+    });
+    return r;
+  }
+
   /* ---------- rondas (monster, suizo, vidas) ---------- */
   function rondaActual(st) { return st.partidos.filter(p => p.fase === "ronda" && p.ronda === st.ronda); }
   function rondaTerminada(st) { const r = rondaActual(st); return r.length > 0 && r.every(p => p.estado === "fin"); }
@@ -279,7 +368,7 @@
   function rondaMonster(st, ids) {
     const rand = azar(st);
     const h = historialMonster(st);
-    let js = barajar(ids || activos(st).map(j => j.id), rand);
+    let js = barajar(ids || activos(st).filter(j => !j.retirado).map(j => j.id), rand);
     const juegan = Math.floor(js.length / 4) * 4;
     // descansan los que menos han descansado (a igualdad, al azar)
     js.sort((x, y) => (h.descansos[x] || 0) - (h.descansos[y] || 0));
@@ -305,7 +394,7 @@
   // ---------- Suizo ----------
   function rondaSuiza(st) {
     const rand = azar(st);
-    const tabla = clasificacion(st);
+    const tabla = clasificacion(st).filter(f => !(pareja(st, f.id) || {}).retirada);
     const orden = st.ronda === 1 ? barajar(tabla.map(f => f.id), rand) : tabla.map(f => f.id);
     const jugados = new Set();
     st.partidos.forEach(p => { if (p.a && p.b) { jugados.add(p.a + "|" + p.b); jugados.add(p.b + "|" + p.a); } });
@@ -345,7 +434,7 @@
 
   function vidasDe(st) {
     const v = {};
-    activos(st).forEach(j => (v[j.id] = st.config.vidas));
+    activos(st).forEach(j => (v[j.id] = j.retirado ? 0 : (j.vidasIni != null ? j.vidasIni : st.config.vidas)));
     st.partidos.forEach(p => {
       if (p.fase !== "ronda" || p.estado !== "fin" || p.bye) return;
       const l = p.ganador === "a" ? p.b : p.a;
@@ -704,6 +793,7 @@
       let i = info[j.id] || {};
       let estado = i.estado || "descansa";
       if (st.fase === "final" || st.fase === "terminado") estado = enFinal.has(j.id) ? "final" : "eliminado";
+      else if (j.retirado) estado = "retirado";
       else if (!(v[j.id] > 0)) estado = "eliminado";
       return { id: j.id, nombre: j.nombre, vidas: v[j.id], estado, mesa: i.mesa || null, ronda: i.ronda || null, pj: f.pj || 0, pg: f.pg || 0, pp: f.pp || 0 };
     }).sort((x, y) => (y.vidas > 0) - (x.vidas > 0) || y.vidas - x.vidas || y.pg - x.pg || x.nombre.localeCompare(y.nombre));
@@ -933,7 +1023,7 @@
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
-    usaMarcador, registrarGanador, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
+    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, ganable, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO
