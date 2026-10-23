@@ -5,12 +5,16 @@
    · Tipografías de Google → copia guardada y se actualiza en segundo plano.
    Nunca toca los POST (leer y guardar torneos): de eso se encarga la propia página, que guarda una copia
    del torneo en el móvil y la sube sola cuando vuelve la conexión. */
-const CACHE = "ciegos-app-v2";
+// V tiene que ser el mismo «?v=» que llevan los scripts en index.html y tv.html. Al cambiar algún
+// archivo de la app, se sube V en los tres sitios: así cada versión de la página usa siempre sus
+// propios scripts y nunca se mezclan nuevos y viejos (aunque la red vaya a trompicones).
+const V = "20261023b";
+const CACHE = "ciegos-app-" + V;
 const BASE = [
   "./", "tv.html", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",
-  "../zt4k9m/app.css", "../fx.css", "../fx.js",
+  ...["../zt4k9m/app.css", "../fx.css", "../fx.js",
   "../zt4k9m/config.js", "../zt4k9m/engine.js", "../zt4k9m/store.js", "../zt4k9m/comun.js",
-  "../zt4k9m/imagen.js", "../zt4k9m/ciegos.js", "../zt4k9m/ciegos-vista.js"
+  "../zt4k9m/imagen.js", "../zt4k9m/ciegos.js", "../zt4k9m/ciegos-vista.js"].map(f => f + "?v=" + V)
 ];
 
 self.addEventListener("install", e => {
@@ -25,7 +29,8 @@ self.addEventListener("activate", e => {
 async function redPrimero(req, clave) {
   const c = await caches.open(CACHE);
   const red = fetch(req).then(r => { if (r.ok) c.put(clave || req, r.clone()); return r; });
-  const guardada = await c.match(clave || req, { ignoreSearch: true });
+  // la página se busca sin mirar «?t=…»; los scripts, con su «?v=» exacto (cada versión, sus archivos)
+  const guardada = await c.match(clave || req, { ignoreSearch: !!clave });
   if (!guardada) return red;
   // con mala cobertura no se espera más de 4 s: se usa la copia
   const espera = new Promise(res => setTimeout(() => res(guardada), 4000));

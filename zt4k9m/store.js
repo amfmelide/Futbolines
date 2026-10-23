@@ -11,13 +11,20 @@
   let modo = params.has("local") || localStorage.getItem("torneo-modo") === "local" || !C.supabaseUrl ? "local" : "remoto";
 
   // Sin claves: todas las lecturas y escrituras van a la Edge Function.
+  // Con mala cobertura una petición puede quedarse colgada: a los 15 s se corta y cuenta como «sin red».
   async function api(accion, cuerpo) {
-    const r = await fetch(C.supabaseUrl + C.funcion, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(Object.assign({ accion }, cuerpo))
-    });
+    const corta = typeof AbortController === "function" ? new AbortController() : null;
+    const t = corta ? setTimeout(() => corta.abort(), (C.esperaSeg || 15) * 1000) : null;
+    let r;
+    try {
+      r = await fetch(C.supabaseUrl + C.funcion, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify(Object.assign({ accion }, cuerpo)),
+        signal: corta ? corta.signal : undefined
+      });
+    } finally { if (t) clearTimeout(t); }
     let j = {};
     try { j = await r.json(); } catch (_) {}
     if (!r.ok) {

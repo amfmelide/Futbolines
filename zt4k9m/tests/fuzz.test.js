@@ -93,8 +93,9 @@ function jugarTorneo(modo, semilla) {
     invariantes(st, donde());
   }
   const pod = C.podio(st);
-  assert.ok(pod.length >= 2, donde() + ": podio vacío");
-  assert.equal(pod[0].pos, 1);
+  const quedan = st.modo === "monster" ? C.activos(st).filter(j => !j.retirado).length : st.modo === "suizo" ? st.parejas.filter(p => !p.retirada).length : 99;
+  assert.ok(pod.length >= Math.min(2, quedan), donde() + ": podio vacío");
+  if (pod.length) assert.equal(pod[0].pos, 1);
   pod.forEach(x => assert.ok(x.ids.length >= 1 && x.ids.every(id => C.jugador(st, id)), donde() + ": podio con jugadores que no existen"));
   if (st.modo === "vidas" || st.modo === "ciegos") assert.equal(new Set(pod.flatMap(x => x.ids)).size, pod.flatMap(x => x.ids).length, donde() + ": alguien repite en el podio");
   const pr = C.premiosPodio(st);

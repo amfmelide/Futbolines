@@ -855,11 +855,12 @@
       if (e && e.estado === "riesgo") throw new Error("Este partido podría dejar a menos de 8 en pie: espera a que acaben los de las mesas");
       if (e && e.reparto) { p.a = e.reparto.a; p.b = e.reparto.b; }
     }
+    const mismoGanador = p.estado === "fin" && p.ganador === (ra > rb ? "a" : "b");
     delete p.soloGanador;
     p.ra = ra; p.rb = rb; p.ganador = ra > rb ? "a" : "b"; p.ganadorId = Array.isArray(p.a) ? null : p[p.ganador];
     p.estado = "fin"; p.fin = Date.now(); p.mesa = null;
     if (st.modo === "vidas" && p.fase === "ronda") salvarHastaOcho(st, p);
-    if (p.fase !== "ronda") { limpiarDespues(st, p); resolverKO(st); }
+    if (p.fase !== "ronda" && !mismoGanador) { limpiarDespues(st, p); resolverKO(st); }
     actualizarFase(st);
     return p;
   }
@@ -881,8 +882,14 @@
       if (x.estado === "fin" || !x.sorteo || (x.fa !== p.id && x.fb !== p.id)) return;
       st.parejas = st.parejas.filter(q => !(q.deFinal && (q.id === x.a || q.id === x.b)));   // se vuelve a sortear
       x.a = x.b = null;
+      if (x.estado === "mesa") { x.estado = "pendiente"; x.mesa = null; }
     });
-    st.partidos.forEach(x => { if (x.sorteo) return; if (x.estado !== "fin" && (x.fa === p.id || x.fb === p.id)) { if (x.fa === p.id) x.a = null; if (x.fb === p.id) x.b = null; } });
+    st.partidos.forEach(x => {
+      if (x.sorteo || x.estado === "fin" || (x.fa !== p.id && x.fb !== p.id)) return;
+      if (x.fa === p.id) x.a = null;
+      if (x.fb === p.id) x.b = null;
+      if (x.estado === "mesa") { x.estado = "pendiente"; x.mesa = null; }   // ya no se sabe quién juega: sale de la mesa
+    });
   }
 
   function puedeEditar(st, id) {
@@ -895,7 +902,7 @@
       return !st.partidos.some(x => x !== p && x.fase === "ronda" && x.ronda >= p.ronda && x.estado !== "pendiente" && cuatroDe(x).some(id => ids.includes(id)));
     }
     if (p.fase === "ronda") return p.ronda === st.ronda && st.fase === "juego";
-    return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && x.estado === "fin" && !x.bye);
+    return !st.partidos.some(x => (x.fa === p.id || x.fb === p.id) && (x.estado === "fin" || x.estado === "mesa") && !x.bye);
   }
 
   // ¿El marcador cuenta? Sólo en Monster y Suizo (desempata la clasificación). En Ciegos y Vidas basta con quién gana.
@@ -978,7 +985,8 @@
       else [f.fa, f.fb].forEach(id => { const s = partido(st, id); if (s && !s.bye && perdedor(s)) res.push({ pos: 3, lado: perdedor(s) }); });
       return res.map(r => Object.assign(r, { ids: jugadoresDe(st, r.lado) }));
     }
-    return clasificacion(st).slice(0, 3).map(f => ({ pos: f.pos, lado: st.modo === "monster" ? [f.id] : f.id, ids: st.modo === "monster" ? [f.id] : jugadoresDe(st, f.id) }));
+    const seFue = f => st.modo === "monster" ? (jugador(st, f.id) || {}).retirado : (pareja(st, f.id) || {}).retirada;
+    return clasificacion(st).filter(f => !seFue(f)).slice(0, 3).map((f, i) => Object.assign(f, { pos: i + 1 })).map(f => ({ pos: f.pos, lado: st.modo === "monster" ? [f.id] : f.id, ids: st.modo === "monster" ? [f.id] : jugadoresDe(st, f.id) }));
   }
 
   /* ---------- mesas ---------- */
