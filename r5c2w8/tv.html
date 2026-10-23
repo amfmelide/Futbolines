@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-fx="off">
+<html lang="es" data-fx="off" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -63,6 +63,28 @@
   body.quieto { cursor: none; } body.quieto .tv-fs { opacity: 0; pointer-events: none; }
   .tv-fs { transition: opacity .4s; }
   .vacio { font-size: 1.4rem; }
+  .tv-tit { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tv-top { padding-top: env(safe-area-inset-top); }
+
+  /* pantalla estrecha (móvil o tableta en vertical): una columna y se puede bajar */
+  @media (max-width: 900px), (orientation: portrait) {
+    html { font-size: 15px; }
+    body { overflow: auto; height: auto; }
+    .tv { height: auto; min-height: 100vh; padding: 1rem 1rem 1.4rem; }
+    .tv-top { flex-wrap: wrap; gap: .8rem; }
+    .tv-top img { width: 2.8rem; height: 2.8rem; }
+    .tv-tit { font-size: 2rem; }
+    .tv-reloj { font-size: 2rem; }
+    .tv-dato b { font-size: 1.7rem; }
+    .tv-barra h2 { font-size: 1.6rem; }
+    .tv-main { overflow: visible; }
+    .tv-dos { grid-template-columns: 1fr; height: auto; gap: 1rem; }
+    .tv .mesas { grid-template-columns: 1fr; }
+    .tv-campeon .copa { font-size: 5rem; } .tv-campeon .n { font-size: 3.4rem; }
+    .tv-campeon .resto { flex-direction: column; gap: .6rem; }
+    .tv-campeon > .premio { font-size: 1.6rem; }
+    .tv-fs { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -89,6 +111,8 @@
 <script src="../zt4k9m/ciegos-vista.js"></script>
 <script>
 "use strict";
+// la TV va siempre en oscuro, aunque en este aparato se eligiera el tema claro
+document.documentElement.dataset.theme = "dark";
 const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
 const { esc, $ } = TC;
 const params = new URLSearchParams(location.search);
