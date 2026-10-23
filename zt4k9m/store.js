@@ -24,9 +24,10 @@
         body: JSON.stringify(Object.assign({ accion }, cuerpo)),
         signal: corta ? corta.signal : undefined
       });
-    } finally { if (t) clearTimeout(t); }
+    } catch (e) { if (t) clearTimeout(t); throw e; }
     let j = {};
     try { j = await r.json(); } catch (_) {}
+    if (t) clearTimeout(t);
     if (!r.ok) {
       const e = new Error(j.error || ("Error " + r.status));
       e.status = r.status;

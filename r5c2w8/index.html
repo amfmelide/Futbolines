@@ -359,6 +359,7 @@ async function abrir(codigo) {
   catch (e) { if (e.status || !loc) throw e; }                       // sin red: se abre la copia del móvil
   if (r && (!r.datos || r.datos.app !== "ciegos")) throw new Error("Ese no es un torneo Ciegos");
   CODIGO = codigo;
+  if (r && loc && loc.pendiente && JSON.stringify(loc.datos) === JSON.stringify(r.datos)) loc.pendiente = false;   // ya había llegado
   if (!r) { ST = loc.datos; VERSION = loc.version; sinRed(true); }
   else if (loc && loc.pendiente && loc.version >= r.version) { ST = loc.datos; VERSION = r.version; }   // cambios hechos sin cobertura
   else if (loc && loc.pendiente && confirm(`Este móvil tiene cambios de «${loc.datos.nombre}» sin subir, pero en el servidor hay otros más nuevos (de otro móvil).\n\nAceptar = quedarse con los de ESTE móvil\nCancelar = quedarse con los del servidor`)) { ST = loc.datos; VERSION = r.version; }
@@ -379,14 +380,13 @@ async function abrir(codigo) {
 function salir() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ pass: PASS, modo: S.modo })); } catch (_) {} location.reload(); }
 
 /* ================= GUARDADO ================= */
-function cambio(fn, txt) {
+function cambio(fn, txt, junto) {
   const copia = JSON.stringify(ST);
   try { fn(); } catch (e) { TC.toast(esc(e.message), "bad", 5000); return false; }
   if (!txt && JSON.stringify(ST) === copia) { pintar(); return true; }      // no ha cambiado nada
   nCambios++;
-  // lo que pasa solo justo después (sortear, llamar a mesa) va con la misma acción: un «deshacer» lo quita todo
-  if (!(HIST.length && Date.now() - ultimoCambio < 800)) { HIST.push(copia); if (HIST.length > 40) HIST.shift(); }
-  ultimoCambio = Date.now();
+  // lo que la app hace sola justo después (sortear, llamar a mesa) va «junto» con la acción: un «deshacer» lo quita todo
+  if (!(junto && HIST.length)) { HIST.push(copia); if (HIST.length > 40) HIST.shift(); }
   if (txt) { ST.log = (ST.log || []).slice(-199); ST.log.push({ ts: Date.now(), txt }); }
   copiaGuardar(true);
   pintar(); guardar();
@@ -395,7 +395,7 @@ function cambio(fn, txt) {
 function deshacer() {
   if (!HIST.length) return;
   ST = JSON.parse(HIST.pop());
-  nCambios++; ultimoCambio = 0;
+  nCambios++;
   copiaGuardar(true);
   pintar(); guardar(); TC.toast("Cambio deshecho");
 }
@@ -403,7 +403,8 @@ async function guardar() {
   if (guardando) { pendiente = true; return guardando; }
   estadoSync("Guardando…");
   guardando = (async () => {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
+      const envio = JSON.stringify(ST); enviados.push(envio); if (enviados.length > 6) enviados.shift();
       try { VERSION = (await S.guardar(CODIGO, ST, VERSION, PASS)).version; copiaGuardar(false); sinRed(false); errorGuardar = null; estadoSync("Guardado ✓"); return; }
       catch (e) {
         if (!e.status && !e.conflicto) { sinRed(true); return; }           // sin cobertura: queda en el móvil y se reintenta
@@ -417,6 +418,9 @@ async function guardar() {
         // alguien guardó este torneo desde otro móvil mientras tanto
         let srv;
         try { srv = await S.cargar(CODIGO); } catch (_) { sinRed(true); return; }
+        const enServidor = JSON.stringify(srv.datos);
+        if (enServidor === JSON.stringify(ST)) { VERSION = srv.version; copiaGuardar(false); sinRed(false); errorGuardar = null; estadoSync("Guardado ✓"); return; }
+        if (enviados.includes(enServidor)) { VERSION = srv.version; continue; }   // era un guardado nuestro que sí llegó: se sigue sin preguntar
         const quedarme = confirm("Mientras tanto se han guardado cambios en este torneo desde otro móvil.\n\nAceptar = guardar los de ESTE móvil (se pierden los del otro)\nCancelar = quedarse con los del otro móvil");
         VERSION = srv.version;
         if (!quedarme) { ST = srv.datos; HIST.length = 0; copiaGuardar(false); pintar(); estadoSync("Actualizado"); return; }
@@ -425,7 +429,8 @@ async function guardar() {
   })();
   try { await guardando; } finally { guardando = null; if (pendiente) { pendiente = false; guardar(); } }
 }
-let errorGuardar = null, erroresSeguidos = 0, nCambios = 0, ultimoCambio = 0, ticks = 0;
+let errorGuardar = null, erroresSeguidos = 0, nCambios = 0, ticks = 0;
+const enviados = [];                       // lo último que se mandó al servidor (por si llegó aunque no hubo respuesta)
 function estadoSync(txt, err) { const s = $("#sync"); s.textContent = txt; s.classList.toggle("err", !!err); $("#bDeshacer").classList.toggle("oculto", !HIST.length); }
 async function sondear() {
   if (guardando || document.hidden || $(".modal-bg")) return;
@@ -622,7 +627,7 @@ function seVa(id) {
   if (cambio(() => { r = E.retirar(ST, id); }, `Se va: ${j.nombre}`)) {
     TC.toast(`🚪 ${esc(j.nombre)} se ha ido${r && r.wo ? " · W.O. para el rival" : ""}`, "ok", 5000);
     if (ST.fase === "terminado") celebrar();
-    else if (antes === "juego" && ST.fase === "final") { if (autoActivo()) cambio(() => E.asignarMesas(ST)); sorteoParejas(); }
+    else if (antes === "juego" && ST.fase === "final") { if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true); sorteoParejas(); }
     else if (r && r.wo) trasResultado(false);
   }
 }
@@ -657,7 +662,7 @@ function empezar() {
   if (!cambio(() => E.empezar(ST), "Torneo empezado")) return;
   const nombres = E.activos(ST).map(j => j.nombre);
   apuntarHabituales(CODIGO, nombres, ST.fecha); guardarUltimos(CODIGO, nombres, ST.fecha);
-  if (autoActivo()) cambio(() => E.asignarMesas(ST));
+  if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true);
   tab = "juego"; pintar();
   if (sortea || ST.fase === "final") sorteoParejas();
 }
@@ -763,8 +768,8 @@ function trasResultado(estaba) {
   const antes = ST.fase;
   let nuevos = [];
   // En Vidas siempre: rehacer partidos si alguien cae, sortear la ronda siguiente y, con 8, la fase final
-  if (ST.modo === "vidas" && ST.fase === "juego") cambio(() => { nuevos = E.sortearVidas(ST); });
-  if (autoActivo() && (estaba || nuevos.length || ST.fase !== antes)) cambio(() => E.asignarMesas(ST));
+  if (ST.modo === "vidas" && ST.fase === "juego") cambio(() => { nuevos = E.sortearVidas(ST); }, "", true);
+  if (autoActivo() && (estaba || nuevos.length || ST.fase !== antes)) cambio(() => E.asignarMesas(ST), "", true);
   if (antes === "juego" && ST.fase === "final") sorteoParejas();
   else if (sorteoFinalNuevo()) sorteoFinal();
   else if (nuevos.length) TC.toast(`🎲 Sorteada la ronda ${Math.max(...nuevos.map(p => p.ronda))}`, "ok", 5000);
@@ -773,7 +778,7 @@ function rellenar() { cambio(() => E.asignarMesas(ST)); }
 function siguiente() {
   const antes = ST.fase;
   if (!cambio(() => E.siguienteRonda(ST), "Siguiente ronda")) return;
-  if (autoActivo()) cambio(() => E.asignarMesas(ST));
+  if (autoActivo()) cambio(() => E.asignarMesas(ST), "", true);
   if (antes === "juego" && ST.fase === "final") sorteoParejas();       // Vidas: parejas de la fase final
   if (ST.fase === "terminado") celebrar();
 }
@@ -782,7 +787,7 @@ function modalResultado(id) {
   const p = E.partido(ST, id);
   if (!p || !p.a || !p.b || p.bye) return;
   const editar = p.estado === "fin";
-  if (editar && !E.puedeEditar(ST, id)) return TC.toast("Ese resultado ya no se puede cambiar: hay partidos posteriores jugados", "bad");
+  if (editar && !E.puedeEditar(ST, id)) return TC.toast(esc(E.motivoNoEditar(ST, id)), "bad", 6000);
   const conMarcador = E.usaMarcador(ST);
   const nom = l => E.nombreLado(ST, p[l]);
   const boton = l => `<button type="button" class="gana-btn ${editar && p.ganador === l ? "on" : ""}" data-g="${l}"><span class="g-t">🏆 Gana</span><b>${esc(nom(l))}</b></button>`;

@@ -848,7 +848,7 @@
     if (!p.a || !p.b) throw new Error("Aún no se conocen los dos rivales");
     ra = Number(ra); rb = Number(rb);
     comprobarMarcador(st, ra, rb);
-    if (p.estado === "fin" && !puedeEditar(st, id)) throw new Error("Ya se han jugado partidos que dependen de este resultado");
+    if (p.estado === "fin" && !puedeEditar(st, id)) throw new Error(motivoNoEditar(st, id));
     if (st.modo === "vidas" && p.fase === "ronda" && p.estado === "pendiente") {
       const e = estadosVidas(st)[p.id];
       if (e && e.estado === "espera") throw new Error("Aún hay jugadores de este partido jugando la ronda anterior");
@@ -892,6 +892,16 @@
     });
   }
 
+  // Por qué no se puede corregir un resultado (para decírselo claro al organizador)
+  function motivoNoEditar(st, id) {
+    const p = partido(st, id);
+    if (!p || p.bye) return "Este partido no se puede tocar";
+    const ids = cuatroDe(p);
+    const enMesa = st.partidos.find(x => x !== p && x.estado === "mesa" && (x.fa === p.id || x.fb === p.id ||
+      (p.fase === "ronda" && x.fase === "ronda" && x.ronda >= p.ronda && cuatroDe(x).some(i => ids.includes(i)))));
+    if (enMesa) return `El partido siguiente ya está en la mesa ${enMesa.mesa}: devuélvelo a la espera (↩) para corregir este`;
+    return "Ya se han jugado partidos que dependen de este resultado";
+  }
   function puedeEditar(st, id) {
     const p = partido(st, id);
     if (!p || p.bye) return false;
@@ -919,7 +929,8 @@
 
   function borrarResultado(st, id) {
     const p = partido(st, id);
-    if (!puedeEditar(st, id) || p.estado !== "fin") throw new Error("Este resultado ya no se puede borrar");
+    if (p.estado !== "fin") throw new Error("Este partido aún no tiene resultado");
+    if (!puedeEditar(st, id)) throw new Error(motivoNoEditar(st, id));
     p.ra = p.rb = null; p.ganador = p.ganadorId = null; p.estado = "pendiente"; delete p.soloGanador;
     if (p.fase !== "ronda") limpiarDespues(st, p);
     actualizarFase(st);
@@ -1051,7 +1062,7 @@
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
-    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
+    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, motivoNoEditar, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, ganable, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO

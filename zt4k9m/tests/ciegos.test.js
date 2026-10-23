@@ -396,7 +396,7 @@ test("revisión: borrar un resultado saca de la mesa el partido que dependía de
   C.asignarMesas(st);
   const semi = st.partidos.find(p => p.ronda === 2 && p.a && p.b);
   if (semi.estado !== "mesa") { semi.estado = "mesa"; semi.mesa = 1; }
-  assert.throws(() => C.borrarResultado(st, cuartos[0].id), /ya no se puede/, "con la semifinal en mesa no se borra el cuarto");
+  assert.throws(() => C.borrarResultado(st, cuartos[0].id), /mesa 1: devuélvelo a la espera/, "con la semifinal en mesa no se borra el cuarto");
   semi.estado = "pendiente"; semi.mesa = null;
   C.borrarResultado(st, cuartos[0].id);                          // sin mesa sí, y la semifinal se queda esperando rival
   st.partidos.filter(p => p.estado === "mesa").forEach(p => assert.ok(p.a && p.b, "en mesa con un hueco vacío"));
