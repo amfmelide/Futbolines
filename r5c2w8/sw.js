@@ -8,7 +8,7 @@
 // V tiene que ser el mismo «?v=» que llevan los scripts en index.html y tv.html. Al cambiar algún
 // archivo de la app, se sube V en los tres sitios: así cada versión de la página usa siempre sus
 // propios scripts y nunca se mezclan nuevos y viejos (aunque la red vaya a trompicones).
-const V = "20261023b";
+const V = "20261102a";
 const CACHE = "ciegos-app-" + V;
 const BASE = [
   "./", "tv.html", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",

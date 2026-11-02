@@ -859,6 +859,15 @@ async function checkAdminPin() {
       a.querySelector('div > div + div').textContent = l.texto || '';
       menu.appendChild(a);
     });
+    // Ciegos (torneos pequeños a sorteo): entra con esta misma contraseña, sin volver a pedirla
+    const c = document.createElement('a');
+    c.className = 'admin-menu-btn';
+    c.href = 'r5c2w8/';
+    c.innerHTML = '<span class="btn-icon">🎲</span><div><div>Ciegos</div><div style="font-size:0.72rem;color:var(--text-dim);font-weight:400;margin-top:2px;">Torneos a sorteo · invitar a un compañero</div></div>';
+    c.addEventListener('click', () => {
+      try { sessionStorage.setItem('ciegos-admin', JSON.stringify({ pass: val, modo: 'remoto' })); } catch (_) {}
+    });
+    menu.appendChild(c);
     document.getElementById('pin-grid').style.display = 'none';
     menu.classList.add('show');
     document.getElementById('admin-overlay').querySelector('.admin-subtitle').textContent = '¿Qué quieres gestionar?';
