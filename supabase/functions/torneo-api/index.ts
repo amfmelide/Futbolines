@@ -5,6 +5,9 @@
 // Secretos necesarios (supabase secrets set ...):
 //   TORNEO_ADMIN_PASS   contraseña del organizador (todo)
 //   CIEGOS_PASS         (opcional) contraseña sólo para la app Ciegos, para prestársela a otra persona
+//   AMF_ADMIN_PASS      (ya existe, la del Admin de la portada) también abre la app Ciegos entera e invita
+//   INVITE_KEY          (opcional) clave para firmar los enlaces de invitado de Ciegos. Si no está, se usa
+//                       TORNEO_ADMIN_PASS. Cambiarla anula al momento todas las invitaciones.
 // Necesita también el SQL 20261013000000_freno_accesos.sql (freno contra adivinar contraseñas).
 //   VAPID_PUBLIC_KEY    } claves Web Push  (npx web-push generate-vapid-keys)
 //   VAPID_PRIVATE_KEY   }
@@ -92,35 +95,80 @@ async function limitarUso(accion: string, ip: string, max: number, ventanaSeg: n
   return 0;
 }
 
-// Contraseñas de organizador (con freno). Hay dos:
-//   TORNEO_ADMIN_PASS → todo (torneos grandes y Ciegos)
-//   CIEGOS_PASS       → sólo la app Ciegos (torneos cuyo código empieza por «ciegos-»), para prestarla
-// Devuelve "admin", "ciegos" o null (sin contraseña: null sin contar como fallo). Se recuerda en la petición.
+// Quién es (con freno). Roles:
+//   "admin"    TORNEO_ADMIN_PASS → todo (torneos grandes y Ciegos)
+//   "amf"      AMF_ADMIN_PASS (Admin de la portada) → toda la app Ciegos y crear invitaciones
+//   "ciegos"   CIEGOS_PASS → toda la app Ciegos (torneos «ciegos-»)
+//   "invitado" enlace de invitación (inv1.…) → sólo los torneos Ciegos que cree él, hasta que caduque
+// Devuelve el rol o null (sin contraseña: null sin contar como fallo). Se recuerda en la petición.
 const PREFIJO_CIEGOS = "ciegos-";
-async function rolDe(b: any): Promise<"admin" | "ciegos" | null> {
+type Rol = "admin" | "amf" | "ciegos" | "invitado" | null;
+async function rolDe(b: any): Promise<Rol> {
   if (b.__rol !== undefined) return b.__rol;
   if (b.pass == null || b.pass === "") return (b.__rol = null);
   const espera = await esperaFreno("torneo-admin", b.__ip);
   if (espera > 0) throw new Fallo(`Demasiados intentos. Espera ${Math.ceil(espera / 60)} min.`, 429);
-  let rol: "admin" | "ciegos" | null = null;
-  if (igualSeguro(b.pass, Deno.env.get("TORNEO_ADMIN_PASS"))) rol = "admin";
+  let rol: Rol = null;
+  if (typeof b.pass === "string" && b.pass.startsWith("inv1.")) {
+    const inv = await leerInvitacion(b.pass);
+    if (inv === "caducada") throw new Fallo("Este enlace de invitado ha caducado. Pide otro al organizador.", 401);
+    if (inv) { rol = "invitado"; b.__inv = inv; }
+  }
+  else if (igualSeguro(b.pass, Deno.env.get("TORNEO_ADMIN_PASS"))) rol = "admin";
+  else if (igualSeguro(b.pass, Deno.env.get("AMF_ADMIN_PASS"))) rol = "amf";
   else if (igualSeguro(b.pass, Deno.env.get("CIEGOS_PASS"))) rol = "ciegos";
   if (rol) await rpcFreno("acceso_ok", { p_clave: `torneo-admin|${b.__ip}` });
   else await apuntarFallo("torneo-admin", b.__ip);
   return (b.__rol = rol);
 }
-function puede(rol: string | null, codigo: string) {
-  return rol === "admin" || (rol === "ciegos" && codigo.startsWith(PREFIJO_CIEGOS));
+
+// ---------- enlaces de invitado (Ciegos) ----------
+// inv1.<datos>.<firma>: datos = {i: id, e: caduca (ms), n: nombre}; firma HMAC-SHA256 con una clave del servidor.
+// No se guardan en ningún sitio: caducan solos. Cambiando INVITE_KEY se anulan todos a la vez.
+const b64u = (u8: Uint8Array) => btoa(String.fromCharCode(...u8)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const desb64u = (t: string) => Uint8Array.from(atob(t.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+async function claveInvitaciones() {
+  const base = Deno.env.get("INVITE_KEY") || Deno.env.get("TORNEO_ADMIN_PASS");
+  if (!base) throw new Fallo("Faltan los secretos para las invitaciones", 500);
+  return crypto.subtle.importKey("raw", new TextEncoder().encode("ciegos-invitacion|" + base), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+async function firmarInvitacion(datos: { i: string; e: number; n: string }) {
+  const cuerpo = b64u(new TextEncoder().encode(JSON.stringify(datos)));
+  const firma = new Uint8Array(await crypto.subtle.sign("HMAC", await claveInvitaciones(), new TextEncoder().encode(cuerpo)));
+  return "inv1." + cuerpo + "." + b64u(firma);
+}
+async function leerInvitacion(token: string): Promise<{ i: string; e: number; n: string } | "caducada" | null> {
+  const p = token.split(".");
+  if (p.length !== 3 || p[1].length > 400 || p[2].length > 100) return null;
+  try {
+    const ok = await crypto.subtle.verify("HMAC", await claveInvitaciones(), desb64u(p[2]), new TextEncoder().encode(p[1]));
+    if (!ok) return null;
+    const d = JSON.parse(new TextDecoder().decode(desb64u(p[1])));
+    if (typeof d?.i !== "string" || typeof d?.e !== "number") return null;
+    return Date.now() > d.e ? "caducada" : { i: d.i, e: d.e, n: String(d.n || "").slice(0, 40) };
+  } catch (_) { return null; }
+}
+
+// ¿Puede tocar este torneo? El invitado sólo los suyos (los que creó con su enlace).
+async function puede(b: any, rol: Rol, codigo: string, nuevo = false) {
+  if (rol === "admin") return true;
+  if (!codigo.startsWith(PREFIJO_CIEGOS) || !rol) return false;
+  if (rol !== "invitado") return true;
+  if (nuevo) return true;
+  const { data } = await db.from("torneos").select("datos->>invitacion").eq("codigo", codigo).maybeSingle();
+  return !!data && (data as any).invitacion === b.__inv.i;
 }
 // ¿Tiene permiso de organizador sobre este torneo?
 async function adminValido(b: any): Promise<boolean> {
-  return puede(await rolDe(b), texto(b.codigo));
+  return puede(b, await rolDe(b), texto(b.codigo));
 }
-// Exige contraseña. Con la de Ciegos sólo vale para torneos «ciegos-» (salvo entrar y listar).
-async function exigirAdmin(b: any, sinTorneo = false) {
+// Exige contraseña. Las de Ciegos sólo valen para torneos «ciegos-» (salvo entrar y listar).
+async function exigirAdmin(b: any, sinTorneo = false, nuevo = false) {
   const rol = await rolDe(b);
   if (!rol) throw new Fallo("Contraseña incorrecta", 401);
-  if (!sinTorneo && !puede(rol, texto(b.codigo))) throw new Fallo("Esta contraseña sólo sirve para la app Ciegos", 403);
+  if (!sinTorneo && !(await puede(b, rol, texto(b.codigo), nuevo))) {
+    throw new Fallo(rol === "invitado" ? "Con el enlace de invitado sólo puedes tocar los torneos que hayas creado tú" : "Esta contraseña sólo sirve para la app Ciegos", 403);
+  }
   return rol;
 }
 
@@ -284,7 +332,16 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   // ---------- sólo organizador ----------
   async login(b) {
     const rol = await exigirAdmin(b, true);
-    return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV), rol };
+    return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV), rol, invitacion: rol === "invitado" ? { nombre: b.__inv.n, caduca: b.__inv.e } : undefined };
+  },
+
+  // Enlace de invitado para la app Ciegos (sólo el organizador o el Admin de la portada)
+  async invitar(b) {
+    const rol = await exigirAdmin(b, true);
+    if (rol !== "admin" && rol !== "amf") throw new Fallo("Sólo el organizador puede invitar", 403);
+    const horas = Math.min(14 * 24, Math.max(1, Math.round(Number(b.horas) || 48)));
+    const datos = { i: aleatorio(8), e: Date.now() + horas * 3600_000, n: texto(b.nombre, 40) };
+    return { token: await firmarInvitacion(datos), caduca: datos.e, nombre: datos.n };
   },
 
   async propuestas(b) {
@@ -308,10 +365,11 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
 
   async listar(b) {
     const rol = await exigirAdmin(b, true);
-    const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase")
-      .order("updated_at", { ascending: false }).limit(50);
+    const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase, datos->>invitacion, datos->>invitado")
+      .order("updated_at", { ascending: false }).limit(80);
     if (error) throw new Fallo(error.message, 500);
-    return { rol, torneos: (data ?? []).filter((r: any) => rol === "admin" || String(r.codigo).startsWith(PREFIJO_CIEGOS)).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase })) };
+    const ver = (r: any) => rol === "admin" || (String(r.codigo).startsWith(PREFIJO_CIEGOS) && (rol !== "invitado" || r.invitacion === b.__inv.i));
+    return { rol, torneos: (data ?? []).filter(ver).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase, invitado: r.invitado || undefined })) };
   },
 
   // Fin del torneo: se borran teléfonos y avisos (un torneo nuevo empieza de cero)
@@ -322,8 +380,12 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async crear(b) {
-    await exigirAdmin(b);
+    const rol = await exigirAdmin(b, false, true);
     const codigo = texto(b.codigo);
+    if (rol === "invitado") {                                  // el torneo queda marcado como suyo (lo pone el servidor)
+      if (!b.datos || typeof b.datos !== "object") throw new Fallo("Datos no válidos");
+      b.datos.invitacion = b.__inv.i; b.datos.invitado = b.__inv.n || "Invitado";
+    }
     if (!/^[a-z0-9-]{3,60}$/.test(codigo)) throw new Fallo("Código no válido (minúsculas, números y guiones)");
     const { error } = await db.from("torneos").insert({ codigo, datos: b.datos, version: 1 });
     if (error) throw new Fallo(error.code === "23505" ? "Ya existe un torneo con ese código" : error.message, 409);
@@ -334,7 +396,8 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
   },
 
   async guardar(b) {
-    await exigirAdmin(b);
+    const rol = await exigirAdmin(b);
+    if (rol === "invitado" && b.datos && typeof b.datos === "object") { b.datos.invitacion = b.__inv.i; b.datos.invitado = b.__inv.n || "Invitado"; }
     const { data, error } = await db.rpc("torneo_guardar", { p_codigo: texto(b.codigo), p_datos: b.datos, p_version: b.version });
     if (error) {
       if (error.message.includes("conflicto")) throw new Fallo("conflicto_version", 409);
@@ -415,6 +478,7 @@ Deno.serve(async (req) => {
     if (b && typeof b === "object") {
       b.__ip = ipDe(req);                                      // la pone el servidor; el cliente no puede falsearla en el cuerpo
       delete b.__rol;                                          // el rol lo calcula el servidor con la contraseña, nunca el cliente
+      delete b.__inv;
     }
     const fn = acciones[b?.accion];
     if (!fn) return json({ error: "Acción desconocida" }, 400);

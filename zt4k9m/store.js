@@ -72,7 +72,16 @@
           return { codigo, nombre: d.nombre, fecha: d.fecha, lugar: d.lugar, fase: d.fase };
         });
       }
-      return (await api("listar", { pass })).torneos;
+      const r = await api("listar", { pass });
+      const t = r.torneos || [];
+      t.rol = r.rol;                                   // quién es (admin, amf, ciegos o invitado)
+      return t;
+    },
+
+    // Ciegos: enlace de invitado que caduca solo (sólo el organizador o el Admin de la portada)
+    async invitar(pass, horas, nombre) {
+      if (modo === "local") throw new Error("Las invitaciones necesitan conexión");
+      return api("invitar", { pass, horas, nombre });
     },
 
     async cargar(codigo) {

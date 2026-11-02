@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../zt4k9m/app.css?v=20261023b">
+<link rel="stylesheet" href="../zt4k9m/app.css?v=20261102a">
 <style>
   /* Fondo de la web de la AMF: foto del futbolín oscurecida */
   .fondo-foto { position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -55,6 +55,12 @@
   .jug .pill { font-size: .72rem; padding: 3px 8px; }
   .cp-premio small { font-size: .65em; color: var(--dim); font-weight: 600; }
   @media (max-width: 760px) { #bTV { display: none !important; } }
+
+  /* invitados */
+  .aviso-inv { margin-bottom: 14px; border-color: var(--gold2); background: rgba(233,205,148,.07); }
+  .invitar { margin-top: 12px; } .invitar summary { cursor: pointer; list-style: none; } .invitar summary::-webkit-details-marker { display: none; }
+  .inv-nueva { padding: 10px; border-radius: 10px; background: var(--surface2); }
+  .t-inv { font-size: .72rem; color: var(--gold); font-weight: 700; }
 
   /* entrada */
   .acceso { max-width: 420px; margin: 24px auto; }
@@ -132,8 +138,8 @@
     input, select, textarea { font-size: 16px !important; }       /* iPhone no hace zoom al escribir */
   }
 </style>
-<link rel="stylesheet" href="../fx.css?v=20261023b">
-<script src="../fx.js?v=20261023b" defer></script>
+<link rel="stylesheet" href="../fx.css?v=20261102a">
+<script src="../fx.js?v=20261102a" defer></script>
 </head>
 <body>
 <div class="fondo-foto" aria-hidden="true"></div>
@@ -157,13 +163,13 @@
 <main class="wrap" id="main"><div class="vacio">Cargando…</div></main>
 <div class="barra-movil oculto" id="barra"></div>
 
-<script src="../zt4k9m/config.js?v=20261023b"></script>
-<script src="../zt4k9m/engine.js?v=20261023b"></script>
-<script src="../zt4k9m/store.js?v=20261023b"></script>
-<script src="../zt4k9m/comun.js?v=20261023b"></script>
-<script src="../zt4k9m/imagen.js?v=20261023b"></script>
-<script src="../zt4k9m/ciegos.js?v=20261023b"></script>
-<script src="../zt4k9m/ciegos-vista.js?v=20261023b"></script>
+<script src="../zt4k9m/config.js?v=20261102a"></script>
+<script src="../zt4k9m/engine.js?v=20261102a"></script>
+<script src="../zt4k9m/store.js?v=20261102a"></script>
+<script src="../zt4k9m/comun.js?v=20261102a"></script>
+<script src="../zt4k9m/imagen.js?v=20261102a"></script>
+<script src="../zt4k9m/ciegos.js?v=20261102a"></script>
+<script src="../zt4k9m/ciegos-vista.js?v=20261102a"></script>
 <script>
 "use strict";
 const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
@@ -228,6 +234,56 @@ function htmlInstalar() {
 }
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
 
+/* ================= INVITADOS =================
+   El organizador crea un enlace que caduca solo (1 día, 2 días…). Quien lo abre entra sin contraseña
+   y sólo ve y toca los torneos que cree él. La firma y la caducidad las comprueba el servidor. */
+const LSI = "ciegos-invitacion";
+const esInvitacion = t => typeof t === "string" && t.startsWith("inv1.");
+function datosInvitacion(t) {                     // lo que dice el enlace (nombre y caducidad); sólo para enseñarlo
+  if (!esInvitacion(t)) return null;
+  try { return JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); } catch (_) { return null; }
+}
+const cuando = ms => new Date(ms).toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function htmlAvisoInvitado() {
+  if (ROL !== "invitado") return "";
+  const d = datosInvitacion(PASS) || {};
+  return `<div class="card aviso-inv">👋 ${d.n ? `Hola, <b>${esc(d.n)}</b>. ` : ""}Estás con un <b>enlace de invitado</b>: ves y llevas sólo los torneos que crees tú.
+    ${d.e ? `<div class="small dim" style="margin-top:4px">Vale hasta el <b>${esc(cuando(d.e))}</b>.</div>` : ""}</div>`;
+}
+function htmlInvitar() {
+  if (ROL !== "admin" && ROL !== "amf") return "";
+  return `<details class="card invitar" ${invitacionNueva ? "open" : ""}><summary><b>🔗 Invitar a un compañero</b> <span class="small dim">· enlace que caduca solo</span></summary>
+    <div class="stack" style="margin-top:10px">
+      <div class="small dim">Entra sin contraseña y sólo ve los torneos que cree él. Tú los ves todos. Al caducar, el enlace deja de funcionar.</div>
+      <div class="row"><input type="text" id="iNombre" placeholder="Nombre (p. ej. Pepe)" style="flex:1" maxlength="40" autocapitalize="words">
+        <select id="iHoras" aria-label="Cuánto dura"><option value="24">1 día</option><option value="48" selected>2 días</option><option value="72">3 días</option><option value="168">1 semana</option></select></div>
+      <button class="btn pri" type="button" onclick="crearInvitacion()">Crear enlace</button>
+      ${invitacionNueva ? `<div class="inv-nueva stack">
+        <div class="small">Enlace para <b>${esc(invitacionNueva.nombre || "tu compañero")}</b> · vale hasta el <b>${esc(cuando(invitacionNueva.caduca))}</b></div>
+        <input type="text" readonly value="${esc(invitacionNueva.url)}" onclick="this.select()" aria-label="Enlace de invitado">
+        <div class="row"><button class="btn sm" type="button" onclick="copiarInvitacion()">📋 Copiar</button>
+          <a class="btn sm ok" target="_blank" rel="noopener" href="${esc(urlWhatsInvitacion())}">WhatsApp</a></div></div>` : ""}
+    </div></details>`;
+}
+let invitacionNueva = null;
+async function crearInvitacion() {
+  const nombre = $("#iNombre").value.trim(), horas = Number($("#iHoras").value) || 48;
+  try {
+    const r = await S.invitar(PASS, horas, nombre);
+    invitacionNueva = { url: new URL("./?inv=" + encodeURIComponent(r.token), location.href).href, caduca: r.caduca, nombre: r.nombre };
+    pantallaAcceso();
+  } catch (e) { TC.toast(esc(/desconocida/i.test(e.message) ? "Falta actualizar la función torneo-api en Supabase" : e.message), "bad", 6000); }
+}
+function textoInvitacion() {
+  const i = invitacionNueva;
+  return `${i.nombre ? "Hola " + i.nombre + ", aquí" : "Aquí"} tienes la app Ciegos para llevar el torneo (vale hasta el ${cuando(i.caduca)}): ${i.url}`;
+}
+function urlWhatsInvitacion() { return "https://wa.me/?text=" + encodeURIComponent(textoInvitacion()); }
+async function copiarInvitacion() {
+  try { await navigator.clipboard.writeText(invitacionNueva.url); TC.toast("Enlace copiado", "ok"); }
+  catch (_) { const i = $(".inv-nueva input"); if (i) { i.select(); document.execCommand("copy"); TC.toast("Enlace copiado", "ok"); } }
+}
+
 /* ================= ACCESO ================= */
 (async function inicio() {
   S.setModo("remoto", true);
@@ -235,6 +291,17 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
   const leer = k => { try { return JSON.parse(sessionStorage.getItem(k)) || null; } catch (_) { return null; } };
   const ses = leer("ciegos-admin"), ses2 = leer("torneo-admin");
   PASS = (ses && ses.pass) || (ses2 && ses2.pass) || "";
+  // enlace de invitado (?inv=…): entra sin contraseña y se recuerda en este móvil hasta que caduca
+  const enUrl = new URLSearchParams(location.search).get("inv");
+  if (enUrl) {
+    PASS = enUrl;
+    try { localStorage.setItem(LSI, enUrl); } catch (_) {}
+    history.replaceState(null, "", location.pathname);               // que no se quede a la vista en la barra
+  } else if (!PASS) {
+    let guardada = null; try { guardada = localStorage.getItem(LSI); } catch (_) {}
+    const d = datosInvitacion(guardada);
+    if (d && d.e > Date.now()) PASS = guardada;
+  }
   if (ses && ses.codigo && ses.modo === S.modo) { try { await abrir(ses.codigo); return; } catch (_) {} }
   pantallaAcceso();
 })();
@@ -259,7 +326,16 @@ async function pantallaAcceso() {
   $("#tSub").textContent = "Torneos pequeños a sorteo";
   pintarBarra();
   let lista = null, err = "";
-  if (PASS) { try { lista = (await S.listar(PASS)).filter(t => t.codigo.startsWith(PREFIJO)); } catch (e) { err = e.message; } }
+  if (PASS) { try { const t = await S.listar(PASS); ROL = t.rol || ROL; lista = t.filter(x => x.codigo.startsWith(PREFIJO)); } catch (e) { err = e.message; } }
+  // enlace de invitado caducado (o roto)
+  if (!lista && esInvitacion(PASS) && !/fetch|network|load failed|conex/i.test(err) && navigator.onLine) {
+    try { localStorage.removeItem(LSI); } catch (_) {}
+    $("#main").innerHTML = `<div class="acceso"><div class="card stack" style="text-align:center">
+      <div style="font-size:3rem">⏰</div><h2>Este enlace ya no vale</h2>
+      <p class="dim">${esc(err || "Ha caducado.")}</p>
+      <button class="btn" type="button" onclick="cerrarSesion()">Entrar con contraseña</button></div></div>`;
+    return;
+  }
   // sin contraseña (o mal): sólo la tarjeta para entrar
   if (!lista) {
     const locales = copiasLocales();
@@ -279,18 +355,20 @@ async function pantallaAcceso() {
   $("#main").innerHTML = `
   <div class="row" style="margin:4px 0 14px">
     <h2 style="margin:0">Torneos</h2><span class="spacer"></span>
-    <span class="small dim">Conectado ✓</span><button class="btn sm" type="button" onclick="cerrarSesion()">Salir</button>
+    <span class="small dim">${ROL === "invitado" ? "Invitado ✓" : "Conectado ✓"}</span><button class="btn sm" type="button" onclick="cerrarSesion()">Salir</button>
   </div>
+  ${htmlAvisoInvitado()}
   ${lista.length ? `<div class="t-lista">${lista.map(t => `<div class="t-card fase-${esc(t.fase || "")}">
       <button class="t-abrir" type="button" onclick="entrar('${esc(t.codigo)}')">
         <span class="t-ico" data-ico="${esc(t.codigo)}">🏆</span>
-        <span class="t-txt"><b>${esc(t.nombre || t.codigo)}</b><span class="small dim" data-info="${esc(t.codigo)}">${esc(t.fecha || "")}</span></span>
+        <span class="t-txt"><b>${esc(t.nombre || t.codigo)}</b><span class="small dim" data-info="${esc(t.codigo)}">${esc(t.fecha || "")}</span>${t.invitado && ROL !== "invitado" ? `<span class="t-inv">🔗 ${esc(t.invitado)}</span>` : ""}</span>
         <span class="t-fase">${esc(FASES[t.fase] || "")}</span>
       </button>
       <button class="btn bad t-borrar" type="button" title="Borrar este torneo" aria-label="Borrar ${esc(t.nombre || t.codigo)}" data-nombre="${esc(t.nombre || t.codigo)}" onclick="borrarDeLista('${esc(t.codigo)}', this.dataset.nombre)">🗑</button>
     </div>`).join("")}</div>` : `<div class="vacio">Todavía no hay ningún torneo. Crea el primero 👇</div>`}
   <div style="margin-top:16px">
     ${abierto ? "" : `<button class="btn pri big" type="button" style="width:100%" onclick="formAbierto=true;pantallaAcceso()">＋ Nuevo torneo</button>`}
+    ${htmlInvitar()}
     ${htmlInstalar()}
     <form class="card stack ${abierto ? "" : "oculto"}" onsubmit="crear(event)">
       <div class="row"><h2 style="margin:0">Nuevo torneo</h2><span class="spacer"></span>${lista.length ? `<button class="btn sm" type="button" onclick="formAbierto=false;pantallaAcceso()">Cancelar</button>` : ""}</div>
@@ -315,7 +393,7 @@ async function pantallaAcceso() {
 }
 function cerrarSesion() {
   PASS = ""; ROL = null; CODIGO = "";
-  try { sessionStorage.removeItem("ciegos-admin"); sessionStorage.removeItem("torneo-admin"); } catch (_) {}
+  try { sessionStorage.removeItem("ciegos-admin"); sessionStorage.removeItem("torneo-admin"); localStorage.removeItem(LSI); } catch (_) {}
   pantallaAcceso();
 }
 async function borrarDeLista(codigo, nombre) {
