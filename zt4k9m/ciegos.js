@@ -984,6 +984,97 @@
     return lista;
   }
 
+  /* ---------- ¿cuándo juego? (página de cada jugador) ---------- */
+  // Lo que le toca a un jugador ahora mismo: en mesa, listo, esperando, descansa, eliminado, en el podio…
+  function situacionJugador(st, jid) {
+    const j = jugador(st, jid);
+    if (!j) return null;
+    const r = { id: jid, nombre: j.nombre, fase: st.fase };
+    if (st.modo === "vidas") r.vidas = vidasDe(st)[jid];
+    const ids = l => jugadoresDe(st, l);
+    const mio = p => !p.bye && (ids(p.a).includes(jid) || ids(p.b).includes(jid));
+    const detalle = p => {
+      const lado = ids(p.a).includes(jid) ? "a" : "b", otro = lado === "a" ? "b" : "a";
+      return { partidoId: p.id, mesa: p.mesa || null, ronda: p.ronda, nombrePartido: nombrePartido(st, p),
+        companeros: ids(p[lado]).filter(id => id !== jid).map(id => nombreJugador(st, id)),
+        rivales: ids(p[otro]).map(id => nombreJugador(st, id)) };
+    };
+    if (st.fase === "inscripcion") return Object.assign(r, { tipo: "inscrito" });
+    if (st.fase === "terminado") {
+      const pod = podio(st).find(x => x.ids.includes(jid));
+      const pr = pod ? premiosPodio(st)[pod.pos + "|" + String(pod.lado)] : null;
+      return Object.assign(r, { tipo: pod ? "podio" : "fin", pos: pod ? pod.pos : null, premio: pr ? Math.round(pr / pod.ids.length * 100) / 100 : null });
+    }
+    if (j.retirado) return Object.assign(r, { tipo: "retirado" });
+    const enMesa = st.partidos.find(p => p.estado === "mesa" && mio(p));
+    if (enMesa) return Object.assign(r, { tipo: "mesa" }, detalle(enMesa));
+    if (st.modo === "vidas" && st.fase === "juego") {
+      if (!(r.vidas > 0)) return Object.assign(r, { tipo: "eliminado" });
+      const est = estadosVidas(st);
+      const sig = st.partidos.filter(p => p.fase === "ronda" && p.estado === "pendiente" && mio(p)).sort((x, y) => x.ronda - y.ronda)[0];
+      if (!sig) return Object.assign(r, { tipo: "descansa" });
+      const e = (est[sig.id] || {}).estado;
+      return Object.assign(r, { tipo: e === "lista" ? "lista" : "espera" }, detalle(sig));
+    }
+    // cuadro (Ciegos, fase final de Vidas): ¿sigue vivo?
+    if (st.ko && (st.modo === "ciegos" || st.fase === "final")) {
+      const deKO = st.partidos.filter(p => p.fase === st.ko.fase);
+      const perdido = deKO.find(p => p.estado === "fin" && !p.bye && !p.tercer && ids(perdedor(p)).includes(jid));
+      const sig = deKO.filter(p => p.estado === "pendiente" && mio(p)).sort((x, y) => x.ronda - y.ronda)[0];
+      if (sig) return Object.assign(r, { tipo: sig.a && sig.b ? "pendiente" : "esperaRival" }, detalle(sig));
+      if (perdido) return Object.assign(r, { tipo: "eliminado" });
+      if (st.modo === "vidas" && !st.parejas.some(p => (p.j1 === jid || p.j2 === jid))) return Object.assign(r, { tipo: "eliminado" });
+      return Object.assign(r, { tipo: "esperaRival" });
+    }
+    // rondas (Monster, Suizo)
+    const sig = st.partidos.filter(p => p.fase === "ronda" && p.estado === "pendiente" && mio(p)).sort((x, y) => x.ronda - y.ronda)[0];
+    const fila = clasificacion(st).find(f => f.id === jid || (porParejas(st) && ids(f.id).includes(jid)));
+    if (fila) r.pos = fila.pos;
+    if (sig) return Object.assign(r, { tipo: "pendiente" }, detalle(sig));
+    const desc = (st.descansos || []).some(d => d.ronda === st.ronda && d.ids.includes(jid)) ||
+      st.partidos.some(p => p.ronda === st.ronda && p.bye && ids(p.a).includes(jid));
+    return Object.assign(r, { tipo: desc ? "descansa" : "esperaRonda" });
+  }
+
+  /* ---------- repetir torneo (mismos jugadores y ajustes) ---------- */
+  function repetirTorneo(st, o) {
+    o = o || {};
+    const quitar = new Set(o.quitar || []);
+    const config = JSON.parse(JSON.stringify(st.config));
+    const n = nuevoTorneo({ codigo: o.codigo, nombre: o.nombre || st.nombre, fecha: o.fecha || "", lugar: o.lugar != null ? o.lugar : st.lugar, modo: st.modo, config });
+    if (parejasFijas(st)) {
+      st.parejas.filter(p => !p.deFinal).forEach(p => {
+        if (quitar.has(p.id) || quitar.has(p.j1) || quitar.has(p.j2)) return;
+        const a = jugador(st, p.j1), b = jugador(st, p.j2);
+        if (a && b && !a.baja && !b.baja) añadirPareja(n, a.nombre, b.nombre);
+      });
+    } else activos(st).filter(j => !quitar.has(j.id)).forEach(j => añadirJugador(n, j.nombre));
+    return n;
+  }
+
+  /* ---------- resultados en texto (WhatsApp) ---------- */
+  function textoResultados(st) {
+    const euros = x => (Math.round(x * 100) / 100).toLocaleString("es-ES", { minimumFractionDigits: x % 1 ? 2 : 0, maximumFractionDigits: 2 }) + " €";
+    const med = { 1: "🥇", 2: "🥈", 3: "🥉" };
+    const pod = podio(st), pr = premiosPodio(st);
+    const lineas = ["🏆 *" + st.nombre + "*", [MODOS[st.modo].nombre, st.fecha, st.lugar].filter(Boolean).join(" · "), ""];
+    if (!pod.length) lineas.push("(El torneo aún no ha terminado)");
+    pod.forEach(x => {
+      const e = pr[x.pos + "|" + String(x.lado)];
+      lineas.push(`${med[x.pos] || x.pos + "º"} ${x.ids.map(id => nombreJugador(st, id)).join(" y ")}${e ? " · " + euros(e) + (x.ids.length > 1 ? " (" + euros(e / x.ids.length) + " c/u)" : "") : ""}`);
+    });
+    if (pod.length && st.modo !== "ciegos" && !st.ko) {
+      const t = clasificacion(st).slice(0, 10);
+      if (t.length > 3) {
+        lineas.push("", "📊 Clasificación:");
+        t.forEach(f => lineas.push(`${f.pos}. ${individual(st) ? nombreJugador(st, f.id) : nombreLado(st, f.id)} · ${f.puntos} pt${st.modo === "vidas" ? " · " + f.vidas + "♥" : ""}`));
+      }
+    }
+    const b = bote(st);
+    if (b.cuota && b.total) lineas.push("", `💶 Bote: ${euros(b.total)} (${b.pagados} jugadores)`);
+    return lineas.join("\n");
+  }
+
   /* ---------- podio ---------- */
   // [{pos, ids:[jugadores], lado}]
   function podio(st) {
@@ -1062,7 +1153,7 @@
   return {
     MODOS, rng, barajar, uid, ordenSiembra, potencia2,
     nuevoTorneo, añadirJugador, añadirPareja, jugador, pareja, partido, activos, porParejas, parejasFijas, individual,
-    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, motivoNoEditar, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
+    usaMarcador, registrarGanador, altaTarde, retirar, bote, premiosPodio, jugandoEnMesa, motivoNoEditar, situacionJugador, repetirTorneo, textoResultados, nombreJugador, nombreLado, jugadoresDe, textoFormato, marcadoresPosibles, comprobarMarcador,
     sortearParejas, empezar, siguienteRonda, puedeSiguienteRonda, rondaActual, rondaTerminada, rondasTotales,
     vidasDe, vivos, ganable, estadoVidas, estadosVidas, llamarVidas, sortearVidas, tableroVidas, registrarResultado, borrarResultado, puedeEditar, clasificacion, podio,
     rondaDe, rondasVista, pendientes, mesasLibres, asignarMesas, soltar, nombrePartido, nombreRondaKO

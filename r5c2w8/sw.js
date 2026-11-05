@@ -8,10 +8,10 @@
 // V tiene que ser el mismo «?v=» que llevan los scripts en index.html y tv.html. Al cambiar algún
 // archivo de la app, se sube V en los tres sitios: así cada versión de la página usa siempre sus
 // propios scripts y nunca se mezclan nuevos y viejos (aunque la red vaya a trompicones).
-const V = "20261102a";
+const V = "20261105a";
 const CACHE = "ciegos-app-" + V;
 const BASE = [
-  "./", "tv.html", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",
+  "./", "tv.html", "jugador.html", "manifest.webmanifest", "fondo.jpg", "icon-192.png", "icon-512.png", "apple-touch-icon.png", "logo-amf.png",
   ...["../zt4k9m/app.css", "../fx.css", "../fx.js",
   "../zt4k9m/config.js", "../zt4k9m/engine.js", "../zt4k9m/store.js", "../zt4k9m/comun.js",
   "../zt4k9m/imagen.js", "../zt4k9m/ciegos.js", "../zt4k9m/ciegos-vista.js"].map(f => f + "?v=" + V)
@@ -47,7 +47,7 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") { e.respondWith(copiaYActualiza(req)); return; }
+  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com" || (url.hostname === "cdnjs.cloudflare.com" && url.pathname.includes("/qrcodejs/"))) { e.respondWith(copiaYActualiza(req)); return; }
   if (url.origin !== self.location.origin) return;
   if (req.mode === "navigate") {
     // cada página con su copia (panel en «./», la TV en «tv.html»), sin mirar los parámetros (?t=…)

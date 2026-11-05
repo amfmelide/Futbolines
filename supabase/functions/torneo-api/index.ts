@@ -112,6 +112,7 @@ async function rolDe(b: any): Promise<Rol> {
   if (typeof b.pass === "string" && b.pass.startsWith("inv1.")) {
     const inv = await leerInvitacion(b.pass);
     if (inv === "caducada") throw new Fallo("Este enlace de invitado ha caducado. Pide otro al organizador.", 401);
+    if (inv && (await registroInvitaciones()).lista.some((x: any) => x.i === inv.i && x.anulada)) throw new Fallo("Este enlace lo ha anulado el organizador.", 401);
     if (inv) { rol = "invitado"; b.__inv = inv; }
   }
   else if (igualSeguro(b.pass, Deno.env.get("TORNEO_ADMIN_PASS"))) rol = "admin";
@@ -147,6 +148,20 @@ async function leerInvitacion(token: string): Promise<{ i: string; e: number; n:
     if (typeof d?.i !== "string" || typeof d?.e !== "number") return null;
     return Date.now() > d.e ? "caducada" : { i: d.i, e: d.e, n: String(d.n || "").slice(0, 40) };
   } catch (_) { return null; }
+}
+
+// Registro de invitaciones (para verlas y anular una antes de que caduque). Fila interna «sys-invitaciones»:
+// nunca se enseña en listados ni en «estado». Las caducadas se limpian solas al escribir.
+const REGISTRO = "sys-invitaciones";
+async function registroInvitaciones(): Promise<{ lista: any[]; existe: boolean }> {
+  const { data } = await db.from("torneos").select("datos").eq("codigo", REGISTRO).maybeSingle();
+  return { lista: Array.isArray((data as any)?.datos?.lista) ? (data as any).datos.lista : [], existe: !!data };
+}
+async function guardarRegistro(lista: any[], existe: boolean) {
+  const ahora = Date.now();
+  const datos = { app: "sistema", lista: lista.filter((x) => x.e > ahora).slice(-100) };
+  if (existe) await db.from("torneos").update({ datos }).eq("codigo", REGISTRO);
+  else await db.from("torneos").insert({ codigo: REGISTRO, datos, version: 1 });
 }
 
 // ¿Puede tocar este torneo? El invitado sólo los suyos (los que creó con su enlace).
@@ -222,6 +237,7 @@ const entero = (v: unknown) => (v === null || v === undefined || v === "" ? null
 const acciones: Record<string, (b: any) => Promise<unknown>> = {
   // ---------- público (sin claves en la página: se lee a través de aquí) ----------
   async estado(b) {
+    if (texto(b.codigo).startsWith("sys-")) throw new Fallo("El torneo no existe", 404);
     const { datos, version } = await cargarTorneo(texto(b.codigo));
     return { datos, version };
   },
@@ -329,7 +345,42 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     return { ok: true, modo };
   },
 
+  // Ciegos: un jugador se apunta solo desde el QR (queda pendiente hasta que el organizador lo acepta).
+  // Se guarda en torneo_propuestas con partido_id «apuntarse» y el nombre en «wo» (sin tablas nuevas).
+  async apuntarse(b) {
+    const codigo = texto(b.codigo);
+    if (!codigo.startsWith(PREFIJO_CIEGOS)) throw new Fallo("Sólo para torneos Ciegos", 400);
+    const nombre = texto(b.nombre, 60).replace(/\s+/g, " ").trim();
+    if (nombre.length < 2) throw new Fallo("Escribe tu nombre");
+    if (await limitarUso("apuntarse", b.__ip, 6, 900)) throw new Fallo("Demasiadas peticiones desde este móvil. Pide al organizador que te apunte.", 429);
+    const { datos } = await cargarTorneo(codigo);
+    if (datos.app !== "ciegos") throw new Fallo("Sólo para torneos Ciegos", 400);
+    if (datos.fase !== "inscripcion") throw new Fallo("Las inscripciones ya están cerradas: el torneo ha empezado", 409);
+    if (datos.config?.qrCerrado) throw new Fallo("El organizador ha cerrado las inscripciones por QR", 409);
+    const { data: pend } = await db.from("torneo_propuestas").select("id, wo").eq("codigo", codigo).eq("partido_id", "apuntarse").eq("estado", "pendiente");
+    if ((pend ?? []).some((x: any) => String(x.wo).toLowerCase() === nombre.toLowerCase())) return { ok: true, repetida: true };
+    if ((pend ?? []).length >= 80) throw new Fallo("Hay demasiadas peticiones pendientes. Pide al organizador que te apunte.", 429);
+    const { error } = await db.from("torneo_propuestas").insert({ codigo, partido_id: "apuntarse", wo: nombre });
+    if (error) throw new Fallo(error.message, 500);
+    return { ok: true };
+  },
+
   // ---------- sólo organizador ----------
+  async solicitudes(b) {
+    await exigirAdmin(b);
+    const { data, error } = await db.from("torneo_propuestas").select("id, wo, creado").eq("codigo", texto(b.codigo)).eq("partido_id", "apuntarse").eq("estado", "pendiente");
+    if (error) throw new Fallo(error.message, 500);
+    return { solicitudes: (data ?? []).map((x: any) => ({ id: x.id, nombre: x.wo, creado: x.creado })) };
+  },
+  async resolverSolicitudes(b) {
+    await exigirAdmin(b);
+    const ids = Array.isArray(b.ids) ? b.ids.map(Number).filter(Number.isFinite).slice(0, 200) : [];
+    if (!ids.length) return { ok: true };
+    const estado = b.estado === "aceptada" ? "aceptada" : "rechazada";
+    await db.from("torneo_propuestas").update({ estado }).eq("codigo", texto(b.codigo)).eq("partido_id", "apuntarse").in("id", ids);
+    return { ok: true };
+  },
+
   async login(b) {
     const rol = await exigirAdmin(b, true);
     return { ok: true, push: !!(VAPID_PUB && VAPID_PRIV), rol, invitacion: rol === "invitado" ? { nombre: b.__inv.n, caduca: b.__inv.e } : undefined };
@@ -341,7 +392,27 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     if (rol !== "admin" && rol !== "amf") throw new Fallo("Sólo el organizador puede invitar", 403);
     const horas = Math.min(14 * 24, Math.max(1, Math.round(Number(b.horas) || 48)));
     const datos = { i: aleatorio(8), e: Date.now() + horas * 3600_000, n: texto(b.nombre, 40) };
-    return { token: await firmarInvitacion(datos), caduca: datos.e, nombre: datos.n };
+    const reg = await registroInvitaciones();
+    await guardarRegistro(reg.lista.concat([{ ...datos, creada: Date.now() }]), reg.existe);
+    return { token: await firmarInvitacion(datos), caduca: datos.e, nombre: datos.n, id: datos.i };
+  },
+
+  // Invitaciones que aún valen (para verlas y poder anular una)
+  async invitaciones(b) {
+    const rol = await exigirAdmin(b, true);
+    if (rol !== "admin" && rol !== "amf") throw new Fallo("Sólo el organizador ve las invitaciones", 403);
+    const ahora = Date.now();
+    return { invitaciones: (await registroInvitaciones()).lista.filter((x) => x.e > ahora).map((x) => ({ id: x.i, nombre: x.n, caduca: x.e, anulada: !!x.anulada })) };
+  },
+  async anularInvitacion(b) {
+    const rol = await exigirAdmin(b, true);
+    if (rol !== "admin" && rol !== "amf") throw new Fallo("Sólo el organizador anula invitaciones", 403);
+    const reg = await registroInvitaciones(), id = texto(b.id, 40);
+    const x = reg.lista.find((y) => y.i === id);
+    if (!x) throw new Fallo("Esa invitación no existe o ya ha caducado", 404);
+    x.anulada = true;
+    await guardarRegistro(reg.lista, reg.existe);
+    return { ok: true };
   },
 
   async propuestas(b) {
@@ -368,7 +439,7 @@ const acciones: Record<string, (b: any) => Promise<unknown>> = {
     const { data, error } = await db.from("torneos").select("codigo, updated_at, datos->>nombre, datos->>fecha, datos->>lugar, datos->>fase, datos->>invitacion, datos->>invitado")
       .order("updated_at", { ascending: false }).limit(80);
     if (error) throw new Fallo(error.message, 500);
-    const ver = (r: any) => rol === "admin" || (String(r.codigo).startsWith(PREFIJO_CIEGOS) && (rol !== "invitado" || r.invitacion === b.__inv.i));
+    const ver = (r: any) => !String(r.codigo).startsWith("sys-") && (rol === "admin" || (String(r.codigo).startsWith(PREFIJO_CIEGOS) && (rol !== "invitado" || r.invitacion === b.__inv.i)));
     return { rol, torneos: (data ?? []).filter(ver).map((r: any) => ({ codigo: r.codigo, nombre: r.nombre, fecha: r.fecha, lugar: r.lugar, fase: r.fase, invitado: r.invitado || undefined })) };
   },
 
