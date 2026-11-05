@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es" data-fx="off" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>¿Cuándo juego?</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0a0e1a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../zt4k9m/app.css?v=20261105a">
+<style>
+  /* Página de los jugadores (se abre con el QR): apuntarse y «¿cuándo juego?». Sólo mira, no toca el torneo. */
+  body { background: #0a0e1a; }
+  .fondo-foto { position: fixed; inset: 0; z-index: 0; background: url('fondo.jpg') center top / cover no-repeat; filter: brightness(.22) blur(3px); transform: scale(1.06); }
+  .fondo-velo { position: fixed; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,14,26,.5), rgba(10,14,26,.92)); }
+  .pag { position: relative; z-index: 2; max-width: 560px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top)) 16px 40px; }
+  .cab { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cab img { width: 44px; height: 44px; border-radius: 10px; background: #fff; }
+  .tit { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.8rem; line-height: 1;
+    background: linear-gradient(178deg, #fdf0d0 0%, #e9cd94 40%, #b08d4f 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--dim); font-size: .85rem; }
+  .estado { text-align: center; padding: 22px 16px; border-radius: 18px; border: 2px solid var(--border); background: var(--surface); margin-bottom: 14px; }
+  .estado .ico { font-size: 3rem; line-height: 1; }
+  .estado h2 { font-size: 1.9rem; margin: 8px 0 4px; }
+  .estado .con { font-size: 1.1rem; margin-top: 6px; }
+  .estado .con b { color: var(--gold); }
+  .estado.mesa { border-color: var(--ok); background: rgba(0,200,83,.14); animation: latido 1.2s ease-in-out infinite; }
+  .estado.mesa h2 { font-size: 2.6rem; color: var(--ok); }
+  .estado.lista { border-color: var(--ok); }
+  .estado.podio { border-color: var(--gold); background: rgba(233,205,148,.1); }
+  .estado.fuera { opacity: .8; }
+  @keyframes latido { 50% { box-shadow: 0 0 0 10px rgba(0,200,83,.12); } }
+  @media (prefers-reduced-motion: reduce) { .estado.mesa { animation: none; } }
+  .vidas { font-size: 1.8rem; color: #f50057; letter-spacing: 3px; margin-top: 6px; }
+  .vidas i { font-style: normal; opacity: .2; }
+  .aviso { font-size: .8rem; color: var(--dim); text-align: center; margin: 6px 0 14px; }
+  .yo { display: flex; gap: 8px; align-items: center; justify-content: center; margin-bottom: 14px; font-size: .9rem; }
+  .lista-nombres { display: flex; flex-wrap: wrap; gap: 6px; }
+  .lista-nombres span { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-weight: 600; }
+  .elegir { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .elegir button { padding: 14px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+  .elegir button:hover { border-color: var(--gold2); }
+  input { font-size: 16px !important; }
+  h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; font-size: 1.4rem; color: var(--gold); margin: 18px 0 8px; }
+</style>
+</head>
+<body>
+<div class="fondo-foto" aria-hidden="true"></div>
+<div class="fondo-velo" aria-hidden="true"></div>
+<div class="pag">
+  <div class="cab"><img src="logo-amf.png" alt="AMF"><div style="min-width:0"><div class="tit" id="tTit">Ciegos</div><div class="sub" id="tSub"></div></div></div>
+  <main id="main"><div class="vacio">Cargando…</div></main>
+</div>
+
+<script src="../zt4k9m/config.js?v=20261105a"></script>
+<script src="../zt4k9m/engine.js?v=20261105a"></script>
+<script src="../zt4k9m/store.js?v=20261105a"></script>
+<script src="../zt4k9m/comun.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos-vista.js?v=20261105a"></script>
+<script>
+"use strict";
+document.documentElement.dataset.theme = "dark";
+const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
+const { esc, $ } = TC;
+S.setModo("remoto", true);
+const CODIGO = new URLSearchParams(location.search).get("t") || "";
+const LSY = "ciegos-yo:" + CODIGO, LSA = "ciegos-apuntado:" + CODIGO;
+const leer = k => { try { return localStorage.getItem(k) || ""; } catch (_) { return ""; } };
+const poner = (k, v) => { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k); } catch (_) {} };
+let ST = null, VERSION = 0, YO = leer(LSY), enviado = leer(LSA);
+
+(async function inicio() {
+  if (!CODIGO.startsWith("ciegos-")) { $("#main").innerHTML = `<div class="vacio">Enlace no válido. Escanea el QR del torneo.</div>`; return; }
+  try { await recargar(); } catch (e) { $("#main").innerHTML = `<div class="vacio">${esc(e.message)}</div>`; return; }
+  setInterval(comprobar, 6000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) comprobar(); });
+})();
+async function recargar() {
+  const r = await S.cargar(CODIGO);
+  if (!r.datos || r.datos.app !== "ciegos") throw new Error("Torneo no encontrado");
+  ST = r.datos; VERSION = r.version;
+  // si ya se apuntó y el organizador le ha aceptado, queda elegido solo
+  if (!YO && enviado) { const j = E.activos(ST).find(x => x.nombre.toLowerCase() === enviado.toLowerCase()); if (j) { YO = j.id; poner(LSY, YO); } }
+  if (YO && !E.jugador(ST, YO)) { YO = ""; poner(LSY, ""); }
+  pintar();
+}
+async function comprobar() { try { if ((await S.version(CODIGO)) !== VERSION) await recargar(); } catch (_) {} }
+
+function pintar() {
+  document.title = ST.nombre;
+  $("#tTit").textContent = ST.nombre;
+  $("#tSub").textContent = [ST.fecha, ST.lugar, CV.estadoTexto(ST)].filter(Boolean).join(" · ");
+  let h = "";
+  if (ST.fase === "inscripcion") h += vApuntarse();
+  if (!YO) h += vElegir();
+  else h += vSituacion();
+  h += vResto();
+  $("#main").innerHTML = h;
+  CV.lineas($("#main"));
+}
+
+/* ---------- apuntarse ---------- */
+function vApuntarse() {
+  const fijas = E.parejasFijas(ST), js = E.activos(ST);
+  const yaDentro = YO && E.jugador(ST, YO);
+  let h = "";
+  if (!yaDentro) {
+    h += enviado
+      ? `<div class="estado"><div class="ico">✉️</div><h2>¡Enviado!</h2><div class="con">Has pedido entrar como <b>${esc(enviado)}</b>.</div>
+         <div class="small dim" style="margin-top:8px">En cuanto el organizador te acepte saldrás en la lista. Deja esta página abierta.</div>
+         <button class="btn sm" style="margin-top:10px" onclick="enviado='';poner(LSA,'');pintar()">Me he equivocado</button></div>`
+      : (ST.config && ST.config.qrCerrado ? `<div class="estado"><div class="ico">🔒</div><h2>Inscripción cerrada</h2><div class="con">Pide al organizador que te apunte.</div></div>`
+      : `<form class="card stack" onsubmit="event.preventDefault();apuntarme()">
+          <h2 style="margin:0">✍️ Apúntate</h2>
+          <div class="small dim">${esc(E.MODOS[ST.modo].nombre)}: ${CV.reglas(ST)}</div>
+          <input type="text" id="aNom" placeholder="${fijas ? "Tu nombre" : "Tu nombre (como te conocen)"}" maxlength="30" autocomplete="name" autocapitalize="words" required>
+          ${fijas ? `<input type="text" id="aNom2" placeholder="Tu pareja" maxlength="30" autocapitalize="words" required>` : ""}
+          <button class="btn pri big">Apuntarme</button>
+        </form>`);
+  }
+  h += `<h3>Apuntados (${fijas ? ST.parejas.length + " parejas" : js.length})</h3>
+    <div class="lista-nombres">${js.map(j => `<span>${esc(j.nombre)}</span>`).join("") || '<span class="dim">Todavía nadie</span>'}</div>`;
+  return h;
+}
+async function apuntarme() {
+  const a = $("#aNom").value.trim(), b = $("#aNom2") ? $("#aNom2").value.trim() : "";
+  const nombre = b ? `${a} / ${b}` : a;
+  if (a.length < 2) return TC.toast("Escribe tu nombre", "bad");
+  try { await S.apuntarse(CODIGO, nombre); enviado = a; poner(LSA, a); desbloquearSonido(); pintar(); }
+  catch (e) { TC.toast(esc(e.message), "bad", 6000); }
+}
+
+/* ---------- ¿quién eres? ---------- */
+function vElegir() {
+  if (ST.fase === "inscripcion") return "";
+  const js = E.activos(ST).slice().sort((x, y) => x.nombre.localeCompare(y.nombre));
+  return `<div class="card stack"><h2 style="margin:0">¿Quién eres?</h2>
+    <div class="small dim">Toca tu nombre y te avisamos cuando te toque jugar.</div>
+    <div class="elegir">${js.map(j => `<button type="button" onclick="elegir('${esc(j.id)}')">${esc(j.nombre)}</button>`).join("")}</div></div>`;
+}
+function elegir(id) { YO = id; poner(LSY, id); desbloquearSonido(); pintar(); window.scrollTo(0, 0); }
+
+/* ---------- mi situación ---------- */
+function vSituacion() {
+  const s = E.situacionJugador(ST, YO);
+  if (!s) return "";
+  const con = () => s.rivales && s.rivales.length
+    ? `<div class="con">${s.companeros.length ? `Con <b>${esc(s.companeros.join(" y "))}</b> ` : ""}contra <b>${esc(s.rivales.join(" y "))}</b></div>` : "";
+  const corazones = s.vidas != null && ST.fase === "juego" ? `<div class="vidas">${[...Array(ST.config.vidas).keys()].map(i => i < s.vidas ? "♥" : "<i>♥</i>").join("")}</div>` : "";
+  const T = {
+    inscrito: ["📝", "Apuntado", "<div class='con'>Espera a que empiece el torneo.</div>", ""],
+    mesa: ["🔔", `¡A jugar! Mesa ${s.mesa}`, con(), "mesa"],
+    lista: ["✅", "Te toca enseguida", con() + "<div class='small dim' style='margin-top:6px'>En cuanto quede una mesa libre te llaman.</div>", "lista"],
+    espera: ["⏳", `Ronda ${s.ronda}`, con() + "<div class='small dim' style='margin-top:6px'>Juegas en cuanto tus rivales y tu pareja acaben lo suyo.</div>", ""],
+    pendiente: ["⏳", "Tu próximo partido", con() + "<div class='small dim' style='margin-top:6px'>Espera a que te llamen a mesa.</div>", ""],
+    esperaRival: ["⏳", "Esperando rival", "<div class='con'>Juegas contra quien gane el partido que falta.</div>", ""],
+    descansa: ["☕", "Esta ronda descansas", "<div class='con'>Te avisamos cuando te toque.</div>", ""],
+    esperaRonda: ["⏳", "Esperando la siguiente ronda", "<div class='con'>Están acabando los demás partidos.</div>", ""],
+    eliminado: ["😢", "Eliminado", "<div class='con'>¡Gracias por jugar!</div>", "fuera"],
+    retirado: ["🚪", "Te has ido del torneo", "", "fuera"],
+    podio: [s.pos === 1 ? "🏆" : s.pos === 2 ? "🥈" : "🥉", s.pos === 1 ? "¡Campeón!" : s.pos + "º puesto", s.premio ? `<div class="con">Premio: <b>${esc(CV.euros(s.premio))}</b></div>` : "", "podio"],
+    fin: ["🏁", "Torneo terminado", "<div class='con'>¡Gracias por jugar!</div>", ""]
+  }[s.tipo] || ["⏳", "", "", ""];
+  // aviso al entrar en mesa (vibra, suena y parpadea el título): una vez por partido, aunque abra la página tarde
+  const clave = s.tipo === "mesa" ? s.partidoId + "|" + s.mesa : "";
+  let avisado = ""; try { avisado = sessionStorage.getItem("ciegos-avisado:" + CODIGO) || ""; } catch (_) {}
+  if (clave && clave !== avisado) { avisar(s.mesa); try { sessionStorage.setItem("ciegos-avisado:" + CODIGO, clave); } catch (_) {} }
+  return `<div class="estado ${T[3]}"><div class="ico">${T[0]}</div><h2>${esc(T[1])}</h2>${T[2]}${corazones}
+      ${s.pos && ST.fase === "juego" ? `<div class="small dim" style="margin-top:6px">Vas ${s.pos}º en la clasificación</div>` : ""}</div>
+    <div class="yo"><span class="dim">Eres <b>${esc(s.nombre)}</b></span><button class="btn sm" type="button" onclick="YO='';poner(LSY,'');pintar()">Cambiar</button></div>
+    ${ST.fase === "juego" || ST.fase === "final" ? `<div class="aviso">📳 Deja esta página abierta: cuando te toque, el móvil vibra y suena.</div>` : ""}`;
+}
+let audio = null;
+function desbloquearSonido() { try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch (_) {} }
+document.addEventListener("click", desbloquearSonido, { once: true });
+let parpadeo = null;
+function avisar(mesa) {
+  if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 800]);
+  TC.pitido();
+  clearInterval(parpadeo);
+  let n = 0; const t = ST.nombre;
+  parpadeo = setInterval(() => { document.title = n++ % 2 ? t : `🔔 ¡Mesa ${mesa}!`; if (n > 30) { clearInterval(parpadeo); document.title = t; } }, 700);
+}
+
+/* ---------- lo demás (para mirar) ---------- */
+function vResto() {
+  if (ST.fase === "inscripcion") return "";
+  let h = "";
+  if (ST.fase === "terminado") h += `<h3>🏆 Podio</h3>` + CV.htmlPodio(ST);
+  if (ST.fase === "juego" || ST.fase === "final") h += `<h3>En mesa</h3>` + CV.htmlMesas(ST);
+  if (ST.modo === "vidas" && ST.fase !== "terminado") h += `<h3>❤️ Vidas</h3>` + CV.htmlTableroVidas(ST);
+  if (ST.ko) h += `<h3>Cuadro</h3>` + CV.htmlCuadroFinal(ST);
+  if (ST.modo !== "ciegos") h += `<h3>Clasificación</h3>` + CV.htmlTabla(ST);
+  return h;
+}
+</script>
+</body>
+</html>

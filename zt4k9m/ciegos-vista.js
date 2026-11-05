@@ -307,5 +307,52 @@
   let tLineas;
   window.addEventListener("resize", () => { clearTimeout(tLineas); tLineas = setTimeout(() => lineas(), 120); });
 
-  window.CV = { euros, htmlListos, htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
+  /* ---------- QR (librería qrcodejs, se carga sólo cuando hace falta) ---------- */
+  let qrLib = null;
+  function cargarQR() {
+    if (window.QRCode) return Promise.resolve();
+    if (!qrLib) qrLib = new Promise((ok, ko) => {
+      const sc = document.createElement("script");
+      sc.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+      sc.onload = ok; sc.onerror = () => { qrLib = null; ko(new Error("No se pudo cargar el QR (¿sin conexión?)")); };
+      document.head.appendChild(sc);
+    });
+    return qrLib;
+  }
+  // Pinta un QR en el elemento (blanco y negro, se lee bien desde lejos)
+  async function pintarQR(el, texto, tam) {
+    if (!el) return;
+    try {
+      await cargarQR();
+      el.innerHTML = "";
+      new window.QRCode(el, { text: texto, width: tam || 200, height: tam || 200, colorDark: "#000000", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
+    } catch (e) { el.innerHTML = `<div class="small dim">${esc(e.message)}</div>`; }
+  }
+  // Dirección de la página de los jugadores (apuntarse y «¿cuándo juego?»)
+  function urlJugador(codigo) { return new URL("jugador.html?t=" + encodeURIComponent(codigo), location.href).href; }
+
+  /* ---------- cantar en voz alta las mesas ---------- */
+  function cantar(texto) {
+    try {
+      if (!("speechSynthesis" in window) || !texto) return;
+      const u = new SpeechSynthesisUtterance(texto);
+      u.lang = "es-ES"; u.rate = 0.95;
+      const v = speechSynthesis.getVoices().find(x => /^es(-|_)ES/i.test(x.lang)) || speechSynthesis.getVoices().find(x => /^es/i.test(x.lang));
+      if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    } catch (_) {}
+  }
+  // «Mesa 2. Ana y Bruno, contra, Carla y Dani.»
+  function textoMesa(st, p) {
+    const lado = l => E.jugadoresDe(st, l).map(id => E.nombreJugador(st, id)).join(" y ");
+    return `Mesa ${p.mesa}. ${lado(p.a)}, contra, ${lado(p.b)}.`;
+  }
+  // Partidos que acaban de entrar en mesa (comparando con lo que había antes). Devuelve { nuevos, clave }.
+  function nuevasEnMesa(st, antes) {
+    const ahora = st.partidos.filter(p => p.estado === "mesa").map(p => p.id + "|" + p.mesa);
+    const previo = new Set(antes || []);
+    return { nuevos: antes ? st.partidos.filter(p => p.estado === "mesa" && !previo.has(p.id + "|" + p.mesa)) : [], clave: ahora };
+  }
+
+  window.CV = { cargarQR, pintarQR, urlJugador, cantar, textoMesa, nuevasEnMesa, euros, htmlListos, htmlResumen, htmlRondas, htmlCuadroFinal, lineas, htmlTableroVidas, htmlMesas, htmlCola, htmlRonda, htmlCuadro, htmlTabla, htmlParejas, htmlPodio, estadoTexto, reglas, datosImagen, imagenRedes, corazones };
 })();

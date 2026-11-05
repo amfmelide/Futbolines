@@ -83,6 +83,12 @@
       if (modo === "local") throw new Error("Las invitaciones necesitan conexión");
       return api("invitar", { pass, horas, nombre });
     },
+    async invitaciones(pass) { return (await api("invitaciones", { pass })).invitaciones || []; },
+    async anularInvitacion(pass, id) { return api("anularInvitacion", { pass, id }); },
+    // Ciegos: apuntarse con el QR (público) y, para el organizador, ver y resolver las peticiones
+    async apuntarse(codigo, nombre) { return api("apuntarse", { codigo, nombre }); },
+    async solicitudes(codigo, pass) { return (await api("solicitudes", { codigo, pass })).solicitudes || []; },
+    async resolverSolicitudes(codigo, ids, estado, pass) { return api("resolverSolicitudes", { codigo, ids, estado, pass }); },
 
     async cargar(codigo) {
       if (modo === "local") {

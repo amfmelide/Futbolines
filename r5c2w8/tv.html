@@ -10,7 +10,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../zt4k9m/app.css?v=20261102a">
+<link rel="stylesheet" href="../zt4k9m/app.css?v=20261105a">
 <style>
   /* Pantalla TV: se abre en el PC conectado a la tele. Sólo mira, no toca nada. Va cambiando sola. */
   html { font-size: clamp(15px, 1.12vw, 30px); }
@@ -59,7 +59,16 @@
   .tv-diapo { animation: tvEntra .7s ease both; }
   @keyframes tvEntra { from { opacity: 0; transform: translateY(12px); } }
   /* botón pantalla completa (se esconde al ponerla) */
-  .tv-fs { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 5; }
+  .tv-fs { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 5; display: flex; gap: .6rem; }
+  /* QR para los jugadores (apuntarse / «¿cuándo juego?») */
+  .tv-qr { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+  .tv-qr .qr-img { background: #fff; padding: .3rem; border-radius: .5rem; }
+  .tv-qr .qr-img img, .tv-qr .qr-img canvas { display: block; width: 5.2rem !important; height: 5.2rem !important; }
+  .tv-qr span { font-size: .62rem; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+  .tv-apuntarse { display: grid; grid-template-columns: auto 1fr; gap: 2.4rem; align-items: start; }
+  .tv-apuntarse .grande { background: #fff; padding: 1rem; border-radius: 1.2rem; text-align: center; }
+  .tv-apuntarse .grande img, .tv-apuntarse .grande canvas { width: 18rem !important; height: 18rem !important; }
+  .tv-apuntarse .grande b { display: block; color: #0a0e1a; font-size: 1.6rem; margin-top: .4rem; font-family: 'Bebas Neue', sans-serif; letter-spacing: .05em; }
   body.quieto { cursor: none; } body.quieto .tv-fs { opacity: 0; pointer-events: none; }
   .tv-fs { transition: opacity .4s; }
   .vacio { font-size: 1.4rem; }
@@ -84,6 +93,8 @@
     .tv-campeon .resto { flex-direction: column; gap: .6rem; }
     .tv-campeon > .premio { font-size: 1.6rem; }
     .tv-fs { display: none; }
+    .tv-qr { display: none; }
+    .tv-apuntarse { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -97,18 +108,19 @@
     <div class="tv-dato" id="tBote"></div>
     <div class="tv-dato" id="tPie"></div>
     <div class="tv-reloj" id="tReloj"></div>
+    <div class="tv-qr" id="tQR" title="Escanea para apuntarte o ver cuándo juegas"><div class="qr-img" id="tQRimg"></div><span id="tQRtxt"></span></div>
   </div>
   <div class="tv-barra"><h2 id="tDiapo"></h2><div class="tv-progreso"><i id="tProg"></i></div><span class="tv-puntos" id="tPuntos"></span></div>
   <main class="tv-main" id="main"><div class="vacio">Cargando…</div></main>
 </div>
-<button class="btn pri tv-fs" id="bFS" onclick="pantallaCompleta()">⛶ Pantalla completa (F)</button>
+<div class="tv-fs"><button class="btn" id="bVoz" onclick="cambiarVoz()"></button><button class="btn pri" id="bFS" onclick="pantallaCompleta()">⛶ Pantalla completa (F)</button></div>
 
-<script src="../zt4k9m/config.js?v=20261102a"></script>
-<script src="../zt4k9m/engine.js?v=20261102a"></script>
-<script src="../zt4k9m/store.js?v=20261102a"></script>
-<script src="../zt4k9m/comun.js?v=20261102a"></script>
-<script src="../zt4k9m/ciegos.js?v=20261102a"></script>
-<script src="../zt4k9m/ciegos-vista.js?v=20261102a"></script>
+<script src="../zt4k9m/config.js?v=20261105a"></script>
+<script src="../zt4k9m/engine.js?v=20261105a"></script>
+<script src="../zt4k9m/store.js?v=20261105a"></script>
+<script src="../zt4k9m/comun.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos-vista.js?v=20261105a"></script>
 <script>
 "use strict";
 // la TV va siempre en oscuro, aunque en este aparato se eligiera el tema claro
@@ -135,6 +147,9 @@ async function recargar() {
   const r = await S.cargar(CODIGO);
   if (!r.datos || r.datos.app !== "ciegos") throw new Error("Torneo no encontrado");
   ST = r.datos; VERSION = r.version;
+  const m = CV.nuevasEnMesa(ST, mesasAntes);
+  if (VOZ && vozLista) m.nuevos.forEach(p => CV.cantar(CV.textoMesa(ST, p)));
+  mesasAntes = m.clave;
   // al terminar, la de campeones sale la primera
   if (ST.fase === "terminado" && ultimaFase && ultimaFase !== "terminado") { idx = 0; inicioDiapo = Date.now(); }
   ultimaFase = ST.fase;
@@ -149,12 +164,19 @@ function cabecera() {
   const b = E.bote(ST);
   $("#tBote").innerHTML = b.cuota && b.total ? `<b>${esc(CV.euros(b.total))}</b><span>bote</span>` : "";
   $("#tPie").innerHTML = ST.modo === "vidas" && ST.fase === "juego" ? `<b>${E.vivos(ST).length}</b><span>en pie</span>` : "";
+  // QR pequeño siempre a la vista (en inscripción, «apúntate»; luego, «¿cuándo juego?»)
+  const txt = ST.fase === "inscripcion" ? "apúntate" : ST.fase === "terminado" ? "resultados" : "¿cuándo juego?";
+  $("#tQRtxt").textContent = txt;
+  if (!$("#tQRimg").dataset.hecho) { $("#tQRimg").dataset.hecho = "1"; CV.pintarQR($("#tQRimg"), CV.urlJugador(CODIGO), 160); }
 }
 
 function diapositivas() {
   const d = [], f = ST.fase;
   if (f === "terminado") d.push({ t: "🏆 Campeones", h: vCampeones });
-  if (f === "inscripcion") d.push({ t: "Apuntados", h: () => `<div class="vt">${E.activos(ST).map(j => `<div class="vt-j"><div class="vt-nom">${esc(j.nombre)}</div></div>`).join("")}</div><div class="small dim" style="margin-top:1rem">${CV.reglas(ST)}</div>` });
+  if (f === "inscripcion") d.push({ t: "📱 Apúntate", h: () => `<div class="tv-apuntarse">
+      ${ST.config.qrCerrado ? "" : `<div class="grande"><div data-qr-grande></div><b>Escanea y apúntate</b></div>`}
+      <div><div class="vt">${E.activos(ST).map(j => `<div class="vt-j"><div class="vt-nom">${esc(j.nombre)}</div></div>`).join("") || '<div class="dim" style="font-size:1.4rem">Todavía nadie…</div>'}</div>
+      <div class="small dim" style="margin-top:1rem">${CV.reglas(ST)}</div></div></div>` });
   if (f === "juego" || f === "final") d.push({ t: "En juego", h: vJuego });
   if (ST.modo === "vidas" && f !== "inscripcion") d.push({ t: "❤️ Vidas", h: () => CV.htmlTableroVidas(ST) });
   if (ST.ko) d.push({ t: f === "terminado" ? "Cuadro final" : "🏆 Cuadro", h: () => `<div class="tv-cuadro">${CV.htmlCuadroFinal(ST)}</div>` });
@@ -188,13 +210,27 @@ function pintar(cambia) {
   $("#tPuntos").innerHTML = d.length > 1 ? d.map((_, i) => `<i class="${i === idx ? "on" : ""}"></i>`).join("") : "";
   $("#main").innerHTML = `<div class="${cambia ? "tv-diapo" : ""}" style="height:100%">${s.h()}</div>`;
   CV.lineas($("#main"));
+  const grande = document.querySelector("[data-qr-grande]");
+  if (grande) CV.pintarQR(grande, CV.urlJugador(CODIGO), 300);
   if (cambia && s.h === vCampeones && TC.confeti) TC.confeti(document.body);
 }
 function progreso() { const p = Math.min(1, (Date.now() - inicioDiapo) / (SEG * 1000)); $("#tProg").style.width = (p * 100) + "%"; requestAnimationFrame(progreso); }
 function reloj() { $("#tReloj").textContent = new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }); }
 
 /* pantalla completa, cursor que se esconde y pantalla siempre encendida */
-function pantallaCompleta() { const el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el); }
+function pantallaCompleta() { activarVoz(); const el = document.documentElement; (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el); }
+
+/* cantar las mesas en voz alta: el navegador sólo deja hablar después de un toque o una tecla */
+let VOZ = true, vozLista = false, mesasAntes = null;
+try { VOZ = localStorage.getItem("ciegos-tv-voz") !== "0"; } catch (_) {}
+function activarVoz() { if (!vozLista) { vozLista = true; if (VOZ) CV.cantar(" "); } pintarVoz(); }
+function cambiarVoz() {
+  if (!vozLista) { VOZ = true; vozLista = true; try { localStorage.setItem("ciegos-tv-voz", "1"); } catch (_) {} CV.cantar("Voz activada"); pintarVoz(); return; }   // el primer toque la enciende
+  VOZ = !VOZ; try { localStorage.setItem("ciegos-tv-voz", VOZ ? "1" : "0"); } catch (_) {} activarVoz(); if (VOZ) CV.cantar("Voz activada"); }
+function pintarVoz() { $("#bVoz").textContent = !VOZ ? "🔇 Voz apagada" : vozLista ? "🔊 Voz" : "🔊 Toca para activar la voz"; }
+document.addEventListener("click", activarVoz);
+document.addEventListener("keydown", activarVoz);
+pintarVoz();
 document.addEventListener("keydown", e => {
   if (e.key === "f" || e.key === "F") pantallaCompleta();
   if (e.key === "ArrowRight") { idx++; inicioDiapo = Date.now(); pintar(true); }

@@ -16,7 +16,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../zt4k9m/app.css?v=20261102a">
+<link rel="stylesheet" href="../zt4k9m/app.css?v=20261105a">
 <style>
   /* Fondo de la web de la AMF: foto del futbolín oscurecida */
   .fondo-foto { position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -55,6 +55,17 @@
   .jug .pill { font-size: .72rem; padding: 3px 8px; }
   .cp-premio small { font-size: .65em; color: var(--dim); font-weight: 600; }
   @media (max-width: 760px) { #bTV { display: none !important; } }
+
+  /* QR, peticiones y repetir */
+  .qr-card summary { cursor: pointer; list-style: none; } .qr-card summary::-webkit-details-marker { display: none; }
+  .qr-fila { display: flex; gap: 14px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+  .qr { background: #fff; padding: 8px; border-radius: 12px; width: 166px; height: 166px; flex: none; }
+  .qr img, .qr canvas { display: block; width: 150px !important; height: 150px !important; }
+  .solicitudes { border-top: 1px solid var(--border); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .sol-fila { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--surface2); }
+  .rep-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; max-height: 42vh; overflow: auto; }
+  .rep-op { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+  .rep-op:has(input:not(:checked)) { opacity: .45; text-decoration: line-through; }
 
   /* invitados */
   .aviso-inv { margin-bottom: 14px; border-color: var(--gold2); background: rgba(233,205,148,.07); }
@@ -138,8 +149,8 @@
     input, select, textarea { font-size: 16px !important; }       /* iPhone no hace zoom al escribir */
   }
 </style>
-<link rel="stylesheet" href="../fx.css?v=20261102a">
-<script src="../fx.js?v=20261102a" defer></script>
+<link rel="stylesheet" href="../fx.css?v=20261105a">
+<script src="../fx.js?v=20261105a" defer></script>
 </head>
 <body>
 <div class="fondo-foto" aria-hidden="true"></div>
@@ -163,13 +174,13 @@
 <main class="wrap" id="main"><div class="vacio">Cargando…</div></main>
 <div class="barra-movil oculto" id="barra"></div>
 
-<script src="../zt4k9m/config.js?v=20261102a"></script>
-<script src="../zt4k9m/engine.js?v=20261102a"></script>
-<script src="../zt4k9m/store.js?v=20261102a"></script>
-<script src="../zt4k9m/comun.js?v=20261102a"></script>
-<script src="../zt4k9m/imagen.js?v=20261102a"></script>
-<script src="../zt4k9m/ciegos.js?v=20261102a"></script>
-<script src="../zt4k9m/ciegos-vista.js?v=20261102a"></script>
+<script src="../zt4k9m/config.js?v=20261105a"></script>
+<script src="../zt4k9m/engine.js?v=20261105a"></script>
+<script src="../zt4k9m/store.js?v=20261105a"></script>
+<script src="../zt4k9m/comun.js?v=20261105a"></script>
+<script src="../zt4k9m/imagen.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos.js?v=20261105a"></script>
+<script src="../zt4k9m/ciegos-vista.js?v=20261105a"></script>
 <script>
 "use strict";
 const C = window.TORNEO_CONFIG, E = window.CiegosEngine, S = window.TorneoStore;
@@ -252,12 +263,13 @@ function htmlAvisoInvitado() {
 }
 function htmlInvitar() {
   if (ROL !== "admin" && ROL !== "amf") return "";
-  return `<details class="card invitar" ${invitacionNueva ? "open" : ""}><summary><b>🔗 Invitar a un compañero</b> <span class="small dim">· enlace que caduca solo</span></summary>
+  return `<details class="card invitar" ${invitacionNueva ? "open" : ""} ontoggle="if(this.open)cargarInvitaciones()"><summary><b>🔗 Invitar a un compañero</b> <span class="small dim">· enlace que caduca solo</span></summary>
     <div class="stack" style="margin-top:10px">
       <div class="small dim">Entra sin contraseña y sólo ve los torneos que cree él. Tú los ves todos. Al caducar, el enlace deja de funcionar.</div>
       <div class="row"><input type="text" id="iNombre" placeholder="Nombre (p. ej. Pepe)" style="flex:1" maxlength="40" autocapitalize="words">
         <select id="iHoras" aria-label="Cuánto dura"><option value="24">1 día</option><option value="48" selected>2 días</option><option value="72">3 días</option><option value="168">1 semana</option></select></div>
       <button class="btn pri" type="button" onclick="crearInvitacion()">Crear enlace</button>
+      <div id="invLista">${htmlListaInvitaciones()}</div>
       ${invitacionNueva ? `<div class="inv-nueva stack">
         <div class="small">Enlace para <b>${esc(invitacionNueva.nombre || "tu compañero")}</b> · vale hasta el <b>${esc(cuando(invitacionNueva.caduca))}</b></div>
         <input type="text" readonly value="${esc(invitacionNueva.url)}" onclick="this.select()" aria-label="Enlace de invitado">
@@ -271,7 +283,8 @@ async function crearInvitacion() {
   try {
     const r = await S.invitar(PASS, horas, nombre);
     invitacionNueva = { url: new URL("./?inv=" + encodeURIComponent(r.token), location.href).href, caduca: r.caduca, nombre: r.nombre };
-    pantallaAcceso();
+    await pantallaAcceso();
+    cargarInvitaciones();
   } catch (e) { TC.toast(esc(/desconocida/i.test(e.message) ? "Falta actualizar la función torneo-api en Supabase" : e.message), "bad", 6000); }
 }
 function textoInvitacion() {
@@ -282,6 +295,147 @@ function urlWhatsInvitacion() { return "https://wa.me/?text=" + encodeURICompone
 async function copiarInvitacion() {
   try { await navigator.clipboard.writeText(invitacionNueva.url); TC.toast("Enlace copiado", "ok"); }
   catch (_) { const i = $(".inv-nueva input"); if (i) { i.select(); document.execCommand("copy"); TC.toast("Enlace copiado", "ok"); } }
+}
+
+/* ================= QR PARA LOS JUGADORES · VOZ · WHATSAPP · REPETIR ================= */
+// Peticiones de los que se apuntan solos con el QR (sólo mientras el torneo está en inscripción)
+let SOLICITUDES = [], ultimaSol = 0;
+async function cargarSolicitudes(forzar) {
+  if (!ST || ST.fase !== "inscripcion" || !CODIGO || !PASS) { SOLICITUDES = []; return; }
+  if (!forzar && Date.now() - ultimaSol < 5000) return;
+  ultimaSol = Date.now();
+  try {
+    const l = await S.solicitudes(CODIGO, PASS);
+    const nuevas = l.filter(x => !SOLICITUDES.some(y => y.id === x.id));
+    const cambia = l.length !== SOLICITUDES.length || nuevas.length;
+    SOLICITUDES = l;
+    if (cambia && tab === "jugadores" && !$(".modal-bg") && !(document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName))) pintar();
+    if (nuevas.length) TC.toast(`📱 ${esc(nuevas.map(x => x.nombre).join(", "))} ${nuevas.length > 1 ? "quieren" : "quiere"} apuntarse`, "ok", 5000);
+  } catch (_) {}
+}
+const nombresSolicitud = n => E.parejasFijas(ST) ? String(n).split(/\s*\/\s*/) : [String(n)];
+async function aceptarSolicitudes(ids) {
+  const sel = SOLICITUDES.filter(x => ids.includes(x.id));
+  if (!sel.length) return;
+  const ya = new Set(E.activos(ST).map(j => j.nombre.toLowerCase()));
+  const ok = cambio(() => sel.forEach(x => {
+    const ns = nombresSolicitud(x.nombre);
+    if (E.parejasFijas(ST)) { if (ns.length >= 2 && ns[0] && ns[1]) E.añadirPareja(ST, ns[0], ns[1]); }
+    else if (!ya.has(ns[0].toLowerCase())) { E.añadirJugador(ST, ns[0]); ya.add(ns[0].toLowerCase()); }
+  }), `${sel.length} apuntado(s) por QR`);
+  if (!ok) return;
+  SOLICITUDES = SOLICITUDES.filter(x => !ids.includes(x.id)); pintar();
+  try { await S.resolverSolicitudes(CODIGO, ids, "aceptada", PASS); } catch (e) { TC.toast(esc(e.message), "bad"); }
+}
+async function rechazarSolicitud(id) {
+  SOLICITUDES = SOLICITUDES.filter(x => x.id !== id); pintar();
+  try { await S.resolverSolicitudes(CODIGO, [id], "rechazada", PASS); } catch (_) {}
+}
+function htmlSolicitudes() {
+  if (!SOLICITUDES.length) return `<div class="small dim">Nadie esperando. Cuando alguien se apunte con el QR saldrá aquí para que lo aceptes.</div>`;
+  return `<div class="solicitudes"><div class="row"><b>Quieren apuntarse (${SOLICITUDES.length})</b><span class="spacer"></span>
+      <button class="btn sm ok" onclick="aceptarSolicitudes(SOLICITUDES.map(x=>x.id))">✓ Aceptar a todos</button></div>
+    ${SOLICITUDES.map(x => `<div class="sol-fila"><b>${esc(x.nombre)}</b><span class="spacer"></span>
+      <button class="btn sm ok" aria-label="Aceptar ${esc(x.nombre)}" onclick="aceptarSolicitudes([${Number(x.id)}])">✓</button>
+      <button class="btn sm" aria-label="Rechazar ${esc(x.nombre)}" onclick="rechazarSolicitud(${Number(x.id)})">✕</button></div>`).join("")}</div>`;
+}
+function htmlQRJugadores() {
+  const insc = ST.fase === "inscripcion", url = CV.urlJugador(CODIGO);
+  const texto = insc ? `Apúntate a «${ST.nombre}»: ${url}` : `Mira cuándo juegas en «${ST.nombre}»: ${url}`;
+  return `<details class="card qr-card" ${insc ? "open" : ""}><summary><b>📱 ${insc ? "Que se apunten ellos (QR)" : "QR «¿Cuándo juego?» para los jugadores"}</b></summary>
+    <div class="qr-fila"><div class="qr" data-qr="${esc(url)}"></div>
+      <div class="stack" style="gap:8px;flex:1;min-width:0">
+        <div class="small">${insc ? "Enséñales el QR (o ponlo en la tele): escriben su nombre y aquí te sale para aceptarlo." : "Cada jugador ve cuándo le toca y en qué mesa. El móvil le vibra y le suena cuando le llaman."}</div>
+        <div class="row"><button class="btn sm" type="button" onclick="copiarTexto(this.dataset.u)" data-u="${esc(url)}">📋 Copiar enlace</button>
+          <a class="btn sm ok" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(texto)}">WhatsApp</a></div>
+        ${insc ? `<label class="check small"><input type="checkbox" ${ST.config.qrCerrado ? "" : "checked"} onchange="const v=!this.checked;cambio(()=>{ST.config.qrCerrado=v})"> Dejar que se apunten por QR</label>` : ""}
+      </div></div>
+    ${insc ? htmlSolicitudes() : ""}</details>`;
+}
+async function copiarTexto(t) {
+  try { await navigator.clipboard.writeText(t); TC.toast("Copiado", "ok"); }
+  catch (_) { prompt("Copia el enlace:", t); }
+}
+function pintarQRs() { document.querySelectorAll("[data-qr]").forEach(el => CV.pintarQR(el, el.dataset.qr, 150)); }
+
+// Cantar las mesas en voz alta (en este móvil)
+let VOZ = false; try { VOZ = localStorage.getItem("ciegos-voz") === "1"; } catch (_) {}
+let mesasAntes = null;
+function vigilarMesas() {
+  const r = CV.nuevasEnMesa(ST, mesasAntes);
+  if (VOZ) r.nuevos.forEach(p => CV.cantar(CV.textoMesa(ST, p)));
+  mesasAntes = r.clave;
+}
+function ponerVoz(v) { VOZ = v; try { localStorage.setItem("ciegos-voz", v ? "1" : "0"); } catch (_) {} if (v) CV.cantar("Voz activada. Así se cantarán las mesas."); }
+const htmlVoz = () => `<label class="check" style="margin-bottom:10px"><input type="checkbox" ${VOZ ? "checked" : ""} onchange="ponerVoz(this.checked)"> 🔊 Cantar en voz alta las mesas (en este móvil)</label>`;
+
+// Resultados en texto para el grupo de WhatsApp
+async function compartirResultados() {
+  const t = E.textoResultados(ST);
+  if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank", "noopener");
+}
+
+// Repetir torneo: mismos ajustes y jugadores, quitando a quien no viene
+function modalRepetir() {
+  const fijas = E.parejasFijas(ST);
+  const filas = fijas
+    ? ST.parejas.filter(p => !p.deFinal).map(p => ({ id: p.id, txt: E.nombreJugador(ST, p.j1) + " y " + E.nombreJugador(ST, p.j2) }))
+    : E.activos(ST).map(j => ({ id: j.id, txt: j.nombre }));
+  const hoy = new Date().toISOString().slice(0, 10);
+  TC.modal(`<h3>🔁 Repetir torneo</h3>
+    <p class="small dim" style="margin:-4px 0 10px">Mismo formato, ajustes, cuota y reparto. Desmarca a quien no juegue esta vez (luego puedes apuntar a más).</p>
+    <div class="stack" style="gap:8px">
+      <div><label class="f" for="rNom">Nombre</label><input type="text" id="rNom" value="${esc(ST.nombre)}"></div>
+      <div><label class="f" for="rFecha">Fecha</label><input type="date" id="rFecha" value="${hoy}"></div>
+      <div class="row"><b>${fijas ? "Parejas" : "Jugadores"}</b><span class="small dim" id="rCuenta"></span><span class="spacer"></span>
+        <button type="button" class="btn sm" data-todos>Todos</button><button type="button" class="btn sm" data-ninguno>Ninguno</button></div>
+      <div class="rep-lista">${filas.map(f => `<label class="rep-op"><input type="checkbox" data-r="${esc(f.id)}" checked><span>${esc(f.txt)}</span></label>`).join("")}</div>
+    </div>
+    <div class="row" style="margin-top:12px"><span class="spacer"></span><button type="button" class="btn" data-cerrar>Cancelar</button><button type="button" class="btn pri" data-crear>🔁 Crear y abrir</button></div>`, (el, cerrar) => {
+    const cajas = () => [...el.querySelectorAll("[data-r]")];
+    const contar = () => { const n = cajas().filter(c => c.checked).length; el.querySelector("#rCuenta").textContent = ` · ${n} de ${filas.length}`; };
+    contar();
+    el.addEventListener("change", contar);
+    el.querySelector("[data-todos]").onclick = () => { cajas().forEach(c => (c.checked = true)); contar(); };
+    el.querySelector("[data-ninguno]").onclick = () => { cajas().forEach(c => (c.checked = false)); contar(); };
+    el.querySelector("[data-crear]").onclick = async () => {
+      const nombre = el.querySelector("#rNom").value.trim() || ST.nombre, fecha = el.querySelector("#rFecha").value;
+      const quitar = cajas().filter(c => !c.checked).map(c => c.dataset.r);
+      const codigo = PREFIJO + (slug(nombre) || "torneo") + "-" + Math.random().toString(36).slice(2, 6);
+      const nuevo = E.repetirTorneo(ST, { codigo, nombre, fecha, quitar });
+      try {
+        await S.crear(codigo, nuevo, PASS);
+        cerrar();
+        await abrir(codigo);
+        tab = "jugadores"; pintar();
+        TC.toast(`🔁 Creado con ${E.activos(ST).length} jugadores`, "ok");
+      } catch (e) { TC.toast(esc(e.message), "bad", 6000); }
+    };
+  });
+}
+const htmlBotonesFin = () => `<div class="row" style="justify-content:center;margin-top:8px">
+  <button class="btn ok" onclick="compartirResultados()">💬 Resultados por WhatsApp</button>
+  <button class="btn" onclick="modalRepetir()">🔁 Repetir torneo</button></div>`;
+
+// Invitaciones activas (para anular una)
+let INVITACIONES = null;
+async function cargarInvitaciones() {
+  if (ROL !== "admin" && ROL !== "amf") return;
+  try { INVITACIONES = await S.invitaciones(PASS); } catch (_) { INVITACIONES = null; }
+  const el = $("#invLista"); if (el) el.innerHTML = htmlListaInvitaciones();
+}
+function htmlListaInvitaciones() {
+  if (!INVITACIONES) return "";
+  if (!INVITACIONES.length) return `<div class="small dim">No hay ninguna invitación activa.</div>`;
+  return `<div class="small dim" style="margin-bottom:4px">Activas:</div>` + INVITACIONES.map(x => `<div class="sol-fila">
+    <span>${x.anulada ? "🚫" : "🔗"} <b>${esc(x.nombre || "Sin nombre")}</b> <span class="small dim">${x.anulada ? "anulada" : "hasta el " + esc(cuando(x.caduca))}</span></span><span class="spacer"></span>
+    ${x.anulada ? "" : `<button class="btn sm bad" type="button" onclick="anularInvitacion('${esc(x.id)}', this.dataset.n)" data-n="${esc(x.nombre || "")}">Anular</button>`}</div>`).join("");
+}
+async function anularInvitacion(id, nombre) {
+  if (!confirm(`¿Anular la invitación${nombre ? " de " + nombre : ""}? Su enlace dejará de funcionar ya.`)) return;
+  try { await S.anularInvitacion(PASS, id); TC.toast("Invitación anulada", "ok"); cargarInvitaciones(); }
+  catch (e) { TC.toast(esc(e.message), "bad", 6000); }
 }
 
 /* ================= ACCESO ================= */
@@ -436,7 +590,8 @@ async function abrir(codigo) {
   try { r = await S.cargar(codigo); }
   catch (e) { if (e.status || !loc) throw e; }                       // sin red: se abre la copia del móvil
   if (r && (!r.datos || r.datos.app !== "ciegos")) throw new Error("Ese no es un torneo Ciegos");
-  CODIGO = codigo;
+  if (CODIGO !== codigo) { HIST.length = 0; SOLICITUDES = []; }
+  CODIGO = codigo; mesasAntes = null;
   if (r && loc && loc.pendiente && JSON.stringify(loc.datos) === JSON.stringify(r.datos)) loc.pendiente = false;   // ya había llegado
   if (!r) { ST = loc.datos; VERSION = loc.version; sinRed(true); }
   else if (loc && loc.pendiente && loc.version >= r.version) { ST = loc.datos; VERSION = r.version; }   // cambios hechos sin cobertura
@@ -454,6 +609,8 @@ async function abrir(codigo) {
   intervalos = true;
   setInterval(sondear, (C.refrescoSeg || 10) * 1000);
   setInterval(() => { if (tab === "juego" && !$(".modal-bg")) pintar(); }, 30000);
+  setInterval(() => cargarSolicitudes(), 6000);
+  cargarSolicitudes(true);
 }
 function salir() { try { sessionStorage.setItem("ciegos-admin", JSON.stringify({ pass: PASS, modo: S.modo })); } catch (_) {} location.reload(); }
 
@@ -534,6 +691,7 @@ async function sondear() {
 const VISTAS = { jugadores: vJugadores, juego: vJuego, rondas: vRondas, cuadro: vCuadro, tabla: vTabla, ajustes: vAjustes };
 function pintar() {
   if (!ST) return;
+  vigilarMesas();
   $("#tTitulo").textContent = ST.nombre;
   $("#tSub").textContent = [ST.fecha, ST.lugar, CV.estadoTexto(ST)].filter(Boolean).join(" · ");
   const n = E.activos(ST).length;
@@ -547,6 +705,7 @@ function pintar() {
   const foco = document.activeElement && document.activeElement.id, y = window.scrollY;
   $("#main").innerHTML = VISTAS[tab]();
   CV.lineas($("#main"));
+  pintarQRs();
   if (foco && $("#" + foco)) $("#" + foco).focus();
   window.scrollTo(0, y);
   estadoSync($("#sync").textContent);
@@ -651,6 +810,7 @@ function vJugadores() {
       <button class="btn pri big" onclick="empezar()" ${par ? "disabled" : ""}>${E.individual(ST) ? "▶ Empezar la ronda 1" : fijas ? "▶ Empezar" : "🎲 Sortear parejas y empezar"}</button>
     </div>
   </div>
+  <div style="margin-top:14px">${htmlQRJugadores()}</div>
   ${htmlHabituales()}
   <div style="margin-top:14px">${htmlBote()}</div>
   <h2 style="margin-top:18px">${fijas ? "Parejas apuntadas" : "Apuntados"}</h2>`;
@@ -674,6 +834,7 @@ function vJugadoresEnJuego() {
     <div class="small dim">${ST.modo === "vidas" ? "Entra con las vidas del que menos tiene en pie, y se le sortea en las rondas que vienen." : ST.modo === "suizo" ? "En Suizo se entra por parejas; juega desde la ronda siguiente con 0 puntos." : "Juega desde la ronda siguiente."}</div></div>`;
   else if (ST.modo === "ciegos" && ST.fase === "juego") h += `<div class="small dim" style="margin-bottom:12px">En Ciegos el cuadro ya está sorteado: no puede entrar nadie a mitad. Si alguien se va, su pareja pierde por W.O.</div>`;
   h += htmlBote();
+  h += `<div style="margin-top:14px">${htmlQRJugadores()}</div>`;
   const fila = j => {
     const enMesa = E.jugandoEnMesa(ST, j.id);
     const estado = j.retirado ? `<span class="pill">🚪 Se fue</span>` : enMesa ? `<span class="pill ok">● Mesa ${enMesa.mesa}</span>` : v && !(v[j.id] > 0) ? `<span class="pill">Eliminado</span>` : "";
@@ -775,13 +936,14 @@ function sorteoFinal() {
 function vJuego() {
   if (ST.fase === "inscripcion") return `<div class="vacio">Primero <button class="btn sm" data-tab="jugadores">apunta a los jugadores</button> y empieza el torneo.</div>`;
   let h = "";
-  if (ST.fase === "terminado") h += `<div class="card" style="margin-bottom:14px;text-align:center"><h2>🏁 Torneo terminado</h2>${CV.htmlPodio(ST)}<div class="row" style="justify-content:center"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen de resultados para redes</button><button class="btn" onclick="celebrar()">🏆 Ver campeones</button></div></div>`;
+  if (ST.fase === "terminado") h += `<div class="card" style="margin-bottom:14px;text-align:center"><h2>🏁 Torneo terminado</h2>${CV.htmlPodio(ST)}<div class="row" style="justify-content:center"><button class="btn pri" onclick="CV.imagenRedes(ST)">📸 Imagen de resultados para redes</button><button class="btn" onclick="celebrar()">🏆 Ver campeones</button></div>${htmlBotonesFin()}</div>`;
   h += CV.htmlResumen(ST);
   if (ST.modo === "vidas" && ST.fase === "juego") return h + vJuegoVidas();
   const libres = E.mesasLibres(ST).length, pend = E.pendientes(ST).filter(p => p.estado === "pendiente");
   if (ST.fase !== "terminado") h += `<div class="row" style="margin-bottom:14px">
     <button class="btn pri" onclick="rellenar()" ${!libres || !pend.length ? "disabled" : ""}>▶ Llamar a mesa</button>
     <label class="check"><input type="checkbox" ${auto ? "checked" : ""} onchange="auto=this.checked;try{localStorage.setItem('ciegos-auto',auto?'1':'0')}catch(_){}"> Automático: al meter un resultado se llama al siguiente</label>
+    ${htmlVoz()}
     <span class="spacer"></span><span class="dim small">${pend.length} esperando · ${libres} mesa(s) libre(s)</span></div>`;
   // ¿siguiente ronda?
   if (E.puedeSiguienteRonda(ST) && ST.fase === "juego") {
@@ -820,6 +982,7 @@ function vJuegoVidas() {
       <button class="btn pri big" onclick="siguiente()">🎲 Sortear parejas de semifinales</button></div>`;
   else if (e.fin) h += `<div class="card" style="margin-bottom:14px"><b>¡Quedan 8 en pie!</b> <span class="dim">Cuando acabe lo que se está jugando en las mesas (ya no elimina a nadie) se sortean las semifinales.</span></div>`;
   else if (e.vivos.length <= 12) h += `<div class="small dim" style="margin:-6px 0 12px">Quedan ${e.vivos.length} en pie: sólo se ponen en verde los partidos que aseguran llegar a 8 justos (los demás se recolocan).</div>`;
+  h += htmlVoz();
   h += `<label class="check" style="margin-bottom:12px"><input type="checkbox" ${autoVidas ? "checked" : ""} onchange="autoVidas=this.checked;try{localStorage.setItem('ciegos-auto-vidas',autoVidas?'1':'0')}catch(_){};if(autoVidas)rellenar()"> Llamar solos a mesa los partidos listos (si no, los llamas tú con el botón verde)</label>`;
   const mesas = htmlMesasPanel();
   if (mesas) h += `<h2>En mesa</h2>` + mesas;
@@ -917,13 +1080,16 @@ function celebrar() {
     <div class="cp-n">${nombres(pod[0])}</div>${premio(pod[0])}
     <div class="cp-sub">${esc(ST.nombre)}</div>
     <div class="cp-resto">${pod.slice(1).map(x => `<div><span>${x.pos === 2 ? "🥈" : "🥉"}</span> ${nombres(x)}${premio(x)}</div>`).join("")}</div>
-    <div class="row" style="justify-content:center;margin-top:18px"><button class="btn pri big" data-img>📸 Imagen para redes</button><button class="btn big" data-cerrar>Cerrar</button></div>
+    <div class="row" style="justify-content:center;margin-top:18px"><button class="btn pri big" data-img>📸 Imagen para redes</button><button class="btn ok big" data-wa>💬 WhatsApp</button></div>
+    <div class="row" style="justify-content:center;margin-top:8px"><button class="btn" data-rep>🔁 Repetir torneo</button><button class="btn" data-cerrar>Cerrar</button></div>
   </div>`;
   document.body.appendChild(fondo);
   TC.confeti(fondo);
   setTimeout(() => TC.confeti(fondo), 1600);
   fondo.addEventListener("click", e => {
     if (e.target.closest("[data-img]")) CV.imagenRedes(ST);
+    else if (e.target.closest("[data-wa]")) compartirResultados();
+    else if (e.target.closest("[data-rep]")) { fondo.remove(); modalRepetir(); }
     else if (e.target === fondo || e.target.closest("[data-cerrar]")) fondo.remove();
   });
 }
@@ -1001,7 +1167,10 @@ function vAjustes() {
   <div class="card stack">
     <h2>Compartir</h2>
     <a class="btn" href="${esc(urlTV())}" target="_blank" rel="noopener">📺 Pantalla TV (ábrela en el PC conectado a la tele)</a>
+    <a class="btn" href="${esc(CV.urlJugador(CODIGO))}" target="_blank" rel="noopener">📱 Página de los jugadores («¿Cuándo juego?»)</a>
     <button type="button" class="btn" onclick="CV.imagenRedes(ST)" ${ST.fase === "terminado" ? "" : "disabled"}>📸 Imagen para redes</button>
+    <button type="button" class="btn" onclick="compartirResultados()" ${ST.fase === "terminado" ? "" : "disabled"}>💬 Resultados por WhatsApp (texto)</button>
+    <button type="button" class="btn" onclick="modalRepetir()">🔁 Repetir torneo (mismos jugadores y ajustes)</button>
   </div>
   <div class="card stack">
     <h2>💶 Reparto del bote</h2>

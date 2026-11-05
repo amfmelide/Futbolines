@@ -417,3 +417,55 @@ test("revisión: quien se va no sube al podio ni cobra (y en la tabla se ve que 
   assert.ok(!pod.some(x => x.lado === lider), "la pareja que se fue no está en el podio");
   assert.deepEqual(pod.map(x => x.pos), [1, 2, 3]);
 });
+
+test("¿cuándo juego?: la situación de cada jugador en cada momento", () => {
+  // Vidas
+  let st = conJugadores("vidas", 12, { mesas: 1 }); C.empezar(st); C.asignarMesas(st);
+  const enMesa = st.partidos.find(p => p.estado === "mesa");
+  const jm = enMesa.a[0];
+  let s = C.situacionJugador(st, jm);
+  assert.equal(s.tipo, "mesa"); assert.equal(s.mesa, enMesa.mesa); assert.equal(s.companeros.length, 1); assert.equal(s.rivales.length, 2); assert.equal(s.vidas, 3);
+  const otro = st.jugadores.find(j => !st.partidos.some(p => p.estado === "mesa" && p.a.concat(p.b).includes(j.id)));
+  assert.ok(["lista", "espera", "descansa"].includes(C.situacionJugador(st, otro.id).tipo));
+  // Ciegos: quien pierde queda eliminado; al final, podio con premio por cabeza
+  st = conJugadores("ciegos", 8, { cuota: 5 }); st.jugadores.forEach(j => (j.pagado = true)); C.empezar(st);
+  const q = C.pendientes(st)[0]; const perd = C.jugadoresDe(st, q.b)[0];
+  C.registrarGanador(st, q.id, "a");
+  assert.equal(C.situacionJugador(st, perd).tipo, "eliminado");
+  assert.equal(C.situacionJugador(st, C.jugadoresDe(st, q.a)[0]).tipo, "esperaRival");
+  jugarTodo(st);
+  const camp = C.podio(st)[0].ids[0];
+  s = C.situacionJugador(st, camp);
+  assert.equal(s.tipo, "podio"); assert.equal(s.pos, 1); assert.equal(s.premio, 12);
+  // Monster
+  st = conJugadores("monster", 9); C.empezar(st);
+  const tipos = st.jugadores.map(j => C.situacionJugador(st, j.id).tipo);
+  assert.equal(tipos.filter(t => t === "pendiente").length, 8); assert.equal(tipos.filter(t => t === "descansa").length, 1);
+  assert.equal(C.situacionJugador(st, st.jugadores[0].id).pos > 0, true);
+  // inscripción
+  st = conJugadores("suizo", 4); assert.equal(C.situacionJugador(st, st.jugadores[0].id).tipo, "inscrito");
+});
+
+test("repetir torneo: mismos ajustes y jugadores, quitando a quien no viene", () => {
+  const st = conJugadores("vidas", 10, { cuota: 3, mesas: 2, reparto: [70, 30, 0] });
+  st.jugadores.forEach(j => (j.pagado = true));
+  C.empezar(st);
+  const n = C.repetirTorneo(st, { codigo: "ciegos-otra", nombre: "Otra", fecha: "2026-11-13", quitar: [st.jugadores[0].id, st.jugadores[1].id] });
+  assert.equal(n.fase, "inscripcion"); assert.equal(n.modo, "vidas"); assert.equal(n.nombre, "Otra");
+  assert.equal(n.jugadores.length, 8); assert.ok(!n.jugadores.some(j => j.nombre === st.jugadores[0].nombre));
+  assert.ok(n.jugadores.every(j => !j.pagado), "el pago empieza de cero");
+  assert.deepEqual([n.config.cuota, n.config.mesas, n.config.reparto], [3, 2, [70, 30, 0]]);
+  n.config.reparto[0] = 1; assert.equal(st.config.reparto[0], 70, "copia, no la misma configuración");
+  // parejas fijas: se quita la pareja entera
+  const sf = C.nuevoTorneo({ modo: "suizo", config: { parejas: "fijas" } });
+  C.añadirPareja(sf, "A", "B"); C.añadirPareja(sf, "C", "D"); C.añadirPareja(sf, "E", "F");
+  const nf = C.repetirTorneo(sf, { quitar: [sf.parejas[1].id] });
+  assert.equal(nf.parejas.length, 2); assert.equal(nf.jugadores.length, 4);
+});
+
+test("resultados en texto para WhatsApp", () => {
+  const st = conJugadores("monster", 8, { cuota: 5, rondas: 2 }); st.jugadores.forEach(j => (j.pagado = true));
+  C.empezar(st); jugarTodo(st); C.siguienteRonda(st); jugarTodo(st); C.siguienteRonda(st);
+  const t = C.textoResultados(st);
+  assert.match(t, /🏆 \*/); assert.match(t, /🥇 J\d+ · 24 €/); assert.match(t, /📊 Clasificación/); assert.match(t, /💶 Bote: 40 €/);
+});
