@@ -669,7 +669,9 @@ tr.top2 td:first-child{box-shadow:inset 3px 0 0 rgba(255,240,225,.35)}
 /* En el móvil ya está la barra de abajo: el botón flotante solo tapaba partidos y filas */
 @media (max-width:859px){.fab{display:none!important}}
 /* Enviar resultado por WhatsApp */
-.wa-send{display:flex;justify-content:flex-end;margin:-6px 2px 10px}
+.mcell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.matches{align-items:start}
+.wa-send{display:flex;justify-content:flex-end;margin:0 2px}
 .wa-send a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:var(--dim);font-size:13px;font-weight:600;text-decoration:none}
 .wa-send a:hover,.wa-send a:focus-visible{color:var(--txt);border-color:var(--acc)}
 .fab svg{width:20px;height:20px}
@@ -1414,7 +1416,7 @@ function renderCalendario(){
         <div class="meta" style="justify-content:flex-end">${T("jugadosJ",{a:hechos,b:partidos.length})}</div>
       </div>
     </div>
-    <div class="matches">${partidos.map((m,i)=>matchHTML(m,gid,i)+waHTML(m,gid,jor)).join("")}${restHTML(gid,jor-1)}</div>`;
+    <div class="matches">${partidos.map((m,i)=>{ const wa=waHTML(m,gid,jor); return wa?`<div class="mcell">${matchHTML(m,gid,i)}${wa}</div>`:matchHTML(m,gid,i); }).join("")}${restHTML(gid,jor-1)}</div>`;
   const s=$("#selJor"); if(s) s.onchange=()=>{ vista.jor[gid]=+s.value; renderCalendario(); };
   const cur=el.querySelector('.jchip[aria-current="true"]');
   if(cur){ const st=cur.parentElement; st.scrollLeft=cur.offsetLeft-st.clientWidth/2+cur.clientWidth/2; }
