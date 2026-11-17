@@ -27,6 +27,7 @@
 <meta name="twitter:image" content="https://amfmelide.es/liga-og.jpg">
 <meta name="twitter:title" content="Liga Melide 2026-2027">
 <link rel="icon" type="image/png" href="a/4c8a425d2f17.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SportsEvent","name":"Liga Melide 2026-2027","description":"Liga de futbolín por parejas de la Asociación Melide Futbolín: 20 parejas en 2 grupos, ida y vuelta.","sport":"Futbolín","url":"https://amfmelide.es/liga.html","image":"https://amfmelide.es/liga-og.jpg","startDate":"2026-10","eventStatus":"https://schema.org/EventScheduled","eventAttendanceMode":"https://schema.org/OfflineEventAttendanceMode","location":{"@type":"Place","name":"Melide","address":{"@type":"PostalAddress","addressLocality":"Melide","addressRegion":"A Coruña","addressCountry":"ES"}},"organizer":{"@type":"SportsOrganization","name":"Asociación Melide Futbolín","url":"https://amfmelide.es/"}}</script>
 <link rel="apple-touch-icon" href="a/07a5b180ee40.png">
 <style>
 /* ============================================================
@@ -592,10 +593,10 @@ header.top.scrolled{background:rgba(7,6,5,.72);border-bottom-color:var(--line);b
 @keyframes introMedia{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
 
 /* franja inclinada */
-.band-wrap{overflow:hidden;padding:18px 0;margin-top:-18px;position:relative;z-index:2}
-.band{position:relative;margin:0 -3vw;transform:rotate(-2deg);background:var(--acc);color:var(--acc-ink);overflow:hidden;padding:12px 0;box-shadow:0 20px 40px -24px rgba(242,146,43,.7)}
+.band-wrap{overflow:hidden;padding:8px 0;margin-top:-8px;position:relative;z-index:2}
+.band{position:relative;margin:0 -3vw;transform:rotate(-1deg);background:var(--acc);color:var(--acc-ink);overflow:hidden;padding:5px 0;box-shadow:0 12px 26px -20px rgba(242,146,43,.7)}
 .band-in{display:flex;width:max-content;animation:marq 38s linear infinite}
-.band-in span{font-family:var(--f-display);font-size:clamp(20px,3.2vw,30px);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;padding-right:28px}
+.band-in span{font-family:var(--f-display);font-size:clamp(13px,1.6vw,16px);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;padding-right:28px}
 .band-in span i{font-style:normal;font-size:.62em;vertical-align:.22em;padding-left:28px}
 @keyframes marq{to{transform:translateX(-50%)}}
 
@@ -695,9 +696,22 @@ footer{padding:34px 0 16px}
 
 /* Portada compacta en el móvil a partir de la segunda visita (el logo sigue en la cabecera) */
 @media (max-width:899px){
-  body.vuelta .hero-media .visor, body.vuelta .hero-media .thumbs, body.vuelta .hero .lead{display:none}
+  .hero-media .visor, .hero-media .thumbs, body.vuelta .hero .lead{display:none}
   body.vuelta .hero-word{opacity:.5}
 }
+</style>
+<style>
+/* Resumen de la portada: líderes, jornadas en juego y plazo de la ida */
+.resumen{margin-top:18px;display:grid;gap:10px}
+.res-lid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.res-lid>div{padding:12px 14px;border-radius:14px;background:rgba(19,17,16,.72);border:1px solid var(--line);min-width:0}
+.res-lid .lbl{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold2)}
+.res-lid b{display:block;margin-top:6px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-lid span.s{font-size:12px;color:var(--dim)}
+.res-line{display:flex;flex-wrap:wrap;gap:8px}
+.res-line .chip b{color:var(--gold2)}
+@media (min-width:900px){.resumen{max-width:560px}}
+.res-when{color:var(--dim);font-weight:500;text-transform:none;letter-spacing:0}
 </style>
 <link rel="stylesheet" href="fx.css">
 <script src="fx.js" defer></script>
@@ -724,7 +738,6 @@ try{ if(localStorage.getItem("liga-visto")) document.body.classList.add("vuelta"
       </div>
       <button class="ibtn" type="button" id="btnShare" data-tt="compartir"><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="M8.3 10.8l7.4-3.6M8.3 13.2l7.4 3.6"/></svg></button>
       <button class="ibtn" type="button" id="btnTv" data-tt="modoTv"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></button>
-      <button class="btn hd-cta" type="button" data-go="clasificacion"><span data-t="tabs.clasificacion">Clasificación</span></button>
     </div>
   </div>
 </header>
@@ -740,6 +753,7 @@ try{ if(localStorage.getItem("liga-visto")) document.body.classList.add("vuelta"
       <span class="kicker intro" style="--d:1" data-t="kicker">Futbolín · Melide · A Coruña</span>
       <h1 id="heroTitle" class="intro" style="--d:2">Liga <span>Melide</span> <em>26/27</em></h1>
       <p class="lead intro" style="--d:3" data-t="lead">Clasificación, calendario y resultados en directo.</p>
+      <div class="resumen intro" style="--d:3" id="heroRes" aria-live="polite"></div>
       <div class="hero-cta intro" style="--d:4">
         <button class="btn" type="button" data-go="clasificacion"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0V4zM7 6H4v1a3 3 0 003 3M17 6h3v1a3 3 0 01-3 3"/></svg><span data-t="tabs.clasificacion">Clasificación</span></button>
         <button class="btn ghost" type="button" data-go="calendario"><span data-t="tabs.calendario">Calendario</span></button>
@@ -762,16 +776,6 @@ try{ if(localStorage.getItem("liga-visto")) document.body.classList.add("vuelta"
       <div class="thumbs" role="group" aria-label="Fotos">
         <button type="button" aria-pressed="true" aria-label="Foto 1" data-v="0"><img src="a/eff332290078.webp" width="64" height="52" alt=""></button>
         <button type="button" aria-pressed="false" aria-label="Foto 2" data-v="1"><img src="a/db035896f227.jpg" width="64" height="52" alt=""></button>
-      </div>
-      <div class="panel cdp">
-        <span class="lbl" data-t="cierreIda">Cierre de la ida · 31/12/2026</span>
-        <div class="cd" id="cd" aria-live="off">
-          <div><b id="cdD">--</b><span data-t="dias">días</span></div>
-          <div><b id="cdH">--</b><span data-t="horas">horas</span></div>
-          <div><b id="cdM">--</b><span data-t="min">min</span></div>
-          <div><b id="cdS">--</b><span data-t="seg">seg</span></div>
-        </div>
-        <p class="cd-note" id="cdNote"></p>
       </div>
     </div>
   </div>
@@ -901,7 +905,7 @@ const TX = {
   leyenda:"PJ jugados · G ganados · P perdidos · SF sets a favor · SC sets en contra · DS diferencia de sets · PTS puntos · ★ élite",
   lider:"Líder",segundo:"2.º puesto",victoria:"Victoria",derrota:"Derrota",sinJugar:"Sin jugar",
   jornada:"Jornada",ida:"IDA",vuelta:"VUELTA",porJugar:"Por jugar",descansa:"Descansa",
-  anterior:"Jornada anterior",siguiente:"Jornada siguiente",jorActual:"Jornada actual",
+  anterior:"Jornada anterior",siguiente:"Jornada siguiente",jorActual:"Jornada actual",enJuego:"En juego",jAbrev:"J",terminada:"Terminada",quedanDias:"Quedan <b>{d}</b> días · 31/12",hoy:"hoy",ayer:"ayer",haceDias:"hace {n} días",
   fechaPend:"Fecha por confirmar",enviarRes:"Enviar resultado",sinPartidos:"Sin partidos todavía",lugarPend:"Lugar por confirmar",
   plazoAviso:"La <b>IDA</b> (jornadas 1-9) tiene que estar terminada antes del <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"El plazo de la <b>IDA</b> terminó el 31/12/2026.",
@@ -944,7 +948,7 @@ const TX = {
   leyenda:"PX xogados · G gañados · P perdidos · SF sets a favor · SC sets en contra · DS diferenza de sets · PTS puntos · ★ élite",
   lider:"Líder",segundo:"2.º posto",victoria:"Vitoria",derrota:"Derrota",sinJugar:"Sen xogar",
   jornada:"Xornada",ida:"IDA",vuelta:"VOLTA",porJugar:"Por xogar",descansa:"Descansa",
-  anterior:"Xornada anterior",siguiente:"Xornada seguinte",jorActual:"Xornada actual",
+  anterior:"Xornada anterior",siguiente:"Xornada seguinte",jorActual:"Xornada actual",enJuego:"En xogo",jAbrev:"X",terminada:"Rematada",quedanDias:"Quedan <b>{d}</b> días · 31/12",hoy:"hoxe",ayer:"onte",haceDias:"hai {n} días",
   fechaPend:"Data por confirmar",enviarRes:"Enviar resultado",sinPartidos:"Aínda sen partidos",lugarPend:"Lugar por confirmar",
   plazoAviso:"A <b>IDA</b> (xornadas 1-9) ten que estar rematada antes do <b>31/12/2026</b>. Quedan <b>{d} días</b>.",
   plazoFin:"O prazo da <b>IDA</b> rematou o 31/12/2026.",
@@ -1173,6 +1177,15 @@ function jorActual(gid){
   const i=js.findIndex(p=>p.some(m=>!partidoJugado(m)));
   return i<0 ? Math.max(1,js.length) : i+1;
 }
+/* Jornadas con partidos en juego: de la primera con pendientes a la última con algún resultado */
+function jorEnJuego(gid){
+  const js=jornadasDe(gid); if(!js.length) return "—";
+  const a=jorActual(gid);
+  let b=0; js.forEach((p,i)=>{ if(p.some(partidoJugado)) b=i+1; });
+  b=Math.max(a,b);
+  if(js.every(p=>p.every(partidoJugado))) return T("terminada");
+  return a===b ? `${T("jAbrev")}${a}` : `${T("jAbrev")}${a}–${T("jAbrev")}${b}`;
+}
 function descansa(gid,i){
   const g=grupo(gid), js=jornadasDe(gid)[i]||[];
   const en=new Set(js.flatMap(m=>[m.l,m.v]));
@@ -1238,16 +1251,20 @@ function renderPortada(){
 /* Cuenta atrás hasta el cierre de la ida */
 function tickCuenta(){
   if(!ST) return;
-  const c=contar(), fin=new Date(CONFIG.plazoIda).getTime(), d=fin-Date.now();
-  const pad=n=>String(n).padStart(2,"0");
-  const idaPct=c.idaT?Math.round(c.idaJ*100/c.idaT):0;
-  if(c.idaT&&c.idaJ===c.idaT){ ["cdD","cdH","cdM","cdS"].forEach(k=>$("#"+k).textContent="00"); $("#cdNote").textContent=T("idaCompleta"); return; }
-  if(d<=0){ ["cdD","cdH","cdM","cdS"].forEach(k=>$("#"+k).textContent="00"); $("#cdNote").textContent=T("cdCerrado"); return; }
-  $("#cdD").textContent=Math.floor(d/864e5);
-  $("#cdH").textContent=pad(Math.floor(d/36e5)%24);
-  $("#cdM").textContent=pad(Math.floor(d/6e4)%60);
-  $("#cdS").textContent=pad(Math.floor(d/1e3)%60);
-  $("#cdNote").textContent=T("cdIda",{p:idaPct});
+  const st=$("#stD"); if(st) st.textContent=diasPlazo();
+  renderResumen();
+}
+/* Resumen de la portada (se ve nada más entrar, también en el móvil) */
+function renderResumen(){
+  const el=$("#heroRes"); if(!el||!ST) return;
+  if(cargando){ el.innerHTML=`<div class="res-lid">${ST.grupos.map(()=>'<div><div class="sk sk-row"></div></div>').join("")}</div>`; return; }
+  const c=contar(), idaPct=c.idaT?Math.round(c.idaJ*100/c.idaT):0, d=diasPlazo();
+  const lid=ST.grupos.map(g=>{ const f=tablaC(g.id)[0];
+    return `<div><span class="lbl">${ICO.trophy.replace('class="i"','class="i" style="width:13px;height:13px"')}${esc(g.nombre)}</span>${f&&f.pj?`<b>${esc(f.nombre)}</b><span class="s">${f.pts} ${T("pts").toLowerCase()} · ${f.g}-${f.p}</span>`:`<b>—</b><span class="s">${T("porJugar")}</span>`}</div>`; }).join("");
+  const ida = c.idaT&&c.idaJ===c.idaT ? `<span class="chip">${T("idaCompleta")}</span>`
+    : `<span class="chip">${T("ida")} <b>${idaPct}%</b></span><span class="chip">${d>0?T("quedanDias",{d}):T("cdCerrado")}</span>`;
+  const enj=ST.grupos.map(g=>`<span class="chip">${esc(g.nombre)} · <b>${esc(jorEnJuego(g.id))}</b></span>`).join("");
+  el.innerHTML=`<div class="res-lid">${lid}</div><div class="res-line">${enj}${ida}</div>`;
 }
 function diasPlazo(){ return Math.max(0,Math.floor((new Date(CONFIG.plazoIda).getTime()-Date.now())/864e5)); }
 /* Contadores animados */
@@ -1301,7 +1318,7 @@ function renderClasificacion(){
   const tools=segHTML("clas",g,gruposOpc())+
     `<button class="ibtn" data-act="print" aria-label="${T("imprimir")}" title="${T("imprimir")}">${ICO.print}</button>
      <button class="ibtn" data-act="share" data-tipo="clas" aria-label="${T("compartir")}" title="${T("compartir")}">${ICO.share}</button>`;
-  const head=secHead("h-clas",T("jorActual")+" · "+jorActual(g),T("tabs.clasificacion"),tools);
+  const head=secHead("h-clas",T("enJuego")+" · "+jorEnJuego(g),T("tabs.clasificacion"),tools);
   if(cargando){ el.innerHTML=head+skeleton(8); return; }
   el.innerHTML=head+`<div class="card tbl-wrap">${tablaHTML(g)}</div>
     <div class="legend">
@@ -1316,14 +1333,14 @@ function renderClasificacion(){
 /* ============================================================
    9 · CALENDARIO Y PARTIDOS
    ============================================================ */
-function matchHTML(m,gid,i){
+function matchHTML(m,gid,i,sinSets){
   const r=resultado(m);
   const pl=pareja(m.l), pv=pareja(m.v);
   const cls=id=>!r?"":(r.gana===id?"win":"lose");
   let centro;
   if(!r) centro=`<span class="tbd">${T("porJugar")}</span>`;
   else if(r.wo) centro=`<b><span class="${r.sl>r.sv?"w":"l"}">${r.sl}</span><i>-</i><span class="${r.sv>r.sl?"w":"l"}">${r.sv}</span></b><span class="wo">W.O.</span>`;
-  else centro=`<b><span class="${r.sl>r.sv?"w":"l"}">${r.sl}</span><i>-</i><span class="${r.sv>r.sl?"w":"l"}">${r.sv}</span></b><small>${esc(marcadorSets(m))}</small>`;
+  else centro=`<b><span class="${r.sl>r.sv?"w":"l"}">${r.sl}</span><i>-</i><span class="${r.sv>r.sl?"w":"l"}">${r.sv}</span></b>${sinSets?"":`<small>${esc(marcadorSets(m))}</small>`}`;
   const sub=id=>{
     if(!r) return "";
     if(r.gana===id) return `<small>${T("victoria")}</small>`;
@@ -1387,10 +1404,10 @@ function renderCalendario(){
     <div class="card jhead">
       <div>
         <h3>${T("jornada")} ${jor}</h3>
-        <div class="meta">
-          <span>${ICO.cal}${meta.fecha?esc(fechaLarga(meta.fecha)):T("fechaPend")}</span>
-          <span>${ICO.pin}${meta.lugar?esc(meta.lugar):T("lugarPend")}</span>
-        </div>
+        ${meta.fecha||meta.lugar?`<div class="meta">
+          ${meta.fecha?`<span>${ICO.cal}${esc(fechaLarga(meta.fecha))}</span>`:""}
+          ${meta.lugar?`<span>${ICO.pin}${esc(meta.lugar)}</span>`:""}
+        </div>`:""}
       </div>
       <div style="text-align:right">
         <span class="phase ${esIda(gid,jor)?"ida":"vuelta"}">${esIda(gid,jor)?T("ida"):T("vuelta")}</span>
@@ -1410,7 +1427,14 @@ function jugadosLista(filtro){
   const out=[];
   ST.grupos.forEach(g=>{ if(filtro!=="all"&&g.id!==filtro) return;
     jornadasDe(g.id).forEach((js,i)=>js.forEach((m,k)=>{ if(partidoJugado(m)) out.push({gid:g.id,jor:i+1,k,m}); })); });
-  return out.sort((a,b)=>b.jor-a.jor||a.gid.localeCompare(b.gid)||a.k-b.k);
+  /* primero los publicados más recientes (los que tienen fecha de publicación); el resto, por jornada */
+  return out.sort((a,b)=>(b.m.at||0)-(a.m.at||0)||b.jor-a.jor||a.gid.localeCompare(b.gid)||a.k-b.k);
+}
+function haceCuanto(ts){
+  const d0=new Date(); d0.setHours(0,0,0,0);
+  const d1=new Date(ts); d1.setHours(0,0,0,0);
+  const n=Math.round((d0-d1)/864e5);
+  return n<=0?T("hoy"):n===1?T("ayer"):T("haceDias",{n});
 }
 function renderResultados(){
   const el=$("#sec-resultados");
@@ -1422,8 +1446,8 @@ function renderResultados(){
       const r=resultado(x.m);
       const sets=r.wo?`<span>W.O.</span>`:x.m.s.map(s=>`<span class="${+s[0]>+s[1]?"a":"b"}">${s[0]}-${s[1]}</span>`).join("");
       return `<div class="card res st" style="--i:${i}">
-        <div class="res-top"><span><span class="g">${esc(grupo(x.gid).nombre)}</span> · ${T("jornada")} ${x.jor}</span><span class="phase ${esIda(x.gid,x.jor)?"ida":"vuelta"}">${esIda(x.gid,x.jor)?T("ida"):T("vuelta")}</span></div>
-        ${matchHTML(x.m,x.gid,0).replace('card match st','match')}
+        <div class="res-top"><span><span class="g">${esc(grupo(x.gid).nombre)}</span> · ${T("jornada")} ${x.jor}${x.m.at?` <span class="res-when">· ${esc(haceCuanto(x.m.at))}</span>`:""}</span><span class="phase ${esIda(x.gid,x.jor)?"ida":"vuelta"}">${esIda(x.gid,x.jor)?T("ida"):T("vuelta")}</span></div>
+        ${matchHTML(x.m,x.gid,0,true).replace('card match st','match')}
         <div class="sets">${sets}</div>
       </div>`;}).join("")}</div>
     ${lista.length>vista.resN?`<div class="row" style="justify-content:center;margin-top:14px"><button class="btn ghost" data-act="masRes">${T("verMas")}</button></div>`:""}`;
@@ -1856,7 +1880,7 @@ function arrancarAutoRefresco(){
   timerSync=setInterval(()=>{ if(!document.hidden) recargar(false); },CONFIG.autoRefrescoSeg*1000);
 }
 setInterval(()=>{ if(ST) renderSync(); },10000);
-setInterval(()=>{ if(ST&&!document.hidden) tickCuenta(); },1000);
+setInterval(()=>{ if(ST&&!document.hidden) tickCuenta(); },60000);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&ST&&!cargando) recargar(false); });
 window.addEventListener("online",()=>{ if(ST&&!cargando) recargar(false); });
 window.addEventListener("offline",()=>{ conexionOk=false; renderSync(); });
@@ -1989,13 +2013,13 @@ function guardarMatch(i){
   let a=0,b=0; sets.forEach(s=>s[0]>s[1]?a++:b++);
   if(sets.length===2&&a!==2&&b!==2) return err(es?"Con 1-1 en sets falta el tercer set.":"Con 1-1 en sets falta o terceiro set.");
   if(sets.length===3&&(a===3||b===3||(sets[0][0]>sets[0][1])===(sets[1][0]>sets[1][1]))) return err(es?"El tercer set solo se juega si van 1-1.":"O terceiro set só se xoga se van 1-1.");
-  snapshot(); m.s=sets; m.wo=null;
+  snapshot(); m.s=sets; m.wo=null; m.at=Date.now();
   render(); panelAdmin();
   const e=$(`#me${i}`); if(e){ e.className="msg ok"; e.textContent=`${Math.max(a,b)}-${Math.min(a,b)} ✓ · ${es?"publicando…":"publicando…"}`; }
   publicar(false);   /* el resultado se publica al guardarlo (antes había que pulsar además "Publicar cambios") */
 }
-function marcarWO(i,lado){ snapshot(); const m=matchActual(i); m.wo=m.wo===lado?null:lado; m.s=null; render(); panelAdmin(); publicar(false); }
-function borrarMatch(i){ snapshot(); const m=matchActual(i); m.s=null; m.wo=null; render(); panelAdmin(); publicar(false); }
+function marcarWO(i,lado){ snapshot(); const m=matchActual(i); m.wo=m.wo===lado?null:lado; m.s=null; if(m.wo) m.at=Date.now(); else delete m.at; render(); panelAdmin(); publicar(false); }
+function borrarMatch(i){ snapshot(); const m=matchActual(i); m.s=null; m.wo=null; delete m.at; render(); panelAdmin(); publicar(false); }
 
 /* --- Fechas y lugar por jornada --- */
 function admFechas(){
@@ -2189,7 +2213,7 @@ function irTab(tab,push){
   if(push!==false && location.hash.slice(1)!==tab) history.replaceState(null,"","#"+tab);
   if(tab==="estadisticas" && ST && !cargando) renderEstadisticas();
   /* En el móvil, al cambiar de pestaña se baja directo al contenido (no a la portada) */
-  if(cambio && push!==false && window.innerWidth<860){ const m=$("#main"), hd=$("#hdTop"); if(m){ const y=m.getBoundingClientRect().top+window.scrollY-(hd?hd.offsetHeight:62)-12; window.scrollTo({top:Math.max(0,y),behavior:reduceMotion()?"auto":"smooth"}); } }
+  if(push!==false && window.innerWidth<860){ const m=$("#main"), hd=$("#hdTop"); if(m){ const y=m.getBoundingClientRect().top+window.scrollY-(hd?hd.offsetHeight:62)-12; window.scrollTo({top:Math.max(0,y),behavior:reduceMotion()?"auto":"smooth"}); } }
 }
 /* Todos los clics con data-act pasan por aquí */
 const ACCIONES={
@@ -2332,9 +2356,6 @@ function estadoInicial(){
   const imgs=qa(".vimg"), th=qa(".thumbs button");
   th.forEach(b=>b.addEventListener("click",()=>{ const v=+b.dataset.v; imgs.forEach((im,i)=>im.classList.toggle("on",i===v)); th.forEach(x=>x.setAttribute("aria-pressed",String(x===b))); }));
   /* pegatina: días hasta el cierre de la ida */
-  const cdD=q("#cdD"), stD=q("#stD");
-  const sync=()=>{ stD.textContent=cdD.textContent; };
-  new MutationObserver(sync).observe(cdD,{childList:true,characterData:true,subtree:true}); sync();
   /* titulares de sección: última palabra en serif cursiva */
   function serif(root){
     (root||document).querySelectorAll(".sec-h h2:not([data-ser])").forEach(h=>{
