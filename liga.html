@@ -327,7 +327,11 @@ tr.top2 td:first-child{box-shadow:inset 3px 0 0 var(--red2)}
 .hist{display:grid;gap:6px;margin-top:10px}
 .hrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 11px;border-radius:10px;background:rgba(0,0,0,.25);border:1px solid var(--line);font-size:13px}
 .hrow .rj{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--dim2);width:30px}
-.hrow .rv{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow .rival{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsec{margin-top:16px}.fsec .gtitle{display:flex;justify-content:space-between;align-items:baseline}.fsec .gtitle small{color:var(--dim);font-weight:600;letter-spacing:.04em;text-transform:none}
+.fvta{margin-top:16px}.fvta summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px;padding:0 12px;border-radius:10px;border:1px dashed var(--line2);color:var(--dim);font-size:13px;font-weight:600}
+.fvta summary::-webkit-details-marker{display:none}.fvta summary::after{content:"＋";color:var(--gold2)}.fvta[open] summary::after{content:"－"}
+.pnext.faltan{flex-direction:column;align-items:flex-start;gap:4px}.pnext.faltan b{white-space:normal;line-height:1.45;font-weight:600}
 .tag{display:inline-grid;place-items:center;min-width:52px;height:26px;padding:0 7px;border-radius:7px;font-size:12px;font-weight:800}
 .tag.V{background:var(--win-soft);color:var(--win)} .tag.D{background:var(--loss-soft);color:#E0877E} .tag.P{background:rgba(255,255,255,.05);color:var(--dim)}
 
@@ -918,7 +922,8 @@ const TX = {
   vs:"vs",local:"local",visit:"visitante",ninguno:"Sin partidos pendientes",verFicha:"Ver ficha",
   kJugados:"Partidos jugados",kPend:"Pendientes",kSets:"Sets disputados",k20:"Victorias 2-0",
   lideres:"Líderes",mas20:"Más victorias 2-0",mejorDs:"Mejor diferencia de sets",evolucion:"Evolución de posiciones",
-  evoAyuda:"Toca una pareja para resaltar su línea.",sinDatos:"Las estadísticas aparecerán con el primer resultado.",
+  evoAyuda:"Cada punto es un resultado publicado del grupo (1, 2, 3…), en el orden en que se publicaron. Toca una pareja para resaltar su línea.",
+  jugados:"Jugados",pendIda:"Pendientes de ida",pendVta:"Pendientes de vuelta",faltanIda:"Le faltan {n} de ida",faltanVta:"Le faltan {n} de vuelta",sinDatos:"Las estadísticas aparecerán con el primer resultado.",
   fmtTit:"Cómo se juega",fmtPartido:"Partido",fmtPartidoTx:"Al mejor de 3 sets. Gana quien se lleva 2.",
   fmtSet:"Set",fmtSetTx:"Lo gana la primera pareja que llega a 4 partidas (de 4-0 a 4-3).",
   fmtPartida:"Partida",fmtPartidaTx:"Cada partida se juega a 5 goles.",
@@ -961,7 +966,8 @@ const TX = {
   vs:"vs",local:"local",visit:"visitante",ninguno:"Sen partidos pendentes",verFicha:"Ver ficha",
   kJugados:"Partidos xogados",kPend:"Pendentes",kSets:"Sets disputados",k20:"Vitorias 2-0",
   lideres:"Líderes",mas20:"Máis vitorias 2-0",mejorDs:"Mellor diferenza de sets",evolucion:"Evolución de posicións",
-  evoAyuda:"Toca unha parella para resaltar a súa liña.",sinDatos:"As estatísticas aparecerán co primeiro resultado.",
+  evoAyuda:"Cada punto é un resultado publicado do grupo (1, 2, 3…), na orde en que se publicaron. Toca unha parella para resaltar a súa liña.",
+  jugados:"Xogados",pendIda:"Pendentes de ida",pendVta:"Pendentes de volta",faltanIda:"Fáltanlle {n} da ida",faltanVta:"Fáltanlle {n} da volta",sinDatos:"As estatísticas aparecerán co primeiro resultado.",
   fmtTit:"Como se xoga",fmtPartido:"Partido",fmtPartidoTx:"Ao mellor de 3 sets. Gaña quen leva 2.",
   fmtSet:"Set",fmtSetTx:"Gáñao a primeira parella que chega a 4 partidas (de 4-0 a 4-3).",
   fmtPartida:"Partida",fmtPartidaTx:"Cada partida xógase a 5 goles.",
@@ -1002,7 +1008,15 @@ const EQUIPOS = [
   [16,'Miguez-Suso',true],[17,'Pepe Maconha',false],[18,'Manolo-Messi',true],
   [19,'Lucia-Lorena',false],[20,'Luisinho-Yago',false]
 ];
-const aJugadores = nombre => nombre.split(/[-\s]+/).map(s=>s.trim()).filter(Boolean);
+const aJugadores = nombre => nombre.includes("-") ? nombre.split("-").map(s=>s.trim()).filter(Boolean) : [];
+/* Texto de jugadores: no se enseña si salió de partir el nombre por espacios (p. ej. «Ivan Mateo Seo Migui»)
+   o si es el propio nombre; para ponerlos bien: Admin → Parejas → Jugadores (separados por coma) */
+function jugadoresTxt(p){
+  const j=(p&&p.j)||[]; if(!j.length) return "";
+  const n=(p.nombre||"").trim();
+  if(j.join(" ")===n || (j.length===1&&j[0]===n)) return "";
+  return j.join(" · ");
+}
 const EQ = Object.fromEntries(EQUIPOS.map(([n,nombre,elite])=>[n,{id:"p"+n,n,nombre,elite,j:aJugadores(nombre)}]));
 const SEED = {
   grupos:[
@@ -1151,19 +1165,22 @@ function directo(gid,ida,idb){
   return 0;
 }
 /* Posiciones jornada a jornada (para el gráfico y las flechas de subida/bajada) */
+/* Posiciones tras cada resultado publicado, en el orden en que se publicaron
+   (los anteriores al 17/11/2026 no tienen fecha y van primero, por jornada). */
 function evolucion(gid){
   const g=grupo(gid); if(!g) return null;
-  const js=jornadasDe(gid);
   const guardado=clone(ST.calendario[gid]);
+  const orden=[];
+  guardado.forEach((js,i)=>js.forEach((m,k)=>{ if(partidoJugado(m)) orden.push({i,k,at:m.at||0}); }));
+  orden.sort((a,b)=>a.at-b.at||a.i-b.i||a.k-b.k);
   const serie={}; g.parejas.forEach(p=>serie[p.id]=[]);
-  const puntos=[];
-  for(let k=1;k<=js.length;k++){
-    ST.calendario[gid]=guardado.map((j,i)=> i<k ? j : j.map(m=>({...m,s:null,wo:null})));
-    if(!(guardado[k-1]||[]).some(partidoJugado)) continue;
-    const t=tabla(gid);
-    puntos.push(k);
-    t.forEach((r,i)=>serie[r.id].push(i+1));
-  }
+  const puntos=[], hechos=new Set();
+  orden.forEach((o,n)=>{
+    hechos.add(o.i+"-"+o.k);
+    ST.calendario[gid]=guardado.map((js,i)=>js.map((m,k)=>hechos.has(i+"-"+k)?m:{...m,s:null,wo:null}));
+    tabla(gid).forEach((r,pos)=>serie[r.id].push(pos+1));
+    puntos.push(n+1);
+  });
   ST.calendario[gid]=guardado;
   return {jornadas:puntos,serie,parejas:g.parejas};
 }
@@ -1458,6 +1475,14 @@ function renderResultados(){
 /* ============================================================
    11 · PAREJAS (tarjetas + ficha)
    ============================================================ */
+/* Rivales pendientes de una pareja en la fase en curso (primero la ida; acabada la ida, la vuelta) */
+function faltan(id){
+  const g=grupoDe(id); if(!g) return {fase:"ida",rivales:[]};
+  const pend=partidosDe(id).filter(o=>o.m&&!partidoJugado(o.m));
+  const ida=pend.filter(o=>esIda(g.id,o.jor));
+  const lista=ida.length?ida:pend;
+  return {fase:ida.length?"ida":"vuelta",rivales:lista.map(o=>o.m.l===id?o.m.v:o.m.l)};
+}
 function proximo(id){
   const x=partidosDe(id).find(o=>o.m&&!partidoJugado(o.m));
   if(!x) return null;
@@ -1469,11 +1494,11 @@ function renderParejas(){
   if(cargando){ el.innerHTML=head+skeleton(4); return; }
   const filas=tablaC(gid);
   el.innerHTML=head+`<div class="pgrid">${filas.map((f,i)=>{
-    const p=pareja(f.id), nx=proximo(f.id), forma=f.forma.slice(-5);
+    const p=pareja(f.id), fl=faltan(f.id), forma=f.forma.slice(-5);
     return `<button type="button" class="card pcard st" style="--i:${i}" data-act="ficha" data-id="${f.id}" aria-label="${T("verFicha")}: ${esc(f.nombre)}">
       <div class="ph">
         <span class="pbadge ${i===0&&f.pj?"p1":i===1&&f.pj?"p2":""}">${i+1}</span>
-        <div style="min-width:0;flex:1"><h3>${esc(f.nombre)}${star(p)}</h3><div class="pj">${esc((p.j||[]).join(" · "))}</div></div>
+        <div style="min-width:0;flex:1"><h3>${esc(f.nombre)}${star(p)}</h3>${jugadoresTxt(p)?`<div class="pj">${esc(jugadoresTxt(p))}</div>`:""}</div>
         <span class="form">${forma.map(x=>`<i class="${x}"></i>`).join("")}</span>
       </div>
       <div class="pstats">
@@ -1481,33 +1506,41 @@ function renderParejas(){
         <div><b class="num">${f.g}-${f.p}</b><span>${T("vd")}</span></div>
         <div><b class="num" style="color:${f.ds>0?"var(--win)":f.ds<0?"var(--loss)":"inherit"}">${f.ds>0?"+":""}${f.ds}</b><span>${T("difSets")}</span></div>
       </div>
-      <div class="pnext"><span>${T("proxPartido")}</span>${nx?`<b>J${nx.jor} · ${T("vs")} ${esc(nombreP(nx.rival))}</b>`:`<b>${T("ninguno")}</b>`}</div>
+      <div class="pnext faltan"><span>${fl.rivales.length?T(fl.fase==="ida"?"faltanIda":"faltanVta",{n:fl.rivales.length}):T("ninguno")}</span>${fl.rivales.length?`<b>${fl.rivales.map(r=>esc(nombreP(r))).join(", ")}</b>`:""}</div>
     </button>`;}).join("")}</div>`;
 }
 function abrirFicha(id){
   const p=pareja(id); if(!p) return;
   const g=grupoDe(id), filas=tablaC(g.id), pos=filas.findIndex(f=>f.id===id), f=filas[pos];
-  const nx=proximo(id);
-  const hist=partidosDe(id).map(o=>{
-    if(!o.m) return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rv" style="color:var(--dim)">${T("descansa")}</span><span class="tag P">—</span></div>`;
+  const fila=o=>{
+    if(!o.m) return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rival" style="color:var(--dim)">${T("descansa")}</span><span class="tag P">—</span></div>`;
     const r=resultado(o.m), local=o.m.l===id, rival=local?o.m.v:o.m.l;
-    if(!r) return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rv">${T("vs")} ${nombreHTML(rival)}</span><span class="tag P">${T("porJugar")}</span></div>`;
+    if(!r) return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rival">${T("vs")} ${nombreHTML(rival)}</span><span class="tag P">${T("porJugar")}</span></div>`;
     const a=local?r.sl:r.sv, b=local?r.sv:r.sl, gano=r.gana===id;
     const det=r.wo?"W.O.":o.m.s.map(s=>local?`${s[0]}-${s[1]}`:`${s[1]}-${s[0]}`).join(" / ");
-    return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rv">${T("vs")} ${nombreHTML(rival)}<br><small style="color:var(--dim)">${esc(det)}</small></span><span class="tag ${gano?"V":"D"}">${gano?"V":"D"} ${a}-${b}</span></div>`;
-  }).join("");
+    return `<div class="hrow"><span class="rj">J${o.jor}</span><span class="rival">${T("vs")} ${nombreHTML(rival)}<br><small style="color:var(--dim)">${esc(det)}${o.m.at?" · "+esc(haceCuanto(o.m.at)):""}</small></span><span class="tag ${gano?"V":"D"}">${gano?"V":"D"} ${a}-${b}</span></div>`;
+  };
+  const todos=partidosDe(id).filter(o=>o.m);
+  const jug=todos.filter(o=>partidoJugado(o.m)).sort((a,b)=>(b.m.at||0)-(a.m.at||0)||b.jor-a.jor);
+  const pIda=todos.filter(o=>!partidoJugado(o.m)&&esIda(g.id,o.jor));
+  const pVta=todos.filter(o=>!partidoJugado(o.m)&&!esIda(g.id,o.jor));
+  const bloque=(tit,arr)=>`<div class="fsec"><div class="gtitle">${tit}<small>${arr.length}</small></div><div class="hist">${arr.map(fila).join("")}</div></div>`;
+  const hist=(jug.length?bloque(T("jugados"),jug):"")
+    +(pIda.length?bloque(T("pendIda"),pIda):"")
+    +(pVta.length?(pIda.length
+        ? `<details class="fvta"><summary>${T("pendVta")} · ${pVta.length}</summary><div class="hist">${pVta.map(fila).join("")}</div></details>`
+        : bloque(T("pendVta"),pVta)):"")
+    +(!pIda.length&&!pVta.length?`<p class="note" style="margin-top:14px">${T("ninguno")}</p>`:"");
   $("#fTitle").innerHTML=esc(p.nombre)+star(p);
   $("#fBody").innerHTML=`
-    <p style="color:var(--dim);font-size:13px;margin-top:-8px">${esc(g.nombre)} · ${esc((p.j||[]).join(" · "))}</p>
+    <p style="color:var(--dim);font-size:13px;margin-top:-8px">${esc(g.nombre)}${jugadoresTxt(p)?" · "+esc(jugadoresTxt(p)):""}</p>
     <div class="pstats" style="grid-template-columns:repeat(4,1fr)">
       <div><b>${pos+1}º</b><span>${T("posicion")}</span></div>
       <div><b>${f.pts}</b><span>${T("puntos")}</span></div>
       <div><b>${f.g}-${f.p}</b><span>${T("vd")}</span></div>
       <div><b>${f.ds>0?"+":""}${f.ds}</b><span>${T("difSets")}</span></div>
     </div>
-    <div class="pnext" style="border:0;padding-top:12px"><span>${T("proxPartido")}</span>${nx?`<b>J${nx.jor} · ${T("vs")} ${esc(nombreP(nx.rival))}${metaJor(nx.gid,nx.jor-1).fecha?" · "+esc(fechaCorta(metaJor(nx.gid,nx.jor-1).fecha)):""}</b>`:`<b>${T("ninguno")}</b>`}</div>
-    <div class="gtitle" style="margin-top:16px">${T("historial")}</div>
-    <div class="hist">${hist}</div>`;
+    ${hist}`;
   abrirModal("mFicha");
 }
 
@@ -1529,7 +1562,8 @@ function graficoSVG(gid){
   const sel=vista.evoSel&&e.serie[vista.evoSel]?vista.evoSel:tablaC(gid)[0].id;
   let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${T("evolucion")}">`;
   for(let p=1;p<=n;p++) s+=`<line x1="${L}" x2="${W-R}" y1="${y(p)}" y2="${y(p)}" stroke="rgba(255,255,255,.05)"/><text class="axis" x="${L-10}" y="${y(p)+4}" text-anchor="end">${p}</text>`;
-  J.forEach((j,i)=>{ s+=`<text class="axis" x="${x(i)}" y="${H-8}" text-anchor="middle">J${j}</text>`; });
+  const paso=Math.max(1,Math.ceil(J.length/8));
+  J.forEach((j,i)=>{ if(i%paso===0||i===J.length-1) s+=`<text class="axis" x="${x(i)}" y="${H-8}" text-anchor="middle">${j}</text>`; });
   const linea=(id,color,w,op)=>{
     const pts=e.serie[id].map((p,i)=>`${x(i).toFixed(1)},${y(p).toFixed(1)}`).join(" ");
     return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" opacity="${op}"/>`;
@@ -1552,8 +1586,6 @@ function renderEstadisticas(){
   const todas=ST.grupos.flatMap(g=>tablaC(g.id).map((f,i)=>({...f,gnom:g.nombre,pos:i+1})));
   const top=(fn,filtro)=>todas.filter(filtro||(()=>true)).map(f=>({nombre:f.nombre,elite:f.elite,g:f.gnom,v:fn(f)})).sort((a,b)=>b.v-a.v).slice(0,5);
   const hay=c.jug>0;
-  const lideres=ST.grupos.map(g=>{ const f=tablaC(g.id)[0]; const jugado=!!(f&&f.pj>0);   /* cada grupo por separado */
-    return f?`<div class="card leader st"><span class="lbl">${ICO.trophy.replace('class="i"','class="i" style="width:14px;height:14px;vertical-align:-2px"')} ${esc(g.nombre)}</span><b>${jugado?esc(f.nombre)+star(f):"—"}</b><span>${jugado?`${f.pts} ${T("pts").toLowerCase()} · ${f.g}-${f.p}`:T("sinPartidos")}</span></div>`:""; }).join("");
   el.innerHTML=head+`
     <div class="kpis">
       <div class="card kpi st" style="--i:0"><span class="lbl">${T("kJugados")}</span><b class="gold num" data-count="${c.jug}">${c.jug}</b><small>/ ${c.total}</small></div>
@@ -1561,8 +1593,6 @@ function renderEstadisticas(){
       <div class="card kpi st" style="--i:2"><span class="lbl">${T("kSets")}</span><b class="num" data-count="${c.sets}">${c.sets}</b><small>${c.jug?(c.sets/c.jug).toFixed(2).replace(".",","):"0"} / ${T("partidos").toLowerCase()}</small></div>
       <div class="card kpi st" style="--i:3"><span class="lbl">${T("k20")}</span><b class="num" data-count="${c.g20}">${c.g20}</b><small>${c.jug?Math.round(c.g20*100/c.jug):0}%</small></div>
     </div>
-    <div class="gtitle">${T("lideres")}</div>
-    <div class="leaders">${lideres}</div>
     <div class="grid2">
       ${rankHTML(T("mas20"),ICO.bolt,hay?top(f=>f.g20,f=>f.g20>0):[])}
       ${rankHTML(T("mejorDs"),ICO.up,hay?top(f=>f.ds,f=>f.pj>0):[],v=>(v>0?"+":"")+v)}
