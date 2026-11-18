@@ -1,0 +1,7 @@
+# Nunca subir secretos ni entornos al repositorio
+.env
+.env.*
+*.key
+*.pem
+secrets*.json
+.DS_Store
