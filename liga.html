@@ -654,12 +654,12 @@ tr.top2 td:first-child{box-shadow:inset 3px 0 0 rgba(255,240,225,.35)}
 .ptsbox .p{color:var(--acc2)}
 
 /* bloque de foto a sangre */
-.bleed{position:relative;overflow:hidden;border-radius:var(--r);margin:56px auto 0;min-height:clamp(260px,42vw,440px);display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
+.bleed{position:relative;overflow:hidden;border-radius:var(--r);margin:40px auto 0;min-height:clamp(150px,20vw,230px);display:flex;align-items:flex-end;isolation:isolate;border:1px solid var(--line)}
 .bleed-bg{z-index:-2;opacity:.95;will-change:transform;background-position:65% center!important}
 .bleed::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(7,6,5,.92),rgba(7,6,5,.2) 60%,rgba(7,6,5,.05))}
-.bleed-in{padding:28px 24px}
-@media (min-width:760px){.bleed-in{padding:44px 48px}}
-.bleed h2{font-size:clamp(44px,8vw,92px);line-height:.92;margin:12px 0 10px}
+.bleed-in{padding:20px 20px}
+@media (min-width:760px){.bleed-in{padding:28px 36px}}
+.bleed h2{font-size:clamp(30px,5vw,56px);line-height:.95;margin:8px 0 6px}
 .bleed p.org{color:var(--dim);font-size:14px}
 .bleed-wrap{max-width:1120px;margin:0 auto;padding:0 16px}
 
@@ -674,6 +674,23 @@ tr.top2 td:first-child{box-shadow:inset 3px 0 0 rgba(255,240,225,.35)}
 @media (max-width:859px){.fab{display:none!important}}
 /* Enviar resultado por WhatsApp */
 .mcell{display:flex;flex-direction:column;gap:6px;min-width:0}
+/* Tabla de cruces */
+.cruces-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);padding:0}
+table.cruces{border-collapse:separate;border-spacing:0;font-size:12px;min-width:100%}
+table.cruces th,table.cruces td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);text-align:center;padding:0}
+table.cruces thead th{font-size:10.5px;font-weight:800;color:var(--dim);height:34px;min-width:44px;background:rgba(0,0,0,.25)}
+table.cruces th.rn{position:sticky;left:0;z-index:1;background:#141210;text-align:left;padding:0 10px;font-size:12.5px;font-weight:650;color:var(--txt);white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+table.cruces th.rn b{display:inline-block;width:18px;color:var(--dim2);font-weight:800}
+table.cruces td{height:48px;min-width:44px;line-height:1.25}
+table.cruces td.self{background:repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 6px,transparent 6px 12px)}
+table.cruces td span{display:block;font-weight:700}
+table.cruces td span.w{color:var(--win)} table.cruces td span.l{color:var(--loss)} table.cruces td span.p{color:var(--dim2);font-weight:500}
+.cruces-leg{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--dim)}
+.cal-modo{margin-bottom:12px}
+/* Filtro por pareja */
+.res-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.res-filtros select.f{width:auto;flex:1;min-width:180px}
+.ed-j{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--gold2);margin-right:6px}
 .matches{align-items:start}
 .wa-send{display:flex;justify-content:flex-end;margin:0 2px}
 .wa-send a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:var(--dim);font-size:13px;font-weight:600;text-decoration:none}
@@ -765,10 +782,9 @@ try{ if(localStorage.getItem("liga-visto")) document.body.classList.add("vuelta"
         <button class="btn ghost" type="button" data-go="calendario"><span data-t="tabs.calendario">Calendario</span></button>
       </div>
       <div class="keydata intro" style="--d:5">
-        <div class="prog-top"><span class="lbl" data-t="progreso">Progreso de la liga</span><span class="big"><span id="pgPct" class="num">0</span><small>%</small></span></div>
-        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="pgBar"><i id="pgFill"></i><span class="mid" aria-hidden="true"></span></div>
-        <div class="prog-leg"><span id="pgTxt">—</span><span data-t="idaVuelta">IDA | VUELTA</span></div>
-        <div class="chips" id="heroChips"></div>
+        <div class="prog-top"><span class="lbl" id="pgLbl">Progreso de la ida</span><span class="big"><span id="pgPct" class="num">0</span><small>%</small></span></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="pgBar" aria-labelledby="pgLbl"><i id="pgFill"></i></div>
+        <div class="prog-leg"><span id="pgTxt">—</span><span id="pgPlazo"></span></div>
       </div>
     </div>
     <div class="hero-media intro" style="--d:1">
@@ -923,7 +939,10 @@ const TX = {
   kJugados:"Partidos jugados",kPend:"Pendientes",kSets:"Sets disputados",k20:"Victorias 2-0",
   lideres:"Líderes",mas20:"Más victorias 2-0",mejorDs:"Mejor diferencia de sets",evolucion:"Evolución de posiciones",
   evoAyuda:"Cada punto es un resultado publicado del grupo (1, 2, 3…), en el orden en que se publicaron. Toca una pareja para resaltar su línea.",
-  jugados:"Jugados",pendIda:"Pendientes de ida",pendVta:"Pendientes de vuelta",faltanIda:"Le faltan {n} de ida",faltanVta:"Le faltan {n} de vuelta",sinDatos:"Las estadísticas aparecerán con el primer resultado.",
+  jugados:"Jugados",pendIda:"Pendientes de ida",progIda:"Progreso de la ida",progVta:"Progreso de la vuelta",
+  calJor:"Jornadas",calCru:"Cruces",cruAyuda:"Cada casilla es el resultado de la pareja de la fila contra la de la columna: arriba la ida, abajo la vuelta. · = por jugar.",
+  todasPar:"Todas las parejas",porJornada:"— Por jornada —",shSem:"Semana",shFmt:"Formato",shNormal:"Normal",shHist:"Historia",
+  semTit:"Resultados de la semana",semVacia:"No se ha publicado ningún resultado en los últimos 7 días.",semTabla:"Así va la clasificación",pendVta:"Pendientes de vuelta",faltanIda:"Le faltan {n} de ida",faltanVta:"Le faltan {n} de vuelta",sinDatos:"Las estadísticas aparecerán con el primer resultado.",
   fmtTit:"Cómo se juega",fmtPartido:"Partido",fmtPartidoTx:"Al mejor de 3 sets. Gana quien se lleva 2.",
   fmtSet:"Set",fmtSetTx:"Lo gana la primera pareja que llega a 4 partidas (de 4-0 a 4-3).",
   fmtPartida:"Partida",fmtPartidaTx:"Cada partida se juega a 5 goles.",
@@ -967,7 +986,10 @@ const TX = {
   kJugados:"Partidos xogados",kPend:"Pendentes",kSets:"Sets disputados",k20:"Vitorias 2-0",
   lideres:"Líderes",mas20:"Máis vitorias 2-0",mejorDs:"Mellor diferenza de sets",evolucion:"Evolución de posicións",
   evoAyuda:"Cada punto é un resultado publicado do grupo (1, 2, 3…), na orde en que se publicaron. Toca unha parella para resaltar a súa liña.",
-  jugados:"Xogados",pendIda:"Pendentes de ida",pendVta:"Pendentes de volta",faltanIda:"Fáltanlle {n} da ida",faltanVta:"Fáltanlle {n} da volta",sinDatos:"As estatísticas aparecerán co primeiro resultado.",
+  jugados:"Xogados",pendIda:"Pendentes de ida",progIda:"Progreso da ida",progVta:"Progreso da volta",
+  calJor:"Xornadas",calCru:"Cruces",cruAyuda:"Cada casa é o resultado da parella da fila contra a da columna: arriba a ida, abaixo a volta. · = por xogar.",
+  todasPar:"Todas as parellas",porJornada:"— Por xornada —",shSem:"Semana",shFmt:"Formato",shNormal:"Normal",shHist:"Historia",
+  semTit:"Resultados da semana",semVacia:"Non se publicou ningún resultado nos últimos 7 días.",semTabla:"Así vai a clasificación",pendVta:"Pendentes de volta",faltanIda:"Fáltanlle {n} da ida",faltanVta:"Fáltanlle {n} da volta",sinDatos:"As estatísticas aparecerán co primeiro resultado.",
   fmtTit:"Como se xoga",fmtPartido:"Partido",fmtPartidoTx:"Ao mellor de 3 sets. Gaña quen leva 2.",
   fmtSet:"Set",fmtSetTx:"Gáñao a primeira parella que chega a 4 partidas (de 4-0 a 4-3).",
   fmtPartida:"Partida",fmtPartidaTx:"Cada partida xógase a 5 goles.",
@@ -1031,7 +1053,7 @@ const SEED = {
 let ST = null;                                   // datos de la liga (lo que se guarda en Supabase)
 let admin = false, adminPass = null, pendiente = false;
 let cargando = true, ultimaSync = null, conexionOk = true, versionRemota = null, timerSync = null;
-const vista = {tab:"clasificacion", clas:"A", cal:"A", jor:{}, par:"A", res:"all", resN:12, est:"A", evoSel:null,
+const vista = {tab:"clasificacion", clas:"A", cal:"A", calModo:"jor", jor:{}, par:"A", res:"all", resP:"", resN:12, admP:"", shFmt:"normal", est:"A", evoSel:null,
                adm:"resultados", admG:"A", admJ:1, shTipo:"clas", shG:"A", shJ:1};
 const HIST = [];
 const LS_HIST = "liga-hist-" + CONFIG.codigo;
@@ -1252,18 +1274,16 @@ function aplicarTextos(){
   $$(".lang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lang===LANG)));
 }
 function renderPortada(){
-  const c=contar(), pct=c.total?Math.round(c.jug*100/c.total):0;
+  /* Una sola barra: la ida mientras no esté cerrada; después, la vuelta */
+  const c=contar(), enIda=c.idaJ<c.idaT;
+  const tot=enIda?c.idaT:c.total-c.idaT, jug=enIda?c.idaJ:c.jug-c.idaJ;
+  const pct=tot?Math.round(jug*100/tot):0, d=diasPlazo();
+  $("#pgLbl").textContent=T(enIda?"progIda":"progVta");
   $("#pgFill").style.width=pct+"%";
   $("#pgBar").setAttribute("aria-valuenow",pct);
   animarNum($("#pgPct"),pct,!animados.has("hero"));
-  $("#pgTxt").textContent=T("jugadosDe",{a:c.jug,b:c.total});
-  const nPar=ST.grupos.reduce((a,g)=>a+g.parejas.length,0);
-  const nJor=Math.max(0,...ST.grupos.map(g=>jornadasDe(g.id).length));
-  $("#heroChips").innerHTML=`
-    <span class="chip"><b>${nPar}</b> ${esc(T("parejas").toLowerCase())}</span>
-    <span class="chip"><b>${ST.grupos.length}</b> ${esc(T("grupos").toLowerCase())}</span>
-    <span class="chip"><b>${nJor}</b> ${esc(T("jornadas").toLowerCase())}</span>
-    <span class="chip"><b>${c.total}</b> ${esc(T("partidos").toLowerCase())}</span>`;
+  $("#pgTxt").textContent=T("jugadosDe",{a:jug,b:tot});
+  $("#pgPlazo").innerHTML=enIda?(d>0?T("quedanDias",{d}):T("cdCerrado")):"";
   if(!cargando) animados.add("hero");
   tickCuenta();
 }
@@ -1280,8 +1300,7 @@ function renderResumen(){
   const c=contar(), idaPct=c.idaT?Math.round(c.idaJ*100/c.idaT):0, d=diasPlazo();
   const lid=ST.grupos.map(g=>{ const f=tablaC(g.id)[0];
     return `<div><span class="lbl">${ICO.trophy.replace('class="i"','class="i" style="width:13px;height:13px"')}${esc(g.nombre)}</span>${f&&f.pj?`<b>${esc(f.nombre)}</b><span class="s">${f.pts} ${T("pts").toLowerCase()} · ${f.g}-${f.p}</span>`:`<b>—</b><span class="s">${T("porJugar")}</span>`}</div>`; }).join("");
-  const ida = c.idaT&&c.idaJ===c.idaT ? `<span class="chip">${T("idaCompleta")}</span>`
-    : `<span class="chip">${T("ida")} <b>${idaPct}%</b></span><span class="chip">${d>0?T("quedanDias",{d}):T("cdCerrado")}</span>`;
+  const ida = c.idaT&&c.idaJ===c.idaT ? `<span class="chip">${T("idaCompleta")}</span>` : "";
   const enj=ST.grupos.map(g=>`<span class="chip">${esc(g.nombre)} · <b>${esc(jorEnJuego(g.id))}</b></span>`).join("");
   el.innerHTML=`<div class="res-lid">${lid}</div><div class="res-line">${enj}${ida}</div>`;
 }
@@ -1378,6 +1397,23 @@ function waHTML(m,gid,jor){
   const txt=`${CONFIG.liga} · ${g?g.nombre+" · ":""}${T("jornada")} ${jor}\n${nombreP(m.l)} _-_ ${nombreP(m.v)}\nSets: _-_ / _-_ / _-_`;
   return `<div class="wa-send"><a href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">${ICO.wa}<span>${T("enviarRes")}</span></a></div>`;
 }
+/* Tabla de cruces: fila contra columna; arriba la ida y abajo la vuelta, desde el punto de vista de la fila */
+function crucesHTML(gid){
+  const filas=tablaC(gid), ni=nIda(gid), js=jornadasDe(gid);
+  const celda=(a,b,ida)=>{
+    let m=null;
+    js.forEach((p,i)=>{ if((i<ni)!==ida) return; p.forEach(x=>{ if((x.l===a&&x.v===b)||(x.l===b&&x.v===a)) m=x; }); });
+    if(!m) return `<span class="p">—</span>`;
+    const r=resultado(m); if(!r) return `<span class="p">·</span>`;
+    const mia=m.l===a?r.sl:r.sv, suya=m.l===a?r.sv:r.sl;
+    return `<span class="${mia>suya?"w":"l"}">${mia}-${suya}${r.wo?"*":""}</span>`;
+  };
+  return `<div class="card cruces-wrap"><table class="cruces"><thead><tr><th class="rn" scope="col">${T("pareja")}</th>${filas.map((f,i)=>`<th scope="col" title="${esc(f.nombre)}">${i+1}</th>`).join("")}</tr></thead><tbody>
+    ${filas.map((a,i)=>`<tr><th class="rn" scope="row" title="${esc(a.nombre)}"><b>${i+1}</b>${esc(a.nombre)}</th>${filas.map((b,k)=>i===k?`<td class="self" aria-hidden="true"></td>`
+      :`<td aria-label="${esc(a.nombre)} ${T("vs")} ${esc(b.nombre)}">${celda(a.id,b.id,true)}${celda(a.id,b.id,false)}</td>`).join("")}</tr>`).join("")}
+  </tbody></table></div>
+  <p class="note" style="margin-top:10px">${T("cruAyuda")} * = W.O.</p>`;
+}
 function restHTML(gid,i){
   return descansa(gid,i).map(p=>`<div class="card rest st">${ICO.clock}<span>${T("descansa")}: <b>${esc(p.nombre)}</b>${star(p)}</span></div>`).join("");
 }
@@ -1398,6 +1434,8 @@ function renderCalendario(){
   if(cargando){ el.innerHTML=head+skeleton(5); return; }
   const js=jornadasDe(gid);
   if(!js.length){ el.innerHTML=head+`<div class="card empty">—</div>`; return; }
+  const modo=`<div class="cal-modo">${segHTML("calModo",vista.calModo,[["jor",T("calJor")],["cru",T("calCru")]])}</div>`;
+  if(vista.calModo==="cru"){ el.innerHTML=head+modo+crucesHTML(gid); return; }
   const jor=Math.min(Math.max(vista.jor[gid]||1,1),js.length); vista.jor[gid]=jor;
   const ni=nIda(gid), meta=metaJor(gid,jor-1), partidos=js[jor-1]||[];
   const hechos=partidos.filter(partidoJugado).length;
@@ -1409,7 +1447,7 @@ function renderCalendario(){
   const idaCerrada=contar().idaJ===contar().idaT;
   const aviso = esIda(gid,jor)&&!idaCerrada
     ? `<div class="alert">${ICO.clock}<span>${diasPlazo()>0?T("plazoAviso",{d:diasPlazo()}):T("plazoFin")}</span></div>` : "";
-  el.innerHTML=head+`
+  el.innerHTML=head+modo+`
     <div class="jstrip" role="group" aria-label="${T("jornadas")}">
       <span class="jsep">${T("ida")}</span>${js.slice(0,ni).map((_,i)=>chip(i)).join("")}
       <span class="jsep">${T("vuelta")}</span>${js.slice(ni).map((_,k)=>chip(k+ni)).join("")}
@@ -1445,7 +1483,7 @@ function renderCalendario(){
 function jugadosLista(filtro){
   const out=[];
   ST.grupos.forEach(g=>{ if(filtro!=="all"&&g.id!==filtro) return;
-    jornadasDe(g.id).forEach((js,i)=>js.forEach((m,k)=>{ if(partidoJugado(m)) out.push({gid:g.id,jor:i+1,k,m}); })); });
+    jornadasDe(g.id).forEach((js,i)=>js.forEach((m,k)=>{ if(partidoJugado(m)&&(!vista.resP||m.l===vista.resP||m.v===vista.resP)) out.push({gid:g.id,jor:i+1,k,m}); })); });
   /* primero los publicados más recientes (los que tienen fecha de publicación); el resto, por jornada */
   return out.sort((a,b)=>(b.m.at||0)-(a.m.at||0)||b.jor-a.jor||a.gid.localeCompare(b.gid)||a.k-b.k);
 }
@@ -1459,9 +1497,13 @@ function renderResultados(){
   const el=$("#sec-resultados");
   const head=secHead("h-res",T("ultimos"),T("tabs.resultados"),segHTML("res",vista.res,[["all",T("todos")],...gruposOpc()]));
   if(cargando){ el.innerHTML=head+skeleton(4); return; }
+  const pars=ST.grupos.filter(g=>vista.res==="all"||g.id===vista.res).flatMap(g=>g.parejas).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  if(vista.resP&&!pars.some(x=>x.id===vista.resP)) vista.resP="";
+  const filtro=`<div class="res-filtros"><select class="f" id="resPar" aria-label="${T("pareja")}"><option value="">${T("todasPar")}</option>${pars.map(x=>`<option value="${x.id}" ${x.id===vista.resP?"selected":""}>${esc(x.nombre)}</option>`).join("")}</select></div>`;
   const lista=jugadosLista(vista.res);
-  if(!lista.length){ el.innerHTML=head+`<div class="card empty">${T("sinJugados")}</div>`; return; }
-  el.innerHTML=head+`<div class="matches">${lista.slice(0,vista.resN).map((x,i)=>{
+  const enganchar=()=>{ const s=$("#resPar"); if(s) s.onchange=()=>{ vista.resP=s.value; vista.resN=12; renderResultados(); }; };
+  if(!lista.length){ el.innerHTML=head+filtro+`<div class="card empty">${T("sinJugados")}</div>`; enganchar(); return; }
+  el.innerHTML=head+filtro+`<div class="matches">${lista.slice(0,vista.resN).map((x,i)=>{
       const r=resultado(x.m);
       const sets=r.wo?`<span>W.O.</span>`:x.m.s.map(s=>`<span class="${+s[0]>+s[1]?"a":"b"}">${s[0]}-${s[1]}</span>`).join("");
       return `<div class="card res st" style="--i:${i}">
@@ -1470,6 +1512,7 @@ function renderResultados(){
         <div class="sets">${sets}</div>
       </div>`;}).join("")}</div>
     ${lista.length>vista.resN?`<div class="row" style="justify-content:center;margin-top:14px"><button class="btn ghost" data-act="masRes">${T("verMas")}</button></div>`:""}`;
+  enganchar();
 }
 
 /* ============================================================
@@ -1651,7 +1694,8 @@ function abrirCompartir(tipo){
 function pintarCompartir(){
   const gid=vista.shG;
   $("#sBody").innerHTML=`
-    <div class="row">${segHTML("shTipo",vista.shTipo,[["clas",T("shClas")],["jor",T("shJor")]])}${segHTML("shG",gid,gruposOpc())}</div>
+    <div class="row">${segHTML("shTipo",vista.shTipo,[["clas",T("shClas")],["jor",T("shJor")],["sem",T("shSem")]])}${segHTML("shG",gid,gruposOpc())}</div>
+    <div class="row" style="margin-top:8px">${segHTML("shFmt",vista.shFmt,[["normal",T("shNormal")],["hist",T("shHist")]])}</div>
     ${vista.shTipo==="jor"?`<label class="f" for="shJor">${T("jornada")}</label><div class="jnav" style="margin:0">${selJornadas(gid,vista.shJ,"shJor").replace("<select","<select class=\"f\"")}</div>`:""}
     <div class="share-prev"><img id="shImg" alt=""></div>
     <div class="row" style="margin-top:12px">
@@ -1664,22 +1708,37 @@ function pintarCompartir(){
 }
 function rrect(x,cx,cy,w,h,r){ x.beginPath(); x.moveTo(cx+r,cy); x.arcTo(cx+w,cy,cx+w,cy+h,r); x.arcTo(cx+w,cy+h,cx,cy+h,r); x.arcTo(cx,cy+h,cx,cy,r); x.arcTo(cx,cy,cx+w,cy,r); x.closePath(); }
 function recortar(x,txt,max){ if(x.measureText(txt).width<=max) return txt; while(txt.length>1&&x.measureText(txt+"…").width>max) txt=txt.slice(0,-1); return txt+"…"; }
-async function generarImagen(){
+function resultadosSemana(gid){
+  const desde=Date.now()-7*864e5, out=[];
+  jornadasDe(gid).forEach((js,i)=>js.forEach(m=>{ if(partidoJugado(m)&&m.at&&m.at>=desde) out.push({m,jor:i+1}); }));
+  return out.sort((a,b)=>b.m.at-a.m.at);
+}
+function rangoSemana(){
+  const f=d=>d.toLocaleDateString(LANG==="gl"?"gl-ES":"es-ES",{day:"numeric",month:"short"});
+  return `${f(new Date(Date.now()-6*864e5))} – ${f(new Date())}`;
+}
+async function generarImagen(){ return generarImagenBase(); }
+async function generarImagenBase(){
   try{ await Promise.all([document.fonts.load('60px "Anton"'),document.fonts.load('600 30px "Inter"'),document.fonts.load('800 30px "Inter"')]); }catch{}
-  const gid=vista.shG, g=grupo(gid), W=1080, clas=vista.shTipo==="clas";
-  const filas=clas?tablaC(gid):[], jor=vista.shJ, partidos=clas?[]:(jornadasDe(gid)[jor-1]||[]), rest=clas?[]:descansa(gid,jor-1);
-  const H=clas? 330+filas.length*92+120 : 330+partidos.length*150+rest.length*70+120;
-  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const gid=vista.shG, g=grupo(gid), W=1080, sem=vista.shTipo==="sem", clas=vista.shTipo==="clas";
+  const semana=sem?resultadosSemana(gid):[], filasSem=sem?tablaC(gid):[];
+  const filas=clas?tablaC(gid):[], jor=vista.shJ, partidos=(clas||sem)?[]:(jornadasDe(gid)[jor-1]||[]), rest=(clas||sem)?[]:descansa(gid,jor-1);
+  const H=sem ? 330+(semana.length?semana.length*150:90)+70+filasSem.length*58+120
+        : clas? 330+filas.length*92+120 : 330+partidos.length*150+rest.length*70+120;
+  /* Formato historia: lienzo 1080×1920 con el contenido centrado (y encogido si no cabe) */
+  const hist=vista.shFmt==="hist", CH=hist?1920:H;
+  const c=document.createElement("canvas"); c.width=W; c.height=CH;
   const x=c.getContext("2d");
-  x.fillStyle="#08090B"; x.fillRect(0,0,W,H);
-  let gr=x.createRadialGradient(120,-40,10,120,-40,760); gr.addColorStop(0,"rgba(158,27,18,.45)"); gr.addColorStop(1,"rgba(158,27,18,0)"); x.fillStyle=gr; x.fillRect(0,0,W,H);
-  gr=x.createRadialGradient(W,0,10,W,0,600); gr.addColorStop(0,"rgba(212,149,42,.18)"); gr.addColorStop(1,"rgba(212,149,42,0)"); x.fillStyle=gr; x.fillRect(0,0,W,H);
+  x.fillStyle="#08090B"; x.fillRect(0,0,W,CH);
+  let gr=x.createRadialGradient(120,-40,10,120,-40,hist?1100:760); gr.addColorStop(0,"rgba(158,27,18,.45)"); gr.addColorStop(1,"rgba(158,27,18,0)"); x.fillStyle=gr; x.fillRect(0,0,W,CH);
+  gr=x.createRadialGradient(W,0,10,W,0,600); gr.addColorStop(0,"rgba(212,149,42,.18)"); gr.addColorStop(1,"rgba(212,149,42,0)"); x.fillStyle=gr; x.fillRect(0,0,W,CH);
+  if(hist){ const k=Math.min(1,(CH-160)/H); x.translate((W-W*k)/2,(CH-H*k)/2); x.scale(k,k); }
   const logo=$("#logoImg"); try{ x.save(); rrect(x,64,60,150,150,30); x.clip(); x.drawImage(logo,64,60,150,150); x.restore(); }catch{}
   x.strokeStyle="rgba(212,149,42,.6)"; x.lineWidth=3; rrect(x,64,60,150,150,30); x.stroke();
   x.fillStyle="#F3EFE7"; x.font='76px "Anton", Impact, sans-serif'; x.textBaseline="alphabetic";
   x.fillText("LIGA MELIDE 2026-27",244,140);
   x.fillStyle="#F2B955"; x.font='800 30px "Inter", sans-serif';
-  const sub=clas?`${T("shClas").toUpperCase()} · ${g.nombre.toUpperCase()}`:`${T("jornada").toUpperCase()} ${jor} · ${g.nombre.toUpperCase()} · ${esIda(gid,jor)?T("ida"):T("vuelta")}`;
+  const sub=sem?`${T("semTit").toUpperCase()} · ${g.nombre.toUpperCase()}`:clas?`${T("shClas").toUpperCase()} · ${g.nombre.toUpperCase()}`:`${T("jornada").toUpperCase()} ${jor} · ${g.nombre.toUpperCase()} · ${esIda(gid,jor)?T("ida"):T("vuelta")}`;
   x.fillText(sub,246,192);
   const lg=x.createLinearGradient(64,0,W-64,0); lg.addColorStop(0,"#D23A26"); lg.addColorStop(1,"rgba(212,149,42,.1)");
   x.fillStyle=lg; x.fillRect(64,250,W-128,4);
@@ -1705,13 +1764,30 @@ async function generarImagen(){
       x.fillStyle="#F3EFE7"; x.font='44px "Anton", Impact, sans-serif'; x.fillText(f.pts,990,y+56); x.textAlign="left";
       y+=92;
     });
+  }else if(sem){
+    x.font='600 26px "Inter", sans-serif'; x.fillStyle="#ABA59B"; x.fillText(rangoSemana(),64,y); y+=30;
+    if(!semana.length){ x.font='600 28px "Inter", sans-serif'; x.fillStyle="#ABA59B"; x.fillText(T("semVacia"),64,y+50); y+=90; }
+    semana.forEach(o=>{ dibPartido(o.m,`J${o.jor}`); });
+    y+=10; x.font='800 24px "Inter", sans-serif'; x.fillStyle="#F2B955"; x.fillText(T("semTabla").toUpperCase(),64,y+20); y+=50;
+    filasSem.forEach((f,i)=>{
+      x.fillStyle=i%2?"rgba(255,255,255,.025)":"rgba(255,255,255,.05)"; rrect(x,64,y,W-128,50,12); x.fill();
+      x.font='30px "Anton", Impact, sans-serif'; x.fillStyle=i===0&&f.pj?"#F2B955":"#ABA59B"; x.textAlign="center"; x.fillText(String(i+1),104,y+37);
+      x.textAlign="left"; x.font='700 26px "Inter", sans-serif'; x.fillStyle="#F3EFE7"; x.fillText(recortar(x,f.nombre+(f.elite?" ★":""),620),150,y+35);
+      x.textAlign="center"; x.font='600 24px "Inter", sans-serif'; x.fillStyle="#ABA59B"; x.fillText(`${f.g}-${f.p}`,820,y+35);
+      x.font='34px "Anton", Impact, sans-serif'; x.fillStyle="#F3EFE7"; x.fillText(f.pts,990,y+39); x.textAlign="left";
+      y+=58;
+    });
   }else{
     const meta=metaJor(gid,jor-1);
-    x.font='600 26px "Inter", sans-serif'; x.fillStyle="#ABA59B";
-    x.fillText(`${meta.fecha?fechaLarga(meta.fecha):T("fechaPend")} · ${meta.lugar||T("lugarPend")}`,64,y); y+=30;
-    partidos.forEach(m=>{
+    if(meta.fecha||meta.lugar){ x.font='600 26px "Inter", sans-serif'; x.fillStyle="#ABA59B";
+      x.fillText([meta.fecha?fechaLarga(meta.fecha):"",meta.lugar||""].filter(Boolean).join(" · "),64,y); }
+    y+=30;
+    partidos.forEach(m=>dibPartido(m));
+  }
+  function dibPartido(m,etq){
       const r=resultado(m);
       x.fillStyle="rgba(255,255,255,.05)"; rrect(x,64,y,W-128,128,18); x.fill();
+      if(etq){ x.font='800 20px "Inter", sans-serif'; x.fillStyle="#F2B955"; x.textAlign="left"; x.fillText(etq,90,y+32); }
       x.font='700 30px "Inter", sans-serif';
       x.fillStyle=r&&r.gana!==m.l?"#8A857C":"#F3EFE7"; x.textAlign="left"; x.fillText(recortar(x,nombreP(m.l),330),90,y+74);
       x.fillStyle=r&&r.gana!==m.v?"#8A857C":"#F3EFE7"; x.textAlign="right"; x.fillText(recortar(x,nombreP(m.v),330),W-90,y+74);
@@ -1723,7 +1799,8 @@ async function generarImagen(){
         x.font='800 22px "Inter", sans-serif'; x.fillStyle="#8A857C"; x.fillText(T("porJugar").toUpperCase(),W/2,y+72);
       }
       x.textAlign="left"; y+=150;
-    });
+  }
+  if(!clas&&!sem){
     rest.forEach(p=>{ x.font='600 26px "Inter", sans-serif'; x.fillStyle="#ABA59B"; x.fillText(`${T("descansa")}: ${p.nombre}`,64,y+36); y+=70; });
   }
   x.font='600 24px "Inter", sans-serif'; x.fillStyle="#8A857C"; x.textAlign="left";
@@ -1735,6 +1812,10 @@ function textoCompartir(){
   if(vista.shTipo==="clas"){
     return `🏆 *${CONFIG.liga}* · ${g.nombre}\n\n`+tablaC(gid).map((f,i)=>`${i+1}. ${f.nombre}${f.elite?" ★":""} — ${f.pts} pts (${f.g}-${f.p}, DS ${f.ds>0?"+":""}${f.ds})`).join("\n")+`\n\n${CONFIG.url}`;
   }
+  if(vista.shTipo==="sem"){
+    const sm=resultadosSemana(gid).map(o=>{ const r=resultado(o.m); return `• J${o.jor} · ${nombreP(o.m.l)} ${r.sl}-${r.sv} ${nombreP(o.m.v)}${!r.wo?` (${marcadorSets(o.m)})`:" W.O."}`; });
+    return `📰 *${CONFIG.liga}* · ${g.nombre} · ${T("semTit")} (${rangoSemana()})\n\n${sm.length?sm.join("\n"):T("semVacia")}\n\n🏆 ${T("semTabla")}:\n`+tablaC(gid).map((f,i)=>`${i+1}. ${f.nombre} — ${f.pts} pts`).join("\n")+`\n\n${CONFIG.url}`;
+  }
   const jor=vista.shJ;
   const ps=(jornadasDe(gid)[jor-1]||[]).map(m=>{ const r=resultado(m); return `• ${nombreP(m.l)} ${r?`${r.sl}-${r.sv}`:"vs"} ${nombreP(m.v)}${r&&!r.wo?` (${marcadorSets(m)})`:""}`; });
   const rs=descansa(gid,jor-1).map(p=>`${T("descansa")}: ${p.nombre}`);
@@ -1742,7 +1823,7 @@ function textoCompartir(){
 }
 async function compartirImagen(descargar){
   const c=await generarImagen();
-  const nombre=`liga-melide-${vista.shTipo==="clas"?"clasificacion":"jornada-"+vista.shJ}-${vista.shG}.png`;
+  const nombre=`liga-melide-${vista.shTipo==="clas"?"clasificacion":vista.shTipo==="sem"?"semana":"jornada-"+vista.shJ}-${vista.shG}${vista.shFmt==="hist"?"-historia":""}.png`;
   const blob=await new Promise(r=>c.toBlob(r,"image/png"));
   if(!descargar && blob && navigator.canShare){
     const file=new File([blob],nombre,{type:"image/png"});
@@ -1993,20 +2074,43 @@ function selGrupoAdm(id){
 }
 
 /* --- Resultados set a set --- */
+/* Partidos que se están editando en el panel (por jornada o por pareja) */
+let ADM_LISTA=[];
+function selParejaAdm(gid){
+  const ps=(grupo(gid)?grupo(gid).parejas:[]).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,"es"));
+  return `<select class="f" id="apSel" style="flex:1;min-width:160px" aria-label="${T("pareja")}"><option value="">${T("porJornada")}</option>${ps.map(x=>`<option value="${x.id}" ${x.id===vista.admP?"selected":""}>${esc(x.nombre)}</option>`).join("")}</select>`;
+}
 function admResultados(){
   const gid=vista.admG, js=jornadasDe(gid);
+  if(vista.admP && !(grupo(gid)&&grupo(gid).parejas.some(x=>x.id===vista.admP))) vista.admP="";
+  if(js.length && vista.admP){
+    /* Por pareja: primero lo pendiente (ida y luego vuelta), después lo jugado */
+    const id=vista.admP, todos=[];
+    js.forEach((p,j)=>p.forEach((m,k)=>{ if(m.l===id||m.v===id) todos.push({gid,j,k,m}); }));
+    const pend=todos.filter(o=>!partidoJugado(o.m)), hechos=todos.filter(o=>partidoJugado(o.m));
+    ADM_LISTA=[...pend,...hechos];
+    $("#admBody").innerHTML=`
+      <div class="row" style="margin-bottom:12px">${selGrupoAdm("agSel")}${selParejaAdm(gid)}</div>
+      ${ADM_LISTA.map((o,i)=>edMatch(o.m,i,`J${o.j+1} · ${esIda(gid,o.j+1)?T("ida"):T("vuelta")}`)).join("")}`;
+    $("#agSel").onchange=e=>{ vista.admG=e.target.value; vista.admP=""; vista.admJ=jorActual(vista.admG); panelAdmin(); };
+    $("#apSel").onchange=e=>{ vista.admP=e.target.value; panelAdmin(); };
+    $$("#admBody .setin input").forEach(inp=>inp.addEventListener("input",()=>validarCelda(inp.closest(".setin"))));
+    return;
+  }
   if(!js.length){ $("#admBody").innerHTML=`<div class="row">${selGrupoAdm("agSel")}</div><p class="note">${gl()?"Este grupo non ten calendario.":"Este grupo no tiene calendario."}</p>`; $("#agSel").onchange=e=>{vista.admG=e.target.value;panelAdmin();}; return; }
   const jor=Math.min(Math.max(vista.admJ,1),js.length); vista.admJ=jor;
   const partidos=js[jor-1]||[];
+  ADM_LISTA=partidos.map((m,k)=>({gid,j:jor-1,k,m}));
   $("#admBody").innerHTML=`
-    <div class="row" style="margin-bottom:12px">${selGrupoAdm("agSel")}${selJornadas(gid,jor,"ajSel").replace("<select","<select class=\"f\" style=\"flex:1;min-width:140px\"")}</div>
+    <div class="row" style="margin-bottom:12px">${selGrupoAdm("agSel")}${selParejaAdm(gid)}${selJornadas(gid,jor,"ajSel").replace("<select","<select class=\"f\" style=\"flex:1;min-width:140px\"")}</div>
     ${partidos.map((m,i)=>edMatch(m,i)).join("")}
     ${descansa(gid,jor-1).map(p=>`<p class="note" style="margin:0 0 8px">${T("descansa")}: <b>${esc(p.nombre)}</b></p>`).join("")}`;
   $("#agSel").onchange=e=>{ vista.admG=e.target.value; vista.admJ=jorActual(vista.admG); panelAdmin(); };
   $("#ajSel").onchange=e=>{ vista.admJ=+e.target.value; panelAdmin(); };
+  $("#apSel").onchange=e=>{ vista.admP=e.target.value; panelAdmin(); };
   $$("#admBody .setin input").forEach(inp=>inp.addEventListener("input",()=>validarCelda(inp.closest(".setin"))));
 }
-function edMatch(m,i){
+function edMatch(m,i,etiqueta){
   const s=m.s||[];
   const cell=k=>`<div class="setin"><label>SET ${k+1}</label><div>
     <input inputmode="numeric" pattern="[0-4]" maxlength="1" aria-label="Set ${k+1} ${esc(nombreP(m.l))}" id="s${i}_${k}_0" value="${s[k]?s[k][0]:""}">
@@ -2014,7 +2118,7 @@ function edMatch(m,i){
     <input inputmode="numeric" pattern="[0-4]" maxlength="1" aria-label="Set ${k+1} ${esc(nombreP(m.v))}" id="s${i}_${k}_1" value="${s[k]?s[k][1]:""}"></div></div>`;
   const r=resultado(m);
   return `<div class="ed">
-    <div class="ed-nm"><span>${esc(nombreP(m.l))} <span style="color:var(--dim2)">vs</span> ${esc(nombreP(m.v))}</span>${r?`<span class="tag V">${r.sl}-${r.sv}${r.wo?" W.O.":""}</span>`:`<span class="tag P">${T("porJugar")}</span>`}</div>
+    <div class="ed-nm"><span>${etiqueta?`<span class="ed-j">${esc(etiqueta)}</span>`:""}${esc(nombreP(m.l))} <span style="color:var(--dim2)">vs</span> ${esc(nombreP(m.v))}</span>${r?`<span class="tag V">${r.sl}-${r.sv}${r.wo?" W.O.":""}</span>`:`<span class="tag P">${T("porJugar")}</span>`}</div>
     <div class="ed-sets">${cell(0)}${cell(1)}${cell(2)}</div>
     <div class="row" style="margin-top:10px">
       <button class="btn sm" data-act="guardarMatch" data-i="${i}">${gl()?"Gardar":"Guardar"}</button>
@@ -2030,7 +2134,7 @@ function validarCelda(box){
   const [a,b]=[...box.querySelectorAll("input")].map(x=>x.value.trim());
   box.classList.toggle("bad", !(a===""&&b==="") && !setValido([a===""?NaN:Number(a),b===""?NaN:Number(b)]));
 }
-function matchActual(i){ return ST.calendario[vista.admG][vista.admJ-1][i]; }
+function matchActual(i){ const o=ADM_LISTA[i]; return o ? ST.calendario[o.gid][o.j][o.k] : ST.calendario[vista.admG][vista.admJ-1][i]; }
 function guardarMatch(i){
   const m=matchActual(i), sets=[];
   for(let k=0;k<3;k++){
@@ -2250,9 +2354,10 @@ function irTab(tab,push){
 /* Todos los clics con data-act pasan por aquí */
 const ACCIONES={
   seg:(b)=>{ const k=b.dataset.k, v=b.dataset.v; vista[k]=v;
-    if(k==="clas") renderClasificacion(); else if(k==="cal") renderCalendario(); else if(k==="res"){ vista.resN=12; renderResultados(); }
+    if(k==="clas") renderClasificacion(); else if(k==="cal"||k==="calModo") renderCalendario(); else if(k==="res"){ vista.resN=12; renderResultados(); }
     else if(k==="par") renderParejas(); else if(k==="est"){ vista.evoSel=null; renderEstadisticas(); }
-    else if(k==="shTipo"||k==="shG"){ vista.shJ=vista.jor[vista.shG]||1; pintarCompartir(); } },
+    else if(k==="shTipo"||k==="shG"){ vista.shJ=vista.jor[vista.shG]||1; pintarCompartir(); }
+    else if(k==="shFmt") pintarCompartir(); },
   jor:(b)=>{ vista.jor[vista.cal]=+b.dataset.v; renderCalendario(); },
   jorMov:(b)=>{ vista.jor[vista.cal]=(vista.jor[vista.cal]||1)+ +b.dataset.v; renderCalendario(); },
   ficha:(b)=>abrirFicha(b.dataset.id),
