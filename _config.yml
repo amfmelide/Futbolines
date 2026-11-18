@@ -1,0 +1,9 @@
+# GitHub Pages (Jekyll). Archivos que NO deben servirse en amfmelide.es
+# aunque sigan en el repositorio (código de servidor, notas internas, migraciones).
+# Las carpetas que empiezan por punto (.git, .github, .claude) ya se excluyen solas.
+exclude:
+  - CLAUDE.md
+  - README.md
+  - supabase
+  - "*.sql"
+  - netlify.toml
